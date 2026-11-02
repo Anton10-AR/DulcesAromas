@@ -114,16 +114,21 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
                     builder: (context, limites) {
                       // Al arrancar en Android, el primer cuadro puede llegar con ancho 0 y la cuadrícula falla.
                       if (limites.maxWidth <= 32) return const SizedBox.shrink();
-                      return GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 260,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.7,
+                      // Deslizar hacia abajo vuelve a pedir el catálogo: precios, disponibilidad e imágenes nuevas.
+                      return RefreshIndicator(
+                        onRefresh: _actualizar,
+                        child: GridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 260,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.7,
+                          ),
+                          itemCount: productos.length,
+                          itemBuilder: (_, i) => _TarjetaProducto(productos[i], alVolver: _buscar),
                         ),
-                        itemCount: productos.length,
-                        itemBuilder: (_, i) => _TarjetaProducto(productos[i]),
                       );
                     },
                   );
@@ -134,6 +139,15 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
         ),
       ),
     );
+  }
+
+  Future<void> _actualizar() async {
+    _buscar();
+    try {
+      await _productos;
+    } on Object {
+      // El error ya lo muestra el Cargador, con su botón para reintentar.
+    }
   }
 
   Widget _chip(String nombre, int? id) => Padding(
@@ -150,9 +164,12 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
 }
 
 class _TarjetaProducto extends StatelessWidget {
-  const _TarjetaProducto(this.producto);
+  const _TarjetaProducto(this.producto, {required this.alVolver});
 
   final Producto producto;
+
+  /// Al volver del detalle, el catálogo se actualiza: pudo cambiar la imagen o la disponibilidad.
+  final VoidCallback alVolver;
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +177,10 @@ class _TarjetaProducto extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/producto/${producto.id}'),
+        onTap: () async {
+          await context.push('/producto/${producto.id}');
+          alVolver();
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

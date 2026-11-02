@@ -246,4 +246,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Dulces Aromas'), findsOneWidget);
   });
+
+  testWidgets('el catálogo se actualiza al deslizar hacia abajo y al volver de un producto', (tester) async {
+    var consultas = 0;
+    final api = apiFalsa(
+      respuestas: {
+        '/api/catalogo/productos': (solicitud) {
+          consultas++;
+          return http.Response(
+            jsonEncode([
+              {
+                'id': 1,
+                'nombre': 'Torta de chocolate',
+                'descripcion': 'Hecha en casa',
+                'precio': 120.0,
+                'categoria': {'id': 1, 'nombre': 'Tortas'},
+                'activo': true,
+                'disponible': true,
+                'personalizable': false,
+                'imagen': null,
+                'opciones': [],
+              },
+            ]),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        },
+      },
+    );
+    await abrir(tester, api);
+    expect(consultas, 1);
+
+    await tester.fling(find.byType(GridView), const Offset(0, 400), 1000);
+    await tester.pumpAndSettle();
+    expect(consultas, 2);
+
+    await tester.tap(find.text('Torta de chocolate'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(consultas, 3);
+  });
 }
