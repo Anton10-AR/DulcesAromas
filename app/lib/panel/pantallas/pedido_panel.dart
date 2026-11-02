@@ -110,6 +110,23 @@ class _PedidoPanelState extends State<PedidoPanel> {
                     children: _acciones(pedido, entrega, pagos.lastOrNull?.estado == 'PENDIENTE_DE_PAGO'),
                   ),
                   if (pedido.esDelivery && _usuario.puede('DISTRIBUCION_ASIGNAR')) _repartidor(pedido, entrega),
+                  // CU08: el recojo no lleva repartidor; se cierra cuando el cliente lo retira.
+                  if (!pedido.esDelivery && ['CONFIRMADO', 'EN_PREPARACION', 'LISTO'].contains(pedido.estado))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.storefront_outlined),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Recojo en tienda: no lleva repartidor. Ciérralo con «El cliente lo retiró» '
+                              'cuando esté Listo y lo recojan.',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const Divider(height: 32),
                   _productos(pedido),
                   const Divider(height: 32),

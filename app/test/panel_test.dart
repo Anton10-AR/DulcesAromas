@@ -4,6 +4,7 @@ import 'package:dulces_aromas/comun/api.dart';
 import 'package:dulces_aromas/panel/app_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,7 +39,10 @@ Api apiCon({
         });
       }
       if (sesionVencida) return json({'codigo': 'SIN_SESION', 'mensaje': 'Inicia sesión para continuar.'}, 401);
-      if (respuestas.containsKey(ruta)) return json(respuestas[ruta]!);
+      if (respuestas.containsKey(ruta)) {
+        final respuesta = respuestas[ruta]!;
+        return respuesta is http.Response ? respuesta : json(respuesta);
+      }
       return switch (ruta) {
         '/api/auth/logout' => http.Response('', 204),
         _ => json([]),
@@ -223,5 +227,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(TextField, 'Tortas'), findsOneWidget);
+  });
+
+  testWidgets('CU08: un pedido con recojo explica que no lleva repartidor', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'VENDEDOR',
+        permisos: ['PEDIDOS_CONSULTAR', 'DISTRIBUCION_ASIGNAR'],
+        respuestas: {
+          '/api/entregas/5': json({
+            'codigo': 'SIN_REPARTIDOR',
+            'mensaje': 'Este pedido todavía no tiene repartidor asignado.',
+          }, 409),
+          '/api/pedidos/5': {
+            'id': 5,
+            'estado': 'LISTO',
+            'tipoEntrega': 'RECOJO',
+            'direccion': null,
+            'telefono': '70012345',
+            'horarioEntrega': '2026-11-03T14:00:00Z',
+            'lineas': [],
+            'costoEnvio': 0,
+            'total': 120,
+            'fechaCreacion': '2026-11-02T14:00:00Z',
+            'asistido': false,
+            'motivoCancelacion': null,
+            'historial': [],
+          },
+        },
+      ),
+    );
+    final router = tester.widget<MaterialApp>(find.byType(MaterialApp)).routerConfig!;
+    (router as GoRouter).go('/pedidos/5');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Recojo en tienda: no lleva repartidor.'), findsOneWidget);
+    expect(find.text('El cliente lo retiró'), findsOneWidget);
+    expect(find.text('Elegir repartidor'), findsNothing);
   });
 }

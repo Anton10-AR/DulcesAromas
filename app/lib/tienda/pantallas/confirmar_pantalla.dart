@@ -17,7 +17,8 @@ class ConfirmarPantalla extends StatefulWidget {
 }
 
 class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
-  String _tipo = 'RECOJO';
+  /// Sin valor inicial: el cliente elige a propósito, para no confirmar un recojo sin darse cuenta.
+  String? _tipo;
   final _direccion = TextEditingController();
   final _telefono = TextEditingController();
   DateTime? _dia;
@@ -120,12 +121,22 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
                   ),
                   ButtonSegment(value: 'DELIVERY', label: Text('Delivery'), icon: Icon(Icons.delivery_dining_outlined)),
                 ],
-                selected: {_tipo},
+                emptySelectionAllowed: true,
+                selected: {?_tipo},
                 onSelectionChanged: (s) {
+                  if (s.isEmpty) return;
                   _tipo = s.first;
                   _cotizar();
                 },
               ),
+              if (_error?.campos['tipoEntrega'] != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _error!.campos['tipoEntrega']!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
               const SizedBox(height: 16),
               if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
               if (_error?.codigo == 'PRODUCTOS_NO_DISPONIBLES')
@@ -154,7 +165,11 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
                 teclado: TextInputType.phone,
                 autocompletar: const [AutofillHints.telephoneNumber],
               ),
-              Text(_tipo == 'DELIVERY' ? 'Horario de entrega' : 'Horario de recojo', style: textos.titleMedium),
+              Text(switch (_tipo) {
+                'DELIVERY' => 'Horario de entrega',
+                'RECOJO' => 'Horario de recojo',
+                _ => 'Horario',
+              }, style: textos.titleMedium),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -197,6 +212,11 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
                           Text(bolivianos(c.total), style: textos.titleLarge),
                         ],
                       ),
+                      if (_tipo == null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text('El envío se suma si eliges delivery.', style: textos.bodySmall),
+                        ),
                     ],
                   ),
                 ),

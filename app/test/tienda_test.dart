@@ -155,4 +155,47 @@ void main() {
     expect(find.text('Iniciar sesión'), findsOneWidget);
     expect(find.text('Recuperar contraseña'), findsOneWidget);
   });
+
+  testWidgets('HU10: el cliente elige recojo o delivery; no viene uno marcado', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'sesion_tienda': 't',
+      'carrito': jsonEncode([
+        {'productoId': 1, 'nombre': 'Torta de chocolate', 'cantidad': 1, 'opciones': [], 'nombresOpciones': []},
+      ]),
+    });
+    http.Response respuesta(Object cuerpo, [int estado = 200]) =>
+        http.Response(jsonEncode(cuerpo), estado, headers: {'content-type': 'application/json; charset=utf-8'});
+    final api = apiFalsa(
+      respuestas: {
+        '/api/auth/yo': (_) => respuesta({
+          'id': 9,
+          'nombre': 'Ana',
+          'correo': 'ana@correo.bo',
+          'tipo': 'CLIENTE',
+          'rol': null,
+          'permisos': [],
+        }),
+        '/api/pedidos/cotizacion': (_) =>
+            respuesta({'lineas': [], 'costoEnvio': 0, 'total': 120, 'confirmable': true, 'noDisponibles': []}),
+        '/api/pedidos': (_) => respuesta({
+          'codigo': 'DATOS_INVALIDOS',
+          'mensaje': 'Revisa los datos de entrega.',
+          'campos': {'tipoEntrega': 'Elige recojo en tienda o delivery.'},
+        }, 400),
+      },
+    );
+    await abrir(tester, api);
+    final router = tester.widget<MaterialApp>(find.byType(MaterialApp)).routerConfig!;
+    (router as GoRouter).go('/confirmar');
+    await tester.pumpAndSettle();
+
+    final opciones = tester.widget<SegmentedButton<String>>(find.byType(SegmentedButton<String>));
+    expect(opciones.selected, isEmpty);
+    expect(find.text('El envío se suma si eliges delivery.'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar pedido'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Elige recojo en tienda o delivery.'), findsOneWidget);
+  });
 }
