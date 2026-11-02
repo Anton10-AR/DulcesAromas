@@ -1,0 +1,95 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../comun/api.dart';
+import '../../comun/formato.dart';
+import '../../comun/modelos.dart';
+import '../../comun/widgets.dart';
+
+/// Lista de pedidos del Panel, del horario de entrega más próximo al más lejano (CU10, HU14).
+class PedidosPanel extends StatefulWidget {
+  const PedidosPanel({super.key});
+
+  @override
+  State<PedidosPanel> createState() => _PedidosPanelState();
+}
+
+class _PedidosPanelState extends State<PedidosPanel> {
+  /// Nulo: todos los que siguen en curso.
+  String? _estado;
+  late Future<List<PedidoResumen>> _pedidos;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  void _cargar() {
+    setState(() {
+      _pedidos = context.read<Api>().get('/api/pedidos', {'estado': _estado}).then((j) => lista(j, PedidoResumen.deJson));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Column(children: [
+      SizedBox(
+        height: 56,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          children: [
+            _filtro('En curso', null),
+            for (final e in nombresEstadoPedido.entries) _filtro(e.value, e.key),
+          ],
+        ),
+      ),
+      Expanded(
+        child: RefreshIndicator(
+          onRefresh: () async => _cargar(),
+          child: Cargador(
+            futuro: _pedidos,
+            reintentar: _cargar,
+            constructor: (context, pedidos) {
+              if (pedidos.isEmpty) return const Center(child: Text('No hay pedidos en este estado.'));
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: pedidos.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final p = pedidos[i];
+                  return ListTile(
+                    onTap: () => context.go('/pedidos/${p.id}'),
+                    title: Text('Pedido #${p.id} · ${p.tipoEntrega == 'DELIVERY' ? 'Delivery' : 'Recojo'}'
+                        '${p.asistido ? ' · Asistido' : ''}'),
+                    subtitle: Text('Entrega: ${fechaHora(p.horarioEntrega)} · ${p.productos} productos'),
+                    trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(nombresEstadoPedido[p.estado]!, style: textos.titleSmall),
+                          Text(bolivianos(p.total)),
+                        ]),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _filtro(String nombre, String? estado) => Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ChoiceChip(
+          label: Text(nombre),
+          selected: _estado == estado,
+          onSelected: (_) {
+            _estado = estado;
+            _cargar();
+          },
+        ),
+      );
+}

@@ -58,6 +58,20 @@ class Api {
   Future<dynamic> put(String ruta, Object cuerpo) =>
       _enviar(() => _cliente.put(uri(ruta), headers: _cabeceras, body: jsonEncode(cuerpo)));
 
+  /// Un archivo protegido, como un comprobante: con el token de la sesión, a diferencia de una imagen pública.
+  Future<({List<int> bytes, String tipo})> archivo(String ruta) async {
+    final http.Response respuesta;
+    try {
+      respuesta = await _cliente.get(uri(ruta), headers: _cabeceras);
+    } catch (_) {
+      throw ErrorApi(0, ErrorApi.sinConexion, 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.');
+    }
+    if (respuesta.statusCode != 200) {
+      throw _error(respuesta.statusCode, utf8.decode(respuesta.bodyBytes, allowMalformed: true));
+    }
+    return (bytes: respuesta.bodyBytes, tipo: respuesta.headers['content-type'] ?? '');
+  }
+
   /// Formulario con un archivo, como el comprobante de pago.
   Future<dynamic> multipart(String metodo, String ruta,
       {Map<String, String> campos = const {}, required String nombreArchivo, required List<int> bytes,

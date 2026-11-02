@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- La Tienda necesita internet para hablar con la API. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="dulces_aromas"
+        android:label="Dulces Aromas"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

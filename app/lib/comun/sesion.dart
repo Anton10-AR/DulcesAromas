@@ -45,6 +45,9 @@ class Sesion extends ChangeNotifier {
   bool debeCambiarContrasena = false;
   bool cargando = true;
 
+  /// La API cerró la sesión: en el Panel, tras 30 minutos sin uso (RNF06). Se muestra al volver a ingresar.
+  bool vencida = false;
+
   bool get iniciada => usuario != null;
 
   /// Recupera la sesión guardada, si sigue vigente.
@@ -95,6 +98,7 @@ class Sesion extends ChangeNotifier {
   Future<void> _abrir(dynamic respuesta) async {
     final json = respuesta as Map<String, dynamic>;
     api.token = json['token'] as String;
+    vencida = false;
     usuario = Usuario.deJson(json['usuario'] as Map<String, dynamic>);
     debeCambiarContrasena = json['debeCambiarContrasena'] as bool? ?? false;
     final preferencias = await SharedPreferences.getInstance();
@@ -103,6 +107,7 @@ class Sesion extends ChangeNotifier {
   }
 
   void _perdida() {
+    vencida = true;
     _olvidar().then((_) => notifyListeners());
   }
 

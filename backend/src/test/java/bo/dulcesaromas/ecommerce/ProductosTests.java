@@ -1,5 +1,7 @@
 package bo.dulcesaromas.ecommerce;
 
+import java.math.BigDecimal;
+
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +74,17 @@ class ProductosTests extends PruebaCatalogo {
 		intentarCrearProducto(personalizable("[{\"tipo\":\"Tamaño\",\"nombre\":\"Grande\",\"recargo\":-1}]"))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.campos['opciones[0].recargo']").isNotEmpty());
+	}
+
+	@Test
+	void losMontosLleganComoTextoParaNoPerderExactitud() throws Exception {
+		intentarCrearProducto(personalizable("[{\"tipo\":\"Tamaño\",\"nombre\":\"Grande\",\"recargo\":\"0.10\"}]")
+			.replace("\"precio\":120.00", "\"precio\":\"120.20\""))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.precio").value(120.20))
+			.andExpect(jsonPath("$.opciones[0].recargo").value(0.10));
+		assertThat(jdbc.queryForObject("select precio from producto", BigDecimal.class))
+			.isEqualByComparingTo("120.20");
 	}
 
 	@Test

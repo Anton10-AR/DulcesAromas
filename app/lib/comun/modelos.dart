@@ -258,6 +258,58 @@ class Cobro {
   final String? observacionRechazo;
 }
 
+class CategoriaPanel {
+  CategoriaPanel(this.id, this.nombre, this.activa, this.productosActivos);
+
+  factory CategoriaPanel.deJson(Json j) =>
+      CategoriaPanel(j['id'] as int, j['nombre'] as String, j['activa'] as bool, j['productosActivos'] as int);
+
+  final int id;
+  final String nombre;
+  final bool activa;
+  final int productosActivos;
+}
+
+class Persona {
+  Persona(this.id, this.nombre);
+
+  factory Persona.deJson(Json j) => Persona(j['id'] as int, j['nombre'] as String? ?? '');
+
+  final int id;
+  final String nombre;
+}
+
+/// Una entrega de un pedido con delivery, con lo que necesita el repartidor (CU08).
+class Entrega {
+  Entrega({required this.pedidoId, required this.estado, this.cliente, this.direccion, required this.telefono,
+      required this.horarioEntrega, required this.productos, required this.total, required this.repartidor,
+      this.observacionFallo});
+
+  factory Entrega.deJson(Json j) => Entrega(
+        pedidoId: j['pedidoId'] as int,
+        estado: j['estado'] as String,
+        cliente: j['cliente'] as String?,
+        direccion: j['direccion'] as String?,
+        telefono: j['telefono'] as String,
+        horarioEntrega: instante(j['horarioEntrega'])!,
+        productos: List<String>.from(j['productos'] as List),
+        total: decimalDe(j['total']),
+        repartidor: Persona.deJson(j['repartidor'] as Json),
+        observacionFallo: j['observacionFallo'] as String?,
+      );
+
+  final int pedidoId;
+  final String estado;
+  final String? cliente;
+  final String? direccion;
+  final String telefono;
+  final DateTime horarioEntrega;
+  final List<String> productos;
+  final Decimal total;
+  final Persona repartidor;
+  final String? observacionFallo;
+}
+
 class MetodoPago {
   MetodoPago(this.id, this.nombre, this.instrucciones, this.activo, this.qr);
 

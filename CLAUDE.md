@@ -59,7 +59,7 @@ CREATE DATABASE dulces_aromas OWNER dulces_aromas;
 
 Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo. Para que la recuperación de contraseña envíe correos, define `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA` y `MAIL_REMITENTE`; sin `MAIL_HOST`, el correo se escribe en el registro de la API, lo que solo sirve en desarrollo. `RECUPERACION_URL` es la pantalla de la app que recibe el enlace.
 
-**App Flutter** (desde `app/`). Un solo proyecto con dos puntos de entrada que comparten `lib/comun/`: la Tienda (`lib/main.dart`, código en `lib/tienda/`) y el Panel (`lib/main_panel.dart`, código en `lib/panel/`; todavía no existe).
+**App Flutter** (desde `app/`). Un solo proyecto con dos puntos de entrada que comparten `lib/comun/`: la Tienda (`lib/main.dart`, código en `lib/tienda/`) y el Panel (`lib/main_panel.dart`, código en `lib/panel/`).
 
 ```
 flutter test                                                  # pruebas
