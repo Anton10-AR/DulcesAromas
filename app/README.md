@@ -1,17 +1,15 @@
-# dulces_aromas
+# Dulces Aromas — Tienda y Panel
 
-Tienda y Panel de Dulces Aromas
+Un solo proyecto Flutter con dos puntos de entrada que comparten `lib/comun/`:
 
-## Getting Started
+- **Tienda** (clientes, Android y navegador): `lib/main.dart`, con el código en `lib/tienda/`.
+- **Panel** (personal, navegador): `lib/main_panel.dart`, con el código en `lib/panel/`.
 
-This project is a starting point for a Flutter application.
+Cómo instalar, configurar y ejecutar todo el sistema está en el [README principal](../README.md).
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+flutter test                                                   # pruebas
+dart format lib test                                           # formato (ancho 120)
+flutter run -d chrome --web-port 8081                          # Tienda
+flutter run -d chrome --web-port 8081 -t lib/main_panel.dart   # Panel
+```
