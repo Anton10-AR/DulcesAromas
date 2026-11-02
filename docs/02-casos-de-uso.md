@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.0 · 29/10/2026
+Versión 1.1 · 02/11/2026
 
 ## 1. Introducción y actores
 
@@ -467,6 +467,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Distribución: actualizar entregas | Sí | No | Sí, solo las suyas | CU08 |
 | Reportes de pedidos y ventas | Sí | No | No | CU10 |
 | Seguridad: usuarios y permisos | Sí | No | No | CU09 |
+| Configuración: tarifa de envío y métodos de pago | Sí | No | No | CU05, CU06 |
 
 El Vendedor que registró un pedido asistido no puede verificar el pago de ese mismo pedido (RN06). El Cliente no usa el Panel; solo accede a la Tienda (CU04, CU05, CU06, CU13, CU15, CU16).
 
@@ -512,3 +513,9 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | CU09 | Edita permisos de roles fijos; no crea roles. Agrega RN03 y RN04 |
 | CU10 | Reportes solo para el Administrador, con filtros y rendimiento definido |
 | CU11 a CU17 | Casos nuevos: registro de cliente, recuperación de contraseña, perfil, categorías, mis pedidos, cancelación y pedido asistido |
+
+### 9.3 Cambios en la versión 1.1
+
+| Elemento | Cambio |
+| --- | --- |
+| Matriz de permisos | Se agrega el permiso «Configuración: tarifa de envío y métodos de pago». Ningún permiso cubría editar la tarifa fija de envío (D4) ni los métodos de pago (RNF18) |

@@ -1,6 +1,6 @@
 # Dulces Aromas — Modelos UML v1
 
-Versión 1.0 · 29/10/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
+Versión 1.1 · 02/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
 
 ## 1. Introducción
 
@@ -270,7 +270,6 @@ classDiagram
   }
   class Configuracion {
     -tarifaEnvio: Decimal
-    -maxMensaje: Entero
   }
   class EstadoPedido {
     <<enumeration>>
@@ -303,7 +302,7 @@ Un cliente realiza muchos pedidos; un pedido asistido lo registra una persona de
 ```mermaid
 classDiagram
   class Pago {
-    -metodo: MetodoPago
+    -metodoNombre: Texto (copia)
     -referencia: Texto
     -monto: Decimal
     -comprobante: Archivo
@@ -327,10 +326,10 @@ classDiagram
     +registrarFallo(observacion)
   }
   class MetodoPago {
-    <<enumeration>>
-    QR
-    Transferencia
-    Deposito
+    -nombre: Texto
+    -instrucciones: Texto
+    -qr: Archivo
+    -activo: Lógico
   }
   class EstadoPago {
     <<enumeration>>
@@ -342,13 +341,14 @@ classDiagram
   class Pedido
   class Personal
   Pedido "1" -- "*" Pago : se paga con
+  Pago "*" --> "0..1" MetodoPago : usa
   Pago "1" -- "*" Verificacion : tiene
   Verificacion "*" --> "1" Personal : verificada por
   Pedido "1" -- "0..1" Entrega : se entrega con
   Entrega "*" --> "1" Personal : repartidor
 ```
 
-Un pedido puede tener varios pagos porque un comprobante rechazado obliga a registrar otro (RN07). Cada decisión queda en Verificacion con quién la tomó (RF39). La entrega existe solo para pedidos con delivery y apunta al repartidor asignado (RF40).
+Un pedido puede tener varios pagos porque un comprobante rechazado obliga a registrar otro (RN07). MetodoPago es una clase y no una enumeración: el administrador agrega métodos y edita sus datos para pagar desde el Panel, sin cambiar código (RNF18). El pago guarda una copia del nombre del método, por si luego se renombra. Cada decisión queda en Verificacion con quién la tomó (RF39). La entrega existe solo para pedidos con delivery y apunta al repartidor asignado (RF40).
 
 ### 3.5 Diccionario de clases
 
@@ -369,8 +369,9 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | LineaPedido | E-commerce | Producto, cantidad y mensaje dentro de un pedido |
 | OpcionElegida | E-commerce | Copia de la opción y del recargo elegidos |
 | HistorialEstado | E-commerce | Cada cambio de estado de un pedido |
-| Configuracion | E-commerce | Tarifa fija de envío y largo máximo del mensaje |
+| Configuracion | E-commerce | Tarifa fija de envío |
 | Pago | Cobros | Intento de pago con método, referencia y comprobante |
+| MetodoPago | Cobros | QR, transferencia, depósito u otro, con sus datos para pagar |
 | Verificacion | Cobros | Aprobación o rechazo de un pago |
 | Entrega | Distribución | Asignación, entrega o fallo de un pedido con delivery |
 
@@ -482,8 +483,16 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 | Entrega fallida | CU08 alt. 2 | Entrega.observacionFallo | Distribución, IEntregas | En camino a Listo | RN13 |
 | Recojo | CU08 | Pedido.tipoEntrega | Distribución | Listo a Entregado | RN12 |
 | Total y envío | CU05 | Pedido.calcularTotal(), Configuracion.tarifaEnvio, OpcionElegida | E-commerce | — | RN11, D4, D9 |
-| Mensaje de la torta | CU05 alt. 3b | LineaPedido.mensaje, Configuracion.maxMensaje | E-commerce | — | RN17 |
+| Mensaje de la torta | CU05 alt. 3b | LineaPedido.mensaje (hasta 24 caracteres, límite fijo) | E-commerce | — | RN17 |
 | Disponibilidad manual | CU02, CU04 | Producto.disponible (sin relación con ItemInventario) | IProductos, IStock separadas | — | RN08, D2 |
 | Auditoría | CU07, CU09 | Auditoría, Verificacion | Seguridad | — | RF28, RNF08 |
 
 Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pagos (uno por intento) y la entrega es una clase aparte que solo existe para pedidos con delivery.
+
+## 7. Cambios en la versión 1.1
+
+| Elemento | Cambio | Motivo |
+| --- | --- | --- |
+| MetodoPago | Pasa de enumeración a clase con nombre, instrucciones, QR e indicador activo | RNF18 pide agregar métodos de pago sin cambiar código, y CU06 muestra los datos para pagar |
+| Pago | Guarda una copia del nombre del método | Que renombrar un método no altere pagos anteriores |
+| Configuracion | Se quita maxMensaje | RN17 fija el límite en 24 caracteres; no es un valor configurable |
