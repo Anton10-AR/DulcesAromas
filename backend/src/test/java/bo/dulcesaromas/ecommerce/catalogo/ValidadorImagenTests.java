@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 
@@ -19,8 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * RNF10: las WebP, que Java no sabe leer, deben venir cuadradas (se arman a mano las cabeceras); las JPG y PNG
- * que no son cuadradas se recortan al centro, respetando la orientación EXIF de las fotos de celular.
+ * RNF10: las WebP, que Java no sabe leer, deben venir cuadradas y pesar hasta 2 MB (se arman a mano las cabeceras);
+ * las JPG y PNG se recortan al centro, respetando la orientación EXIF de las fotos de celular, y se reducen a
+ * 1200 px por lado.
  */
 class ValidadorImagenTests {
 
@@ -67,6 +70,13 @@ class ValidadorImagenTests {
 	}
 
 	@Test
+	void unaWebpDeMasDe2MbSeRechazaPorqueNoSePuedeReducir() {
+		byte[] pesada = Arrays.copyOf(vp8(1200, 1200), ValidadorImagen.BYTES_SIN_AJUSTE + 1);
+
+		assertThatThrownBy(() -> ValidadorImagen.preparar(pesada)).hasMessageContaining("hasta 2 MB");
+	}
+
+	@Test
 	void elMensajeDiceLasMedidasDeLaImagen() {
 		assertThatThrownBy(() -> ValidadorImagen.preparar(vp8l(1200, 800))).hasMessageContaining("1200 × 800 px")
 			.hasMessageContaining("Usa JPG o PNG");
@@ -80,6 +90,20 @@ class ValidadorImagenTests {
 		var salida = new ByteArrayOutputStream();
 		ImageIO.write(img, formato, salida);
 		return salida.toByteArray();
+	}
+
+	/**
+	 * Ruido de colores: casi no se comprime, así que pesa como una foto grande.
+	 */
+	private static BufferedImage ruido(int ancho, int alto) {
+		var img = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+		var azar = new Random(7);
+		for (int y = 0; y < alto; y++) {
+			for (int x = 0; x < ancho; x++) {
+				img.setRGB(x, y, azar.nextInt(0x1000000));
+			}
+		}
+		return img;
 	}
 
 	/**
@@ -118,6 +142,44 @@ class ValidadorImagenTests {
 	}
 
 	@Test
+	void unaFotoDeMasDe2MbSeRecortaYSeReduceA1200() throws IOException {
+		byte[] jpg = escribir(ruido(4000, 3000), "jpg");
+		assertThat(jpg.length).isGreaterThan(ValidadorImagen.BYTES_SIN_AJUSTE);
+
+		ValidadorImagen.Imagen lista = ValidadorImagen.preparar(jpg);
+
+		BufferedImage resultado = leer(lista.datos());
+		assertThat(lista.tipo()).isEqualTo("image/jpeg");
+		assertThat(resultado.getWidth()).isEqualTo(1200);
+		assertThat(resultado.getHeight()).isEqualTo(1200);
+		assertThat(lista.datos().length).isLessThan(jpg.length);
+	}
+
+	@Test
+	void unaImagenCuadradaDeMasDe1200SeReduce() throws IOException {
+		// 2000 × 2000 con una franja azul de 500 px: al reducirse a 1200, la franja mide 300 px.
+		byte[] png = escribir(conFranja(2000, 2000, 500, Color.BLUE), "png");
+
+		ValidadorImagen.Imagen lista = ValidadorImagen.preparar(png);
+
+		BufferedImage resultado = leer(lista.datos());
+		assertThat(lista.tipo()).isEqualTo("image/png");
+		assertThat(resultado.getWidth()).isEqualTo(1200);
+		assertThat(new Color(resultado.getRGB(280, 600))).isEqualTo(Color.BLUE);
+		assertThat(new Color(resultado.getRGB(320, 600))).isEqualTo(Color.WHITE);
+	}
+
+	@Test
+	void unaPngQueSigueSiendoPesadaSeGuardaComoJpg() throws IOException {
+		byte[] png = escribir(ruido(1500, 1500), "png");
+
+		ValidadorImagen.Imagen lista = ValidadorImagen.preparar(png);
+
+		assertThat(lista.tipo()).isEqualTo("image/jpeg");
+		assertThat(leer(lista.datos()).getWidth()).isEqualTo(1200);
+	}
+
+	@Test
 	void elLadoMenorDebeMedirAlMenos800() throws IOException {
 		byte[] png = escribir(conFranja(1200, 700, 10, Color.BLUE), "png");
 
@@ -145,9 +207,9 @@ class ValidadorImagenTests {
 	void leeLaOrientacionExifEnAmbosOrdenesDeBytes() throws IOException {
 		byte[] jpg = escribir(conFranja(10, 10, 1, Color.RED), "jpg");
 
-		assertThat(RecorteCuadrado.orientacionExif(conExifOrientacion(jpg, 6))).isEqualTo(6);
-		assertThat(RecorteCuadrado.orientacionExif(conExifOrientacionMotorola(jpg, 8))).isEqualTo(8);
-		assertThat(RecorteCuadrado.orientacionExif(jpg)).isEqualTo(1);
+		assertThat(AjusteImagen.orientacionExif(conExifOrientacion(jpg, 6))).isEqualTo(6);
+		assertThat(AjusteImagen.orientacionExif(conExifOrientacionMotorola(jpg, 8))).isEqualTo(8);
+		assertThat(AjusteImagen.orientacionExif(jpg)).isEqualTo(1);
 	}
 
 	/**

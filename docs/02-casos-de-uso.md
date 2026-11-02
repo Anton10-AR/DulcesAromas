@@ -215,7 +215,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Precondición | El administrador tiene sesión iniciada y existe al menos una categoría |
 | Postcondición | El catálogo refleja el cambio |
 | Secuencia normal | 1. El administrador abre Catálogo. 2. Elige Nuevo producto o selecciona uno existente. 3. Completa o modifica los datos, la imagen, la disponibilidad y las opciones de personalización con su recargo. 4. El sistema valida y guarda. 5. El producto aparece en la Tienda si está activo |
-| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada, la recorta al centro. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos. Se puede borrar solo si nunca se pidió; si tiene pedidos asociados, el sistema lo impide y solo se desactiva (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
+| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada o mide más de 1200 px, la recorta al centro y la reduce. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos. Se puede borrar solo si nunca se pidió; si tiene pedidos asociados, el sistema lo impide y solo se desactiva (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
 | Rendimiento | 2 s o menos por operación |
 | Frecuencia | Semanal |
 | Importancia | Alta |
@@ -523,6 +523,7 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | Matriz de permisos | El permiso de asignar repartidor también permite marcar En camino (tabla 2.2) y cerrar un recojo, que no tenían permiso propio |
 | CU02, CU05, CU09 | El equipo confirmó el horario de atención con 24 horas de anticipación, el borrado de productos sin pedidos y que Seguridad es solo del administrador (sección 10.1) |
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
+| RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
 
 ## 10. Decisiones de implementación
 
@@ -535,7 +536,7 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. El equ
 | Recargo (RN11) | Se cobra por unidad: (precio + recargos) × cantidad |
 | Opciones de personalización | Como máximo una de cada tipo; ninguna es obligatoria |
 | Recojo (RN12) | Exige teléfono y horario, no dirección |
-| Imagen de producto (RNF10) | Una JPG o PNG que no es cuadrada se recorta al centro, respetando la orientación de las fotos de celular. Una WebP debe venir cuadrada |
+| Imagen de producto (RNF10) | Se aceptan fotos de hasta 10 MB. Una JPG o PNG se recorta al centro, respetando la orientación de las fotos de celular, y se reduce a 1200 px por lado. Una WebP debe venir cuadrada y pesar hasta 2 MB, porque no se puede reducir |
 | Métodos de pago (RNF18) | Tabla editable desde el Panel; nacen desactivados hasta que el administrador escribe los datos para pagar |
 | Horario de entrega (CU05, CU17) | Dentro de la atención (lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00) y con al menos 24 horas de anticipación |
 | Borrar productos (RN10) | Un producto sin pedidos se puede borrar; uno con pedidos solo se desactiva |

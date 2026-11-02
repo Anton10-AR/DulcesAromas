@@ -191,7 +191,7 @@ class ProductosTests extends PruebaCatalogo {
 	@Test
 	void rnf10RechazaImagenesQueNoCumplen() throws Exception {
 		long id = crearProducto(tortas, "Torta de chocolate");
-		byte[] demasiadoGrande = new byte[2 * 1024 * 1024 + 1];
+		byte[] demasiadoGrande = new byte[10 * 1024 * 1024 + 1];
 		System.arraycopy(imagen("png", 800, 800), 0, demasiadoGrande, 0, 8);
 
 		for (byte[] mala : new byte[][] { imagen("png", 1200, 700), imagen("jpg", 600, 600), imagen("gif", 900, 900),
