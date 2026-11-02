@@ -24,7 +24,8 @@ RUN useradd --system --no-create-home api
 COPY --from=construccion /fuente/api.jar api.jar
 USER api
 
-# Los planes gratuitos dan unos 512 MB: la JVM usa como mucho el 75 % y un recolector de memoria pequeño.
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseSerialGC"
+# Los planes gratuitos dan unos 512 MB: el heap usa como mucho el 65 % (lo demás queda para la propia JVM) y un
+# recolector de memoria pequeño.
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=65 -XX:+UseSerialGC"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "api.jar"]
