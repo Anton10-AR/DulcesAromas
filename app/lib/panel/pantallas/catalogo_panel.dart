@@ -160,7 +160,9 @@ class _CategoriasState extends State<_Categorias> {
       titulo: categoria == null ? 'Nueva categoría' : 'Renombrar categoría',
       etiqueta: 'Nombre',
       confirmar: 'Guardar',
+      valor: categoria?.nombre ?? '',
       maximo: 60,
+      lineas: 1,
     );
     if (nombre == null) return;
     await _ejecutar(

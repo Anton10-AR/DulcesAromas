@@ -199,4 +199,29 @@ void main() {
     // El Vendedor solo consulta: no ve el botón de movimientos.
     expect(find.text('Movimiento'), findsNothing);
   });
+
+  testWidgets('al renombrar una categoría, el cuadro trae el nombre actual', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'ADMINISTRADOR',
+        permisos: ['CATALOGO_GESTIONAR'],
+        respuestas: {
+          '/api/categorias': [
+            {'id': 1, 'nombre': 'Tortas', 'activa': true, 'productosActivos': 2},
+          ],
+        },
+      ),
+    );
+    await tester.tap(find.text('Catálogo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Categorías'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Renombrar'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(TextField, 'Tortas'), findsOneWidget);
+  });
 }

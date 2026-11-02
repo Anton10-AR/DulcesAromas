@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// Pide un texto obligatorio, como el motivo de una cancelación o la observación de un rechazo.
-/// Devuelve nulo si se cancela.
+/// Pide un texto obligatorio, como el motivo de una cancelación o el nombre de una categoría.
+/// [valor] es el texto inicial, por ejemplo el nombre actual al renombrar. Devuelve nulo si se cancela.
 Future<String?> pedirTexto(
   BuildContext context, {
   required String titulo,
   required String etiqueta,
   required String confirmar,
+  String valor = '',
   int maximo = 500,
+  int lineas = 3,
 }) {
-  final controlador = TextEditingController();
+  final controlador = TextEditingController(text: valor);
   return showDialog<String>(
     context: context,
     builder: (contexto) => StatefulBuilder(
@@ -19,7 +21,7 @@ Future<String?> pedirTexto(
           controller: controlador,
           autofocus: true,
           maxLength: maximo,
-          maxLines: 3,
+          maxLines: lineas,
           onChanged: (_) => actualizar(() {}),
           decoration: InputDecoration(labelText: etiqueta),
         ),
