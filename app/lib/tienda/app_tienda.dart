@@ -34,36 +34,50 @@ GoRouter rutasTienda(Sesion sesion) {
       }
       return null;
     },
+    // Las rutas cuelgan del catálogo (y el pago, del pedido), así que al llegar a una con go() queda debajo la
+    // pantalla de la que sale: siempre hay flecha para volver y el botón Atrás no cierra la app.
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const CatalogoPantalla()),
       GoRoute(
-        path: '/producto/:id',
-        builder: (_, e) => ProductoPantalla(id: int.parse(e.pathParameters['id']!)),
+        path: '/',
+        builder: (_, _) => const CatalogoPantalla(),
+        routes: [
+          GoRoute(
+            path: 'producto/:id',
+            builder: (_, e) => ProductoPantalla(id: int.parse(e.pathParameters['id']!)),
+          ),
+          GoRoute(path: 'carrito', builder: (_, _) => const CarritoPantalla()),
+          GoRoute(
+            path: 'ingresar',
+            builder: (_, e) => IngresarPantalla(volver: e.uri.queryParameters['volver']),
+          ),
+          GoRoute(
+            path: 'registro',
+            builder: (_, e) => RegistroPantalla(volver: e.uri.queryParameters['volver']),
+          ),
+          GoRoute(
+            path: 'recuperar',
+            builder: (_, e) => RecuperarPantalla(token: e.uri.queryParameters['token']),
+          ),
+          GoRoute(path: 'confirmar', builder: (_, _) => const ConfirmarPantalla()),
+          GoRoute(
+            path: 'pedidos',
+            builder: (_, _) => const MisPedidosPantalla(),
+            routes: [
+              GoRoute(
+                path: ':id',
+                builder: (_, e) => PedidoPantalla(id: int.parse(e.pathParameters['id']!)),
+                routes: [
+                  GoRoute(
+                    path: 'pagar',
+                    builder: (_, e) => PagarPantalla(pedidoId: int.parse(e.pathParameters['id']!)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(path: 'perfil', builder: (_, _) => const PerfilPantalla()),
+        ],
       ),
-      GoRoute(path: '/carrito', builder: (_, _) => const CarritoPantalla()),
-      GoRoute(
-        path: '/ingresar',
-        builder: (_, e) => IngresarPantalla(volver: e.uri.queryParameters['volver']),
-      ),
-      GoRoute(
-        path: '/registro',
-        builder: (_, e) => RegistroPantalla(volver: e.uri.queryParameters['volver']),
-      ),
-      GoRoute(
-        path: '/recuperar',
-        builder: (_, e) => RecuperarPantalla(token: e.uri.queryParameters['token']),
-      ),
-      GoRoute(path: '/confirmar', builder: (_, _) => const ConfirmarPantalla()),
-      GoRoute(path: '/pedidos', builder: (_, _) => const MisPedidosPantalla()),
-      GoRoute(
-        path: '/pedidos/:id',
-        builder: (_, e) => PedidoPantalla(id: int.parse(e.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/pedidos/:id/pagar',
-        builder: (_, e) => PagarPantalla(pedidoId: int.parse(e.pathParameters['id']!)),
-      ),
-      GoRoute(path: '/perfil', builder: (_, _) => const PerfilPantalla()),
     ],
   );
 }

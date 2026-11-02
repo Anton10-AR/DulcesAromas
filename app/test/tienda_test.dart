@@ -198,4 +198,52 @@ void main() {
 
     expect(find.text('Elige recojo en tienda o delivery.'), findsOneWidget);
   });
+
+  testWidgets('desde el detalle de un pedido se puede volver, en vez de cerrar la app', (tester) async {
+    SharedPreferences.setMockInitialValues({'sesion_tienda': 't'});
+    http.Response respuesta(Object cuerpo) =>
+        http.Response(jsonEncode(cuerpo), 200, headers: {'content-type': 'application/json; charset=utf-8'});
+    final api = apiFalsa(
+      respuestas: {
+        '/api/auth/yo': (_) => respuesta({
+          'id': 9,
+          'nombre': 'Ana',
+          'correo': 'ana@correo.bo',
+          'tipo': 'CLIENTE',
+          'rol': null,
+          'permisos': [],
+        }),
+        '/api/pedidos/5': (_) => respuesta({
+          'id': 5,
+          'estado': 'ENTREGADO',
+          'tipoEntrega': 'RECOJO',
+          'direccion': null,
+          'telefono': '70012345',
+          'horarioEntrega': '2026-11-03T14:00:00Z',
+          'lineas': [],
+          'costoEnvio': 0,
+          'total': 120,
+          'fechaCreacion': '2026-11-02T14:00:00Z',
+          'asistido': false,
+          'motivoCancelacion': null,
+          'historial': [],
+        }),
+        '/api/pagos': (_) => respuesta([]),
+        '/api/pedidos/mios': (_) => respuesta([]),
+        '/api/pagos/mios': (_) => respuesta([]),
+      },
+    );
+    await abrir(tester, api);
+    final router = tester.widget<MaterialApp>(find.byType(MaterialApp)).routerConfig! as GoRouter;
+    router.go('/pedidos/5');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Mis pedidos'), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Dulces Aromas'), findsOneWidget);
+  });
 }
