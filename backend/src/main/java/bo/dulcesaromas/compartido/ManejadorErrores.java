@@ -21,7 +21,8 @@ class ManejadorErrores {
 
 	@ExceptionHandler
 	ResponseEntity<ErrorRespuesta> reglaNegocio(ReglaNegocioException ex) {
-		return ResponseEntity.status(ex.getEstado()).body(new ErrorRespuesta(ex.getCodigo(), ex.getMessage()));
+		return ResponseEntity.status(ex.getEstado())
+			.body(new ErrorRespuesta(ex.getCodigo(), ex.getMessage(), ex.getCampos()));
 	}
 
 	@ExceptionHandler

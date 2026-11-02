@@ -31,7 +31,7 @@ La API se organiza en cuatro módulos, cada uno en su propio paquete de `bo.dulc
 | Cobros | IPagos | IAutenticacion, IPedidos |
 | Distribución | IEntregas | IAutenticacion, IPedidos |
 
-Cobros llama a IPedidos para pasar el pedido a Confirmado al aprobar un pago. No al revés.
+Cobros llama a IPedidos para pasar el pedido a Confirmado al aprobar un pago. No al revés. Cuando E-commerce necesita que otro módulo reaccione, publica un evento (por ejemplo `PedidoRegistrado`, que hace que Cobros abra el pago Pendiente de pago) y el otro módulo lo escucha con `@EventListener`, dentro de la misma transacción.
 
 Estructura de carpetas:
 

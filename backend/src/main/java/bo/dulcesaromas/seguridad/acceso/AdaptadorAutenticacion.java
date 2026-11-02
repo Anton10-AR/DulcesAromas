@@ -1,12 +1,25 @@
 package bo.dulcesaromas.seguridad.acceso;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import bo.dulcesaromas.seguridad.IAutenticacion;
 import bo.dulcesaromas.seguridad.UsuarioActual;
+import bo.dulcesaromas.seguridad.cuentas.Usuario;
+import bo.dulcesaromas.seguridad.cuentas.UsuarioRepositorio;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 class AdaptadorAutenticacion implements IAutenticacion {
+
+	private final UsuarioRepositorio usuarios;
+
+	AdaptadorAutenticacion(UsuarioRepositorio usuarios) {
+		this.usuarios = usuarios;
+	}
 
 	@Override
 	public UsuarioActual usuarioActual() {
@@ -15,6 +28,12 @@ class AdaptadorAutenticacion implements IAutenticacion {
 			return usuario;
 		}
 		throw new IllegalStateException("La solicitud no tiene sesión");
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Map<Long, String> nombres(Collection<Long> usuarioIds) {
+		return usuarios.findAllById(usuarioIds).stream().collect(Collectors.toMap(Usuario::getId, Usuario::getNombre));
 	}
 
 }

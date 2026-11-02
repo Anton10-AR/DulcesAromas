@@ -1,9 +1,9 @@
-package bo.dulcesaromas.ecommerce.catalogo;
+package bo.dulcesaromas.compartido;
 
 import java.text.Normalizer;
 import java.util.Locale;
 
-final class Textos {
+public final class Textos {
 
 	private Textos() {
 	}
@@ -11,14 +11,14 @@ final class Textos {
 	/**
 	 * Quita espacios sobrantes.
 	 */
-	static String limpio(String texto) {
+	public static String limpio(String texto) {
 		return texto.strip().replaceAll("\\s+", " ");
 	}
 
 	/**
 	 * El texto sin mayúsculas, tildes ni espacios sobrantes, para comparar y buscar.
 	 */
-	static String clave(String texto) {
+	public static String clave(String texto) {
 		String sinTildes = Normalizer.normalize(limpio(texto), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
 		return sinTildes.toLowerCase(Locale.ROOT);
 	}

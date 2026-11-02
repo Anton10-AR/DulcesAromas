@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
+import bo.dulcesaromas.compartido.Textos;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;

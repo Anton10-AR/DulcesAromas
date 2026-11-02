@@ -10,6 +10,7 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
+import bo.dulcesaromas.compartido.TipoArchivo;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -35,8 +36,11 @@ final class ValidadorImagen {
 		if (datos.length > BYTES_MAXIMOS) {
 			throw invalida("La imagen pesa más de 2 MB. Redúcela e inténtalo de nuevo.");
 		}
-		String tipo = tipoContenido(datos);
-		int[] medidas = tipo.equals("image/webp") ? medidasWebp(datos) : medidasImageIo(datos, tipo);
+		TipoArchivo formato = TipoArchivo.detectar(datos)
+			.filter(t -> t != TipoArchivo.PDF)
+			.orElseThrow(() -> invalida("Usa una imagen JPG, PNG o WebP."));
+		String tipo = formato.getTipoContenido();
+		int[] medidas = formato == TipoArchivo.WEBP ? medidasWebp(datos) : medidasImageIo(datos, tipo);
 		int ancho = medidas[0];
 		int alto = medidas[1];
 		if (ancho != alto) {
@@ -46,19 +50,6 @@ final class ValidadorImagen {
 			throw invalida("La imagen debe medir al menos 800 × 800 px; esta mide %d × %d px.".formatted(ancho, alto));
 		}
 		return tipo;
-	}
-
-	private static String tipoContenido(byte[] d) {
-		if (empiezaCon(d, 0, 0x89, 'P', 'N', 'G')) {
-			return "image/png";
-		}
-		if (empiezaCon(d, 0, 0xFF, 0xD8, 0xFF)) {
-			return "image/jpeg";
-		}
-		if (empiezaCon(d, 0, 'R', 'I', 'F', 'F') && empiezaCon(d, 8, 'W', 'E', 'B', 'P')) {
-			return "image/webp";
-		}
-		throw invalida("Usa una imagen JPG, PNG o WebP.");
 	}
 
 	private static int[] medidasImageIo(byte[] datos, String tipo) {

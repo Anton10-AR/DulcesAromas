@@ -2,6 +2,7 @@ package bo.dulcesaromas.ecommerce.catalogo;
 
 import java.math.BigDecimal;
 
+import bo.dulcesaromas.compartido.Textos;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

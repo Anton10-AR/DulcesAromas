@@ -33,8 +33,9 @@ class ConfiguracionSeguridad {
 			.logout(AbstractHttpConfigurer::disable)
 			.authorizeHttpRequests(a -> a
 				.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/clientes").permitAll()
-				// RN15: el catálogo se consulta sin sesión.
-				.requestMatchers(HttpMethod.GET, "/api/catalogo/**").permitAll()
+				// RN15: el catálogo y el total del carrito se consultan sin sesión; hacer el pedido sí la exige.
+				.requestMatchers(HttpMethod.GET, "/api/catalogo/**", "/api/metodos-pago/*/qr").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/pedidos/cotizacion").permitAll()
 				.requestMatchers("/error").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new FiltroToken(sesiones), UsernamePasswordAuthenticationFilter.class)

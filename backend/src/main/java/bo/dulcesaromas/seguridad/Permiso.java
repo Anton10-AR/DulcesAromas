@@ -20,6 +20,7 @@ public enum Permiso {
 	DISTRIBUCION_ASIGNAR("Distribución", "Asignar repartidor"),
 	DISTRIBUCION_ENTREGAS("Distribución", "Actualizar entregas"),
 	REPORTES("Reportes", "Reportes de pedidos y ventas"),
+	CONFIGURACION("Configuración", "Tarifa de envío y métodos de pago"),
 	SEGURIDAD("Seguridad", "Usuarios y permisos");
 
 	private final String modulo;
