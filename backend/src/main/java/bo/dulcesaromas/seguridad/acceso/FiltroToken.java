@@ -3,14 +3,12 @@ package bo.dulcesaromas.seguridad.acceso;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import bo.dulcesaromas.seguridad.UsuarioActual;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,26 +21,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 class FiltroToken extends OncePerRequestFilter {
 
-	private static final String PREFIJO = "Bearer ";
-
 	private final ServicioSesiones sesiones;
 
 	FiltroToken(ServicioSesiones sesiones) {
 		this.sesiones = sesiones;
 	}
 
-	static Optional<String> token(HttpServletRequest solicitud) {
-		String cabecera = solicitud.getHeader(HttpHeaders.AUTHORIZATION);
-		if (cabecera == null || !cabecera.startsWith(PREFIJO) || cabecera.length() == PREFIJO.length()) {
-			return Optional.empty();
-		}
-		return Optional.of(cabecera.substring(PREFIJO.length()).strip());
-	}
-
 	@Override
 	protected void doFilterInternal(HttpServletRequest solicitud, HttpServletResponse respuesta, FilterChain cadena)
 			throws ServletException, IOException {
-		token(solicitud).flatMap(sesiones::autenticar).ifPresent(usuario -> {
+		Tokens.deSolicitud(solicitud).flatMap(sesiones::autenticar).ifPresent(usuario -> {
 			var autenticacion = new UsernamePasswordAuthenticationToken(usuario, null, autoridades(usuario));
 			SecurityContextHolder.getContext().setAuthentication(autenticacion);
 		});

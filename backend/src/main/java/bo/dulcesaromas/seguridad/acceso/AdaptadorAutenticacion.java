@@ -3,10 +3,12 @@ package bo.dulcesaromas.seguridad.acceso;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import bo.dulcesaromas.seguridad.IAutenticacion;
 import bo.dulcesaromas.seguridad.RolBase;
+import bo.dulcesaromas.seguridad.TipoUsuario;
 import bo.dulcesaromas.seguridad.UsuarioActual;
 import bo.dulcesaromas.seguridad.cuentas.Usuario;
 import bo.dulcesaromas.seguridad.cuentas.UsuarioRepositorio;
@@ -42,6 +44,14 @@ class AdaptadorAutenticacion implements IAutenticacion {
 	@Transactional(readOnly = true)
 	public List<UsuarioResumen> personalActivo(RolBase rol) {
 		return usuarios.personalActivo(rol).stream().map(p -> new UsuarioResumen(p.getId(), p.getNombre())).toList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<UsuarioResumen> clienteActivo(Long clienteId) {
+		return usuarios.findById(clienteId)
+			.filter(u -> u.getTipo() == TipoUsuario.CLIENTE && u.isActivo())
+			.map(u -> new UsuarioResumen(u.getId(), u.getNombre()));
 	}
 
 }

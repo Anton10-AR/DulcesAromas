@@ -1,14 +1,8 @@
 package bo.dulcesaromas.seguridad.acceso;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,8 +28,6 @@ public class ServicioSesiones {
 
 	/** Una sesión se marca como usada como mucho una vez por minuto, para no escribir en cada solicitud. */
 	private static final Duration PRECISION_USO = Duration.ofMinutes(1);
-
-	private final SecureRandom aleatorio = new SecureRandom();
 
 	private final SesionRepositorio sesiones;
 
@@ -97,11 +89,9 @@ public class ServicioSesiones {
 
 	@Transactional
 	public SesionIniciada abrirSesion(Usuario usuario) {
-		byte[] bytes = new byte[32];
-		aleatorio.nextBytes(bytes);
-		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-		sesiones.save(new Sesion(hash(token), usuario, reloj.instant()));
-		return new SesionIniciada(token, usuario.comoUsuarioActual());
+		String token = Tokens.nuevo();
+		sesiones.save(new Sesion(Tokens.hash(token), usuario, reloj.instant()));
+		return new SesionIniciada(token, usuario.comoUsuarioActual(), usuario.isDebeCambiarContrasena());
 	}
 
 	/**
@@ -109,7 +99,7 @@ public class ServicioSesiones {
 	 */
 	@Transactional
 	public Optional<UsuarioActual> autenticar(String token) {
-		Optional<Sesion> encontrada = sesiones.findByTokenHash(hash(token));
+		Optional<Sesion> encontrada = sesiones.findByTokenHash(Tokens.hash(token));
 		if (encontrada.isEmpty()) {
 			return Optional.empty();
 		}
@@ -128,7 +118,7 @@ public class ServicioSesiones {
 
 	@Transactional
 	public void cerrarSesion(String token) {
-		sesiones.borrarPorToken(hash(token));
+		sesiones.borrarPorToken(Tokens.hash(token));
 	}
 
 	/**
@@ -137,6 +127,14 @@ public class ServicioSesiones {
 	@Transactional
 	public void cerrarSesionesDe(Long usuarioId) {
 		sesiones.borrarDeUsuario(usuarioId);
+	}
+
+	/**
+	 * Cierra las demás sesiones del usuario y deja abierta la de este token, por ejemplo al cambiar la contraseña.
+	 */
+	@Transactional
+	public void cerrarOtrasSesiones(Long usuarioId, String tokenActual) {
+		sesiones.borrarDeUsuarioSalvo(usuarioId, Tokens.hash(tokenActual));
 	}
 
 	@Scheduled(cron = "0 0 * * * *")
@@ -162,16 +160,6 @@ public class ServicioSesiones {
 		long minutos = Math.max(1, (Duration.between(ahora, usuario.getBloqueadoHasta()).toSeconds() + 59) / 60);
 		return new ReglaNegocioException(HttpStatus.LOCKED, "CUENTA_BLOQUEADA",
 				"La cuenta está bloqueada por varios intentos fallidos. Intenta de nuevo en " + minutos + " minutos.");
-	}
-
-	private static String hash(String token) {
-		try {
-			byte[] resumen = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
-			return HexFormat.of().formatHex(resumen);
-		}
-		catch (NoSuchAlgorithmException ex) {
-			throw new IllegalStateException(ex);
-		}
 	}
 
 }

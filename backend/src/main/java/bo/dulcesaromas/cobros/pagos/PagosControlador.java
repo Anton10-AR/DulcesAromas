@@ -56,7 +56,7 @@ class PagosControlador {
 	}
 
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	@PreAuthorize("hasAuthority('CLIENTE')")
+	@PreAuthorize("hasAnyAuthority('CLIENTE', 'COBRANZA_REGISTRAR')")
 	PagoVista registrar(@Valid @ModelAttribute RegistroPago datos, @RequestPart MultipartFile comprobante)
 			throws IOException {
 		return servicio.registrar(datos.pedidoId(), datos.metodoPagoId(), datos.referencia(), comprobante.getBytes(),

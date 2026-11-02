@@ -1,10 +1,14 @@
 package bo.dulcesaromas.ecommerce.pedidos;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import bo.dulcesaromas.ecommerce.EstadoPedido;
 import bo.dulcesaromas.seguridad.IAutenticacion;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,10 +60,32 @@ class PedidosControlador {
 		return servicio.deCliente(autenticacion.usuarioActual().id());
 	}
 
+	/**
+	 * @param desde y {@code hasta}: días de creación en formato aaaa-mm-dd, incluidos
+	 */
 	@GetMapping
 	@PreAuthorize("hasAnyAuthority('PEDIDOS_CONSULTAR', 'PEDIDOS_PREPARAR', 'DISTRIBUCION_ASIGNAR')")
-	List<PedidoVista.Resumen> delPanel(@RequestParam(required = false) EstadoPedido estado) {
-		return servicio.delPanel(estado);
+	List<PedidoVista.Resumen> delPanel(@RequestParam(required = false) EstadoPedido estado,
+			@RequestParam(required = false) LocalDate desde, @RequestParam(required = false) LocalDate hasta) {
+		return servicio.delPanel(estado, desde, hasta);
+	}
+
+	/**
+	 * Pedido asistido, a nombre de un cliente (CU17, HU21).
+	 */
+	@PostMapping("/asistidos")
+	@ResponseStatus(HttpStatus.CREATED)
+	@PreAuthorize("hasAuthority('PEDIDOS_CONSULTAR')")
+	PedidoVista crearAsistido(@Valid @RequestBody PedidoAsistido datos) {
+		return servicio.crearAsistido(autenticacion.usuarioActual(), datos.clienteId(), datos.pedido());
+	}
+
+	/**
+	 * El cliente cancela los suyos; el personal necesita el permiso de cancelar (CU16, HU20).
+	 */
+	@PostMapping("/{id}/cancelar")
+	PedidoServicio.Cancelacion cancelar(@PathVariable Long id, @Valid @RequestBody Motivo motivo) {
+		return servicio.cancelar(id, motivo.motivo(), autenticacion.usuarioActual());
 	}
 
 	@GetMapping("/{id}")
@@ -90,6 +116,13 @@ class PedidosControlador {
 	@PreAuthorize("hasAuthority('DISTRIBUCION_ASIGNAR')")
 	PedidoVista retirado(@PathVariable Long id) {
 		return servicio.entregarRecojo(id, autenticacion.usuarioActual());
+	}
+
+	record PedidoAsistido(@NotNull(message = "Elige al cliente.") Long clienteId,
+			@NotNull(message = "Arma el pedido.") @Valid SolicitudPedido pedido) {
+	}
+
+	record Motivo(@NotBlank(message = "Indica el motivo de la cancelación.") @Size(max = 255, message = "Usa como máximo 255 caracteres.") String motivo) {
 	}
 
 }

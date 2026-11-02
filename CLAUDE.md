@@ -57,7 +57,7 @@ CREATE USER dulces_aromas WITH PASSWORD '...';
 CREATE DATABASE dulces_aromas OWNER dulces_aromas;
 ```
 
-Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo.
+Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo. Para que la recuperación de contraseña envíe correos, define `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA` y `MAIL_REMITENTE`; sin `MAIL_HOST`, el correo se escribe en el registro de la API, lo que solo sirve en desarrollo. `RECUPERACION_URL` es la pantalla de la app que recibe el enlace.
 
 **App Flutter:** pendiente hasta que Flutter esté instalado. Se creará en `app/` con `flutter create --org bo.dulcesaromas --platforms android,ios,web app`; entonces documenta aquí cómo ejecutarla y probarla.
 

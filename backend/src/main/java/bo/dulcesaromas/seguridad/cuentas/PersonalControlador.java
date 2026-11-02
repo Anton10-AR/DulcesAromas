@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -71,6 +72,12 @@ class PersonalControlador {
 		return CuentaPersonal.de(servicio.desactivar(id, actor()));
 	}
 
+	@PostMapping("/{id}/contrasena")
+	ResponseEntity<Void> restablecerContrasena(@PathVariable Long id, @Valid @RequestBody Restablecimiento datos) {
+		servicio.restablecerContrasena(id, datos.contrasenaNueva(), actor());
+		return ResponseEntity.noContent().build();
+	}
+
 	private Long actor() {
 		return autenticacion.usuarioActual().id();
 	}
@@ -86,6 +93,9 @@ class PersonalControlador {
 			@NotBlank(message = "Escribe el correo.") @Email(message = "Escribe un correo válido, como nombre@ejemplo.com.") @Size(max = 254) String correo,
 			@Size(max = 20, message = "Usa como máximo 20 caracteres.") String telefono,
 			@NotNull(message = "Elige un rol.") RolBase rol) {
+	}
+
+	record Restablecimiento(@ContrasenaValida String contrasenaNueva) {
 	}
 
 	record CuentaPersonal(Long id, String nombre, String correo, String telefono, RolBase rol, boolean activo,

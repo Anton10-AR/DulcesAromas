@@ -21,7 +21,15 @@ public class Cliente extends Usuario {
 	}
 
 	public Cliente(String nombre, String correo, String contrasenaHash, Instant creado) {
-		super(nombre, correo, null, contrasenaHash, creado);
+		this(nombre, correo, null, contrasenaHash, creado);
+	}
+
+	public Cliente(String nombre, String correo, String telefono, String contrasenaHash, Instant creado) {
+		super(nombre, correo, telefono, contrasenaHash, creado);
+	}
+
+	public void cambiarDireccionHabitual(String direccion) {
+		this.direccionHabitual = direccion;
 	}
 
 	@Override

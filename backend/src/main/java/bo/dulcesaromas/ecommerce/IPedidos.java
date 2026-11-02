@@ -17,6 +17,17 @@ public interface IPedidos {
 	PedidoResumen resumen(Long pedidoId);
 
 	/**
+	 * Los ids inexistentes no aparecen.
+	 */
+	List<PedidoResumen> resumenes(Collection<Long> pedidoIds);
+
+	/**
+	 * Pedidos creados en [desde, hasta), del más reciente al más antiguo.
+	 * @param estado nulo para todos los estados
+	 */
+	List<PedidoResumen> creadosEntre(Instant desde, Instant hasta, EstadoPedido estado);
+
+	/**
 	 * Ids de los pedidos de un cliente, del más reciente al más antiguo.
 	 */
 	List<Long> pedidosDeCliente(Long clienteId);
@@ -50,7 +61,8 @@ public interface IPedidos {
 	/**
 	 * @param registradoPor quien registró un pedido asistido, o nulo si lo hizo el cliente
 	 */
-	record PedidoResumen(Long id, Long clienteId, Long registradoPor, EstadoPedido estado, BigDecimal total) {
+	record PedidoResumen(Long id, Long clienteId, Long registradoPor, EstadoPedido estado, BigDecimal total,
+			Instant fechaCreacion) {
 	}
 
 	/**

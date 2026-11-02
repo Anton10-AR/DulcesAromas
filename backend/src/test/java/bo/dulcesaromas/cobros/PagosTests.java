@@ -236,12 +236,14 @@ class PagosTests extends PruebaPedidos {
 	}
 
 	@Test
-	void siElPedidoYaNoEstaPendienteLaAprobacionNoSeAplica() throws Exception {
+	void cu16ElPagoDeUnPedidoCanceladoNoSeVuelveAVerificar() throws Exception {
 		registrarPago(cliente, pedido, "OP-1", PDF).andExpect(status().isOk());
-		jdbc.update("update pedido set estado = 'CANCELADO' where id = ?", pedido);
+		mvc.perform(con(cliente, post("/api/pedidos/" + pedido + "/cancelar")).content("{\"motivo\":\"Cambio de planes\"}"))
+			.andExpect(status().isOk());
 
+		mvc.perform(con(admin, get("/api/pagos/en-verificacion"))).andExpect(jsonPath("$.length()").value(0));
 		aprobar(admin, pagoVigente()).andExpect(status().isConflict())
-			.andExpect(jsonPath("$.codigo").value("TRANSICION_NO_PERMITIDA"));
+			.andExpect(jsonPath("$.codigo").value("PEDIDO_CANCELADO"));
 
 		assertThat(jdbc.queryForObject("select estado from pago where id = ?", String.class, pagoVigente()))
 			.isEqualTo("EN_VERIFICACION");

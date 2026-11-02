@@ -121,6 +121,19 @@ class PersonalServicio {
 	}
 
 	/**
+	 * El administrador restablece la contraseña de una persona del personal (D5). La persona debe cambiarla al
+	 * ingresar, y sus sesiones abiertas se cierran.
+	 */
+	@Transactional
+	void restablecerContrasena(Long id, String contrasenaNueva, Long actorId) {
+		Personal cuenta = obtener(id);
+		cuenta.restablecerContrasena(codificador.encode(contrasenaNueva));
+		sesiones.cerrarSesionesDe(id);
+		auditor.registrar(actorId, AccionAuditada.CONTRASENA_RESTABLECIDA,
+				"Contraseña de la cuenta " + cuenta.getCorreo() + " restablecida.");
+	}
+
+	/**
 	 * RN03: si la cuenta es un administrador activo que va a dejar de serlo, debe quedar otro.
 	 */
 	private void exigirOtroAdministradorActivo(Personal cuenta) {

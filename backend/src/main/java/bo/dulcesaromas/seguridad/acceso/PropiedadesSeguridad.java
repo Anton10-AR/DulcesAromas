@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("seguridad")
 public record PropiedadesSeguridad(@DefaultValue Sesion sesion, @DefaultValue Bloqueo bloqueo,
-		@DefaultValue AdministradorInicial administradorInicial) {
+		@DefaultValue AdministradorInicial administradorInicial, @DefaultValue Recuperacion recuperacion) {
 
 	/**
 	 * Tiempo sin uso tras el cual se cierra la sesión: 30 minutos en el Panel (RNF06).
@@ -30,6 +30,15 @@ public record PropiedadesSeguridad(@DefaultValue Sesion sesion, @DefaultValue Bl
 	 */
 	public record AdministradorInicial(@DefaultValue("Administrador") String nombre, String correo,
 			String contrasena) {
+	}
+
+	/**
+	 * Enlace para que el cliente defina una contraseña nueva (CU12). {@code enlace} es la dirección de la pantalla
+	 * de la Tienda que recibe el token; se le agrega {@code ?token=...}.
+	 */
+	public record Recuperacion(@DefaultValue("60m") Duration vigencia,
+			@DefaultValue("http://localhost:8081/recuperar") String enlace,
+			@DefaultValue("no-responder@dulcesaromas.bo") String remitente) {
 	}
 
 }

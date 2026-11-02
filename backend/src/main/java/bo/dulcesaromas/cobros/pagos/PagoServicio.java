@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -65,13 +66,18 @@ class PagoServicio {
 	}
 
 	/**
-	 * El cliente informa el método, la referencia y el comprobante. El pago pasa a En verificación.
+	 * El cliente informa el método, la referencia y el comprobante, y el pago pasa a En verificación. En un pedido
+	 * asistido lo registra el personal con permiso (CU17, alt. 2); otra persona lo verifica (RN06).
 	 */
 	@Transactional
-	PagoVista registrar(Long pedidoId, Long metodoPagoId, String referencia, byte[] comprobante, UsuarioActual cliente) {
+	PagoVista registrar(Long pedidoId, Long metodoPagoId, String referencia, byte[] comprobante, UsuarioActual usuario) {
 		var pedido = pedidos.resumen(pedidoId);
-		if (!pedido.clienteId().equals(cliente.id())) {
+		if (usuario.tipo() == TipoUsuario.CLIENTE && !pedido.clienteId().equals(usuario.id())) {
 			throw pedidoNoEncontrado();
+		}
+		if (usuario.tipo() == TipoUsuario.PERSONAL && pedido.registradoPor() == null) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "NO_ES_ASISTIDO",
+					"El personal solo registra el pago de un pedido asistido; este lo paga el cliente desde la Tienda.");
 		}
 		if (pedido.estado() != EstadoPedido.PENDIENTE) {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "PEDIDO_NO_PENDIENTE",
@@ -119,9 +125,16 @@ class PagoServicio {
 	record CobroDePedido(Long pedidoId, Long pagoId, EstadoPago estado, BigDecimal monto, String observacionRechazo) {
 	}
 
+	/**
+	 * El pago de un pedido cancelado no se vuelve a verificar (CU16), así que no aparece aquí.
+	 */
 	@Transactional(readOnly = true)
 	List<PagoVista> enVerificacion() {
-		return vistas(pagos.findByEstadoOrderByRegistradoAsc(EstadoPago.EN_VERIFICACION));
+		List<Pago> lista = pagos.findByEstadoOrderByRegistradoAsc(EstadoPago.EN_VERIFICACION);
+		Set<Long> cancelados = pedidos.resumenes(lista.stream().map(Pago::getPedidoId).toList()).stream()
+			.filter(p -> p.estado() == EstadoPedido.CANCELADO).map(IPedidos.PedidoResumen::id)
+			.collect(Collectors.toSet());
+		return vistas(lista.stream().filter(p -> !cancelados.contains(p.getPedidoId())).toList());
 	}
 
 	/**
@@ -157,11 +170,17 @@ class PagoServicio {
 	}
 
 	/**
-	 * RN06: quien registró un pedido asistido no verifica su pago.
+	 * Solo se decide el pago de un pedido que no fue cancelado, y quien registró un pedido asistido no verifica
+	 * su pago (RN06).
 	 */
 	private Pago bloquearParaDecidir(Long pagoId, UsuarioActual verificador) {
 		Pago pago = pagos.bloquear(pagoId).orElseThrow(PagoServicio::pagoNoEncontrado);
-		if (verificador.id().equals(pedidos.resumen(pago.getPedidoId()).registradoPor())) {
+		var pedido = pedidos.resumen(pago.getPedidoId());
+		if (pedido.estado() == EstadoPedido.CANCELADO) {
+			throw new ReglaNegocioException(HttpStatus.CONFLICT, "PEDIDO_CANCELADO",
+					"El pedido fue cancelado; su pago ya no se verifica.");
+		}
+		if (verificador.id().equals(pedido.registradoPor())) {
 			throw new ReglaNegocioException(HttpStatus.FORBIDDEN, "VERIFICACION_PROPIA",
 					"No puedes verificar el pago de un pedido que tú registraste.");
 		}

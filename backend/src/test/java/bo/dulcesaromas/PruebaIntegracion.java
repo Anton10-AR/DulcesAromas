@@ -41,6 +41,9 @@ public abstract class PruebaIntegracion {
 	protected RelojDePrueba reloj;
 
 	@Autowired
+	protected CorreosDePrueba correos;
+
+	@Autowired
 	private Flyway flyway;
 
 	@Autowired
@@ -51,6 +54,7 @@ public abstract class PruebaIntegracion {
 		flyway.clean();
 		flyway.migrate();
 		reloj.reiniciar();
+		correos.vaciar();
 	}
 
 	/**
@@ -105,6 +109,12 @@ public abstract class PruebaIntegracion {
 		@Primary
 		RelojDePrueba relojDePrueba() {
 			return new RelojDePrueba();
+		}
+
+		@Bean
+		@Primary
+		CorreosDePrueba correosDePrueba() {
+			return new CorreosDePrueba();
 		}
 
 	}

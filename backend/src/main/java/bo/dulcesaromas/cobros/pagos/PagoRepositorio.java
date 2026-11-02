@@ -17,6 +17,8 @@ interface PagoRepositorio extends JpaRepository<Pago, Long> {
 
 	List<Pago> findByEstadoOrderByRegistradoAsc(EstadoPago estado);
 
+	List<Pago> findByPedidoIdInAndEstado(Collection<Long> pedidoIds, EstadoPago estado);
+
 	/**
 	 * Bloquea el pago hasta el fin de la transacción: dos personas no deciden el mismo pago a la vez (RNF15).
 	 */

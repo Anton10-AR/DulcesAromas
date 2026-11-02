@@ -97,6 +97,10 @@ class Pago {
 		return estado;
 	}
 
+	Long getMetodoPagoId() {
+		return metodoPagoId;
+	}
+
 	String getMetodoNombre() {
 		return metodoNombre;
 	}

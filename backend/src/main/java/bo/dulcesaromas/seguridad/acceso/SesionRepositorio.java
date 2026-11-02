@@ -20,6 +20,10 @@ interface SesionRepositorio extends JpaRepository<Sesion, Long> {
 	void borrarDeUsuario(Long usuarioId);
 
 	@Modifying
+	@Query("delete from Sesion s where s.usuario.id = :usuarioId and s.tokenHash <> :tokenHash")
+	void borrarDeUsuarioSalvo(Long usuarioId, String tokenHash);
+
+	@Modifying
 	@Query("delete from Sesion s where s.ultimoUso < :limite")
 	int borrarSinUsoDesde(Instant limite);
 

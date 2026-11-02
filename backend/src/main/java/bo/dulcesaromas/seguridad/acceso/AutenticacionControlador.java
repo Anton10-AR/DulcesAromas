@@ -35,7 +35,7 @@ class AutenticacionControlador {
 
 	@PostMapping("/logout")
 	ResponseEntity<Void> cerrarSesion(HttpServletRequest solicitud) {
-		FiltroToken.token(solicitud).ifPresent(sesiones::cerrarSesion);
+		Tokens.deSolicitud(solicitud).ifPresent(sesiones::cerrarSesion);
 		return ResponseEntity.noContent().build();
 	}
 

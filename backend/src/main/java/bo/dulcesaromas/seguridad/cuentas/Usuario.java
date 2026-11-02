@@ -45,6 +45,9 @@ public abstract class Usuario {
 
 	private Instant bloqueadoHasta;
 
+	/** El administrador restableció la contraseña; el usuario debe cambiarla al ingresar (CU12). */
+	private boolean debeCambiarContrasena;
+
 	private Instant creado;
 
 	protected Usuario() {
@@ -97,6 +100,31 @@ public abstract class Usuario {
 		bloqueadoHasta = null;
 	}
 
+	/**
+	 * La contraseña nueva la eligió el propio usuario: deja de exigirse el cambio y se levanta el bloqueo.
+	 */
+	public void cambiarContrasena(String contrasenaHash) {
+		this.contrasenaHash = contrasenaHash;
+		this.debeCambiarContrasena = false;
+		registrarIngreso();
+	}
+
+	/**
+	 * La contraseña la puso el administrador: el usuario debe cambiarla al ingresar (CU12).
+	 */
+	public void restablecerContrasena(String contrasenaHash) {
+		cambiarContrasena(contrasenaHash);
+		this.debeCambiarContrasena = true;
+	}
+
+	/**
+	 * Datos que el usuario edita en Mi perfil. El correo no se cambia desde ahí (CU13).
+	 */
+	public void editarPerfil(String nombre, String telefono) {
+		this.nombre = nombre.strip();
+		this.telefono = telefono;
+	}
+
 	protected void cambiarDatos(String nombre, String correo, String telefono) {
 		this.nombre = nombre.strip();
 		this.correo = normalizarCorreo(correo);
@@ -137,6 +165,10 @@ public abstract class Usuario {
 
 	public Instant getBloqueadoHasta() {
 		return bloqueadoHasta;
+	}
+
+	public boolean isDebeCambiarContrasena() {
+		return debeCambiarContrasena;
 	}
 
 	public Instant getCreado() {
