@@ -522,12 +522,13 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | RN11, RN12 | El recargo se cobra por unidad; el recojo exige teléfono y horario. Lo decidió el equipo al implementar la etapa C |
 | Matriz de permisos | El permiso de asignar repartidor también permite marcar En camino (tabla 2.2) y cerrar un recojo, que no tenían permiso propio |
 | CU02, CU05, CU09 | El equipo confirmó el horario de atención con 24 horas de anticipación, el borrado de productos sin pedidos y que Seguridad es solo del administrador (sección 10.1) |
+| Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 
 ## 10. Decisiones de implementación
 
-Decisiones tomadas al construir el sistema que los documentos no fijaban. Las de la primera tabla las confirmó el equipo; las de la segunda las propuso quien implementó y **el equipo debe revisarlas**. Cambiar cualquiera de ellas es un ajuste pequeño en el código.
+Decisiones tomadas al construir el sistema que los documentos no fijaban. El equipo las revisó y confirmó todas el 02/11/2026. Cambiar cualquiera de ellas es un ajuste pequeño en el código.
 
-### 10.1 Confirmadas
+### 10.1 Decisiones confirmadas
 
 | Tema | Decisión |
 | --- | --- |
@@ -540,11 +541,6 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. Las de
 | Borrar productos (RN10) | Un producto sin pedidos se puede borrar; uno con pedidos solo se desactiva |
 | Sesión de la Tienda | Se cierra tras 30 días sin uso (el Panel, tras 30 minutos, según RNF06) |
 | Permiso de Seguridad (RN04) | Es solo del administrador: no se da a otro rol ni se le quita |
-
-### 10.2 Por revisar con el equipo
-
-| Tema | Decisión propuesta |
-| --- | --- |
 | Cambio del propio rol | Un administrador no puede cambiar su propio rol |
 | Cuenta desactivada | Al ingresar recibe el mismo mensaje que con datos incorrectos |
 | Imágenes y comprobantes | Se guardan en la base de datos, para desplegar en la nube sin disco propio (RNF21) |

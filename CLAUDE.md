@@ -121,7 +121,7 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 
 ### Decisiones ya tomadas (no reabrir sin preguntar)
 
-Las decisiones de implementación (confirmadas y por revisar) están en la sección 10 de `docs/02-casos-de-uso.md`.
+Las decisiones de implementación, todas confirmadas por el equipo, están en la sección 10 de `docs/02-casos-de-uso.md`.
 
 - **D1:** el pago se aprueba antes de preparar el pedido.
 - **D2:** la disponibilidad de un producto es un indicador manual; no sale del inventario de insumos.
