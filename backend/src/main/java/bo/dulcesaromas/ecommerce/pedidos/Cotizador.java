@@ -10,6 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
+import bo.dulcesaromas.ecommerce.TipoEntrega;
 import bo.dulcesaromas.ecommerce.catalogo.OpcionPersonalizacion;
 import bo.dulcesaromas.ecommerce.catalogo.Producto;
 import bo.dulcesaromas.ecommerce.catalogo.ProductoRepositorio;

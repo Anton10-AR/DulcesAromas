@@ -46,6 +46,15 @@ class PagosControlador {
 		return servicio.dePedido(pedido, autenticacion.usuarioActual());
 	}
 
+	/**
+	 * El estado del cobro de cada pedido del cliente, para combinar con Mis pedidos (HU19).
+	 */
+	@GetMapping("/mios")
+	@PreAuthorize("hasAuthority('CLIENTE')")
+	List<PagoServicio.CobroDePedido> mios() {
+		return servicio.deCliente(autenticacion.usuarioActual().id());
+	}
+
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasAuthority('CLIENTE')")
 	PagoVista registrar(@Valid @ModelAttribute RegistroPago datos, @RequestPart MultipartFile comprobante)

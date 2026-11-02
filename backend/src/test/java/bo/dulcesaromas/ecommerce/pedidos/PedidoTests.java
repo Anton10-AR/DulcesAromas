@@ -6,6 +6,7 @@ import java.util.List;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
 import bo.dulcesaromas.ecommerce.EstadoPedido;
+import bo.dulcesaromas.ecommerce.TipoEntrega;
 import org.junit.jupiter.api.Test;
 
 import static bo.dulcesaromas.ecommerce.EstadoPedido.CANCELADO;

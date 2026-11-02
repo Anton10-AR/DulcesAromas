@@ -11,6 +11,7 @@ import java.util.Set;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
 import bo.dulcesaromas.ecommerce.EstadoPedido;
+import bo.dulcesaromas.ecommerce.TipoEntrega;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

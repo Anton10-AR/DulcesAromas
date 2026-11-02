@@ -89,6 +89,36 @@ class PagoServicio {
 		return PagoVista.de(pago, null);
 	}
 
+	/**
+	 * El estado del cobro de cada pedido del cliente, para Mis pedidos (HU19). Si el último pago está Pendiente de
+	 * pago porque rechazaron el anterior, trae la observación del rechazo para que el cliente sepa qué corregir.
+	 */
+	@Transactional(readOnly = true)
+	List<CobroDePedido> deCliente(Long clienteId) {
+		List<Long> pedidoIds = pedidos.pedidosDeCliente(clienteId);
+		Map<Long, List<Pago>> porPedido = pagos.findByPedidoIdInOrderByIdAsc(pedidoIds).stream()
+			.collect(Collectors.groupingBy(Pago::getPedidoId));
+		List<Pago> rechazados = porPedido.values().stream().flatMap(List::stream)
+			.filter(p -> p.getEstado() == EstadoPago.RECHAZADO).toList();
+		Map<Long, String> observaciones = verificaciones.findByPagoIdIn(rechazados.stream().map(Pago::getId).toList())
+			.stream().collect(Collectors.toMap(Verificacion::getPagoId, Verificacion::getObservacion));
+		return pedidoIds.stream().filter(porPedido::containsKey).map(id -> {
+			List<Pago> historial = porPedido.get(id);
+			Pago vigente = historial.getLast();
+			String rechazo = null;
+			if (vigente.getEstado() == EstadoPago.PENDIENTE_DE_PAGO && historial.size() > 1) {
+				rechazo = observaciones.get(historial.get(historial.size() - 2).getId());
+			}
+			return new CobroDePedido(id, vigente.getId(), vigente.getEstado(), vigente.getMonto(), rechazo);
+		}).toList();
+	}
+
+	/**
+	 * @param observacionRechazo por qué rechazaron el pago anterior, si el cobro se reabrió por eso
+	 */
+	record CobroDePedido(Long pedidoId, Long pagoId, EstadoPago estado, BigDecimal monto, String observacionRechazo) {
+	}
+
 	@Transactional(readOnly = true)
 	List<PagoVista> enVerificacion() {
 		return vistas(pagos.findByEstadoOrderByRegistradoAsc(EstadoPago.EN_VERIFICACION));

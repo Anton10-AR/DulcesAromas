@@ -2,8 +2,11 @@ package bo.dulcesaromas;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -67,6 +70,31 @@ public abstract class PruebaPedidos extends PruebaIntegracion {
 		return """
 				{"lineas":[{"productoId":%d,"cantidad":1}],"tipoEntrega":"RECOJO",
 				 "telefono":"70012345","horarioEntrega":"%s"}""".formatted(productoId, MANANA);
+	}
+
+	/**
+	 * Un pedido con delivery de dos tortas Grande, del {@link #cliente}.
+	 */
+	protected String pedidoDelivery() {
+		return """
+				{"lineas":[{"productoId":%d,"cantidad":2,"opciones":[%d]}],"tipoEntrega":"DELIVERY",
+				 "direccion":"Calle Junín 123","telefono":"70012345","horarioEntrega":"%s"}""".formatted(torta, grande, MANANA);
+	}
+
+	/**
+	 * El cliente paga por transferencia y el administrador aprueba: el pedido queda Confirmado.
+	 */
+	protected void pagarYAprobar(long pedidoId) throws Exception {
+		long transferencia = jdbc.queryForObject("select id from metodo_pago where nombre_clave = 'transferencia'",
+				Long.class);
+		jdbc.update("update metodo_pago set instrucciones = 'Cuenta 1-234567', activo = true where id = ?", transferencia);
+		mvc.perform(multipart("/api/pagos").param("pedidoId", String.valueOf(pedidoId))
+			.param("metodoPagoId", String.valueOf(transferencia)).param("referencia", "OP-1")
+			.file(new MockMultipartFile("comprobante", "c.pdf", "application/pdf", "%PDF-1.7".getBytes()))
+			.header(HttpHeaders.AUTHORIZATION, "Bearer " + cliente))
+			.andExpect(status().isOk());
+		long pago = jdbc.queryForObject("select max(id) from pago where pedido_id = ?", Long.class, pedidoId);
+		mvc.perform(con(admin, post("/api/pagos/" + pago + "/aprobar"))).andExpect(status().isOk());
 	}
 
 	protected ResultActions pedir(String token, String json) throws Exception {

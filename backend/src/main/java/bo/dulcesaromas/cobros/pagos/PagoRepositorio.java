@@ -1,5 +1,6 @@
 package bo.dulcesaromas.cobros.pagos;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,6 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 interface PagoRepositorio extends JpaRepository<Pago, Long> {
 
 	List<Pago> findByPedidoIdOrderByIdAsc(Long pedidoId);
+
+	List<Pago> findByPedidoIdInOrderByIdAsc(Collection<Long> pedidoIds);
 
 	List<Pago> findByEstadoOrderByRegistradoAsc(EstadoPago estado);
 

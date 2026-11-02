@@ -1,10 +1,12 @@
 package bo.dulcesaromas.seguridad.acceso;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import bo.dulcesaromas.seguridad.IAutenticacion;
+import bo.dulcesaromas.seguridad.RolBase;
 import bo.dulcesaromas.seguridad.UsuarioActual;
 import bo.dulcesaromas.seguridad.cuentas.Usuario;
 import bo.dulcesaromas.seguridad.cuentas.UsuarioRepositorio;
@@ -34,6 +36,12 @@ class AdaptadorAutenticacion implements IAutenticacion {
 	@Transactional(readOnly = true)
 	public Map<Long, String> nombres(Collection<Long> usuarioIds) {
 		return usuarios.findAllById(usuarioIds).stream().collect(Collectors.toMap(Usuario::getId, Usuario::getNombre));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<UsuarioResumen> personalActivo(RolBase rol) {
+		return usuarios.personalActivo(rol).stream().map(p -> new UsuarioResumen(p.getId(), p.getNombre())).toList();
 	}
 
 }

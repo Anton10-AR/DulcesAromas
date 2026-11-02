@@ -3,6 +3,7 @@ package bo.dulcesaromas.ecommerce.pedidos;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import bo.dulcesaromas.ecommerce.TipoEntrega;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

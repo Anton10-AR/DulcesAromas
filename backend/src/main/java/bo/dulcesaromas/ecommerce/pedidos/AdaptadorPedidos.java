@@ -1,8 +1,12 @@
 package bo.dulcesaromas.ecommerce.pedidos;
 
 import java.time.Clock;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
+import bo.dulcesaromas.ecommerce.EstadoPedido;
 import bo.dulcesaromas.ecommerce.IPedidos;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -28,10 +32,66 @@ class AdaptadorPedidos implements IPedidos {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	public List<Long> pedidosDeCliente(Long clienteId) {
+		return pedidos.findByClienteIdOrderByFechaCreacionDescIdDesc(clienteId).stream().map(Pedido::getId).toList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<DatosEntrega> datosEntrega(Collection<Long> pedidoIds) {
+		return pedidos.findAllById(pedidoIds).stream()
+			.map(p -> new DatosEntrega(p.getId(), p.getClienteId(), p.getEstado(), p.getTipoEntrega(), p.getDireccion(),
+					p.getTelefono(), p.getHorarioEntrega(), p.getTotal(),
+					p.getLineas().stream().map(AdaptadorPedidos::describir).toList()))
+			.toList();
+	}
+
+	@Override
 	@Transactional
 	public void confirmarPorPagoAprobado(Long pedidoId, Long verificadorId) {
-		pedidos.bloquear(pedidoId).orElseThrow(AdaptadorPedidos::noEncontrado)
-			.confirmarPorPago(verificadorId, reloj.instant());
+		bloquear(pedidoId).confirmarPorPago(verificadorId, reloj.instant());
+	}
+
+	@Override
+	@Transactional
+	public void marcarEnCamino(Long pedidoId, Long usuarioId) {
+		bloquear(pedidoId).cambiarEstado(EstadoPedido.EN_CAMINO, usuarioId, null, reloj.instant());
+	}
+
+	@Override
+	@Transactional
+	public void marcarEntregado(Long pedidoId, Long usuarioId) {
+		Pedido pedido = bloquear(pedidoId);
+		// Desde Listo, Entregado es el cierre del recojo; ese lo hace el Vendedor desde E-commerce, no quien reparte.
+		if (pedido.getEstado() != EstadoPedido.EN_CAMINO) {
+			throw transicionNoPermitida(pedido, EstadoPedido.ENTREGADO);
+		}
+		pedido.cambiarEstado(EstadoPedido.ENTREGADO, usuarioId, null, reloj.instant());
+	}
+
+	@Override
+	@Transactional
+	public void registrarEntregaFallida(Long pedidoId, Long usuarioId, String observacion) {
+		Pedido pedido = bloquear(pedidoId);
+		if (pedido.getEstado() != EstadoPedido.EN_CAMINO) {
+			throw transicionNoPermitida(pedido, EstadoPedido.LISTO);
+		}
+		pedido.cambiarEstado(EstadoPedido.LISTO, usuarioId, observacion, reloj.instant());
+	}
+
+	private Pedido bloquear(Long pedidoId) {
+		return pedidos.bloquear(pedidoId).orElseThrow(AdaptadorPedidos::noEncontrado);
+	}
+
+	private static String describir(LineaPedido linea) {
+		String opciones = linea.getOpciones().stream().map(OpcionElegida::getNombre).collect(Collectors.joining(", "));
+		return linea.getCantidad() + " × " + linea.getNombreProducto() + (opciones.isEmpty() ? "" : " (" + opciones + ")");
+	}
+
+	private static ReglaNegocioException transicionNoPermitida(Pedido pedido, EstadoPedido nuevo) {
+		return new ReglaNegocioException(HttpStatus.CONFLICT, "TRANSICION_NO_PERMITIDA",
+				"Un pedido " + pedido.getEstado().getNombre() + " no puede pasar a " + nuevo.getNombre() + ".");
 	}
 
 	private static ReglaNegocioException noEncontrado() {
