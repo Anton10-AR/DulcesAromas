@@ -37,7 +37,7 @@ Estructura de carpetas:
 
 ```
 backend/   API REST (Spring Boot)
-app/       Flutter: Tienda (móvil) y Panel (web). Aún no se crea; ver «Comandos».
+app/       Flutter: Tienda (móvil) y Panel (web)
 docs/      Documentos del proyecto
 ```
 
@@ -59,7 +59,18 @@ CREATE DATABASE dulces_aromas OWNER dulces_aromas;
 
 Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo. Para que la recuperación de contraseña envíe correos, define `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA` y `MAIL_REMITENTE`; sin `MAIL_HOST`, el correo se escribe en el registro de la API, lo que solo sirve en desarrollo. `RECUPERACION_URL` es la pantalla de la app que recibe el enlace.
 
-**App Flutter:** pendiente hasta que Flutter esté instalado. Se creará en `app/` con `flutter create --org bo.dulcesaromas --platforms android,ios,web app`; entonces documenta aquí cómo ejecutarla y probarla.
+**App Flutter** (desde `app/`). Un solo proyecto con dos puntos de entrada que comparten `lib/comun/`: la Tienda (`lib/main.dart`, código en `lib/tienda/`) y el Panel (`lib/main_panel.dart`, código en `lib/panel/`; todavía no existe).
+
+```
+flutter test                                                  # pruebas
+flutter run -d chrome --web-port 8081                         # Tienda en el navegador
+flutter run -d chrome --web-port 8081 -t lib/main_panel.dart  # Panel
+flutter build apk --dart-define=API_URL=https://...           # Tienda para Android (requiere Android SDK)
+```
+
+La dirección de la API se pasa con `--dart-define=API_URL=...` (por defecto `http://localhost:8080`; desde el emulador de Android es `http://10.0.2.2:8080`). El Panel corre en el puerto 8081 porque la API solo acepta llamadas de navegador desde `CORS_ORIGENES`.
+
+Convenciones de la app: los montos llegan del servidor y se convierten con `decimalDe` (paquete `decimal`); la app nunca calcula totales. Los errores de la API llegan como `ErrorApi` con `campos`, que `Campo` muestra junto a cada campo. Las fechas se muestran con `fecha`/`fechaHora` en hora de La Paz. Los colores salen de `Colores` en `lib/comun/tema.dart`; `test/tema_test.dart` comprueba el contraste de 4.5:1.
 
 ## Dominio
 
