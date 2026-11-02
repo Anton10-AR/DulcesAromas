@@ -99,6 +99,8 @@ Para generar la Tienda instalable:
 flutter build apk --dart-define=API_URL=https://tu-api.ejemplo
 ```
 
+La APK se firma con la clave de `app/android/key.properties` y `app/android/tienda.jks`, que **no se versionan**: guárdenlas en un lugar seguro, porque sin esa clave los enlaces de recuperación dejan de abrir la app y no se puede actualizar la app ya instalada. Sin `key.properties`, se firma con la clave de depuración.
+
 ### 5. Datos de demostración (opcional)
 
 Con la API corriendo sobre una base recién creada, desde `backend/`:
@@ -146,8 +148,18 @@ El sistema se despliega desde este repositorio sin cambiar código, y puede hace
 1. **Base de datos:** PostgreSQL administrado, por ejemplo Neon. `DB_URL` lleva el formato `jdbc:postgresql://<host>/<base>?sslmode=require`.
 2. **API:** la imagen de `backend/Dockerfile`. `render.yaml` la describe para Render (New → Blueprint), que pide las variables secretas al crear el servicio. Las imágenes y comprobantes se guardan en la base, así que no hace falta disco propio. En el plan gratuito, la API se apaga tras 15 minutos sin uso y tarda cerca de un minuto en despertar.
 3. **Correo:** una cuenta de Brevo con el remitente verificado; su clave va en `BREVO_CLAVE`.
-4. **Panel:** sitio estático con `flutter build web -t lib/main_panel.dart --dart-define=API_URL=https://...`, publicando `app/build/web`. Su dirección va en `CORS_ORIGENES`.
-5. Todo el tráfico por HTTPS (RNF06); Render lo incluye.
+4. **Sitio web:** la Tienda web en `/` y el Panel en `/panel/`, en el sitio estático `dulces-aromas` de `render.yaml`. Render no trae Flutter, así que lo compila GitHub Actions (`.github/workflows/web.yml`) y lo deja en la rama `web`, que Render publica. Para activarlo, creen la variable del repositorio `API_URL` (Settings → Secrets and variables → Actions → Variables) con la dirección de la API; desde ahí, cada cambio en `app/` vuelve a publicar el sitio.
+5. **Variables de la API** que dependen del sitio: `CORS_ORIGENES=https://dulces-aromas.onrender.com` y `RECUPERACION_URL=https://dulces-aromas.onrender.com/recuperar`.
+6. Todo el tráfico por HTTPS (RNF06); Render lo incluye.
+
+### Enlace de recuperación y App Links
+
+El correo de recuperación lleva un enlace `https://dulces-aromas.onrender.com/recuperar?token=…`:
+
+- Si la Tienda está instalada en Android, el enlace la abre directo en «Contraseña nueva» (App Links).
+- Si no, abre la misma pantalla en la Tienda web.
+
+Android confía en el dominio porque el sitio publica `/.well-known/assetlinks.json` (en `app/web/.well-known/`) con la huella SHA-256 de la clave que firma la APK. Si Render les asigna otro dominio, cámbienlo en `dominioWeb` de `app/android/gradle.properties`, en `CORS_ORIGENES` y en `RECUPERACION_URL`. Si cambian la clave, actualicen la huella en `assetlinks.json`.
 
 Para probar la imagen de la API en local, desde `backend/`:
 

@@ -72,6 +72,8 @@ flutter run -d chrome --web-port 8081 -t lib/main_panel.dart  # Panel
 flutter build apk --dart-define=API_URL=https://...           # Tienda para Android (requiere Android SDK)
 ```
 
+En la web, las rutas van sin `#` (`usePathUrlStrategy`), para que `…/recuperar?token=…` funcione igual en el navegador y como App Link en Android. GitHub Actions (`.github/workflows/web.yml`) publica la Tienda web en `/` y el Panel en `/panel/` en la rama `web`, que sirve Render. La APK final se firma con `app/android/key.properties` y `tienda.jks`, que no se versionan; su huella está en `app/web/.well-known/assetlinks.json`.
+
 La dirección de la API se pasa con `--dart-define=API_URL=...` (por defecto `http://localhost:8080`; desde el emulador de Android es `http://10.0.2.2:8080`). El Panel corre en el puerto 8081 porque la API solo acepta llamadas de navegador desde `CORS_ORIGENES`.
 
 Convenciones de la app: los montos llegan del servidor y se convierten con `decimalDe` (paquete `decimal`); la app nunca calcula totales. Los errores de la API llegan como `ErrorApi` con `campos`, que `Campo` muestra junto a cada campo. Las fechas se muestran con `fecha`/`fechaHora` en hora de La Paz. Los colores salen de `Colores` en `lib/comun/tema.dart`; `test/tema_test.dart` comprueba el contraste de 4.5:1. En `setState`, usa un bloque (`setState(() { _x = ...; })`) cuando asignas un `Future`: la forma con flecha devuelve el `Future` y Flutter lo rechaza.

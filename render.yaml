@@ -32,3 +32,21 @@ services:
         sync: false
       - key: RECUPERACION_URL
         sync: false
+
+  # Tienda web en / y Panel en /panel/. Lo compila GitHub Actions (.github/workflows/web.yml) en la rama «web»,
+  # porque Render no trae Flutter; aquí solo se publica. La dirección queda como https://dulces-aromas.onrender.com.
+  - type: web
+    name: dulces-aromas
+    runtime: static
+    branch: web
+    buildCommand: echo "El sitio ya viene compilado por GitHub Actions"
+    staticPublishPath: .
+    routes:
+      # Las rutas de Flutter (/recuperar, /panel/pedidos…) no son archivos: se responden con su index.html. Los
+      # archivos que existen, como /.well-known/assetlinks.json, se sirven tal cual.
+      - type: rewrite
+        source: /panel/*
+        destination: /panel/index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html

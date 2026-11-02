@@ -1,0 +1,66 @@
+# Compila la Tienda web (en /) y el Panel (en /panel/) y deja el sitio en la rama «web», que publica el sitio
+# estático de Render (render.yaml). Render no trae Flutter, por eso se compila aquí (RNF21).
+#
+# Se activa cuando la variable del repositorio API_URL existe (Settings → Secrets and variables → Actions →
+# Variables), con la dirección pública de la API, por ejemplo https://dulces-aromas-api.onrender.com.
+name: Sitio web
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', '.github/workflows/web.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sitio-web
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    if: vars.API_URL != ''
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Pruebas
+        run: flutter test
+
+      - name: Tienda web
+        run: |
+          flutter build web --release --base-href / --dart-define=API_URL=${{ vars.API_URL }}
+          mv build/web ../sitio
+
+      - name: Panel
+        run: |
+          flutter build web --release --base-href /panel/ -t lib/main_panel.dart --dart-define=API_URL=${{ vars.API_URL }}
+          mv build/web ../sitio/panel
+          rm -rf ../sitio/panel/.well-known
+
+      - name: Comprobar el sitio
+        run: |
+          test -f ../sitio/index.html
+          test -f ../sitio/panel/index.html
+          test -f ../sitio/.well-known/assetlinks.json
+
+      - name: Publicar en la rama web
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: web
+          publish_dir: ./sitio
+          force_orphan: true
+          commit_message: 'Sitio compilado desde ${{ github.sha }}'
