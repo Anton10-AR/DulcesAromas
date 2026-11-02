@@ -1,0 +1,176 @@
+# Dulces Aromas — guía para Claude Code
+
+Sistema de comercio electrónico para una pastelería de Sucre, Bolivia. Es el proyecto de la materia de Ingeniería de Software (USFX, 2026). El equipo son tres estudiantes: Avendaño Retamozo Juan Antonio, Dávalos Nuñez Gabriela y Morejon Morales Luz Yumara. Docente: Ing. Ramiro Duran.
+
+## Fuente de verdad
+
+Los requisitos están en `docs/`. Si el código y un documento no coinciden, **pregunta antes de cambiar cualquiera de los dos**.
+
+| Archivo | Contenido |
+| --- | --- |
+| `docs/01-vision.md` | Alcance, roles, RF01–RF43, RNF01–RNF21, restricciones, paleta |
+| `docs/02-casos-de-uso.md` | CU01–CU17, estados y transiciones, reglas RN01–RN17, matriz de permisos |
+| `docs/03-historias-y-backlog.md` | HU01–HU21 con criterios de aceptación, backlog por etapas |
+| `docs/04-modelos-uml.md` | Casos de uso, clases, componentes y estados (Mermaid) |
+
+Cuando implementes una historia, lee sus criterios de aceptación y el caso de uso que cita. Cita el ID (HU, CU, RN) en el mensaje del commit.
+
+## Arquitectura
+
+- **Tienda (cliente):** aplicación móvil en **Flutter y Dart**. Es obligatorio por la materia.
+- **Panel (personal):** web, en Flutter web, para usar un solo lenguaje en las dos interfaces.
+- **API REST:** la consumen la Tienda y el Panel. Spring Boot 4.1 con Java 25 y Maven.
+- **Base de datos:** PostgreSQL. El esquema se versiona con migraciones de Flyway en `backend/src/main/resources/db/migration` (`V1__descripcion.sql`, `V2__...`). Hibernate solo valida el esquema; nunca lo crea.
+
+La API se organiza en cuatro módulos, cada uno en su propio paquete de `bo.dulcesaromas` (`seguridad`, `ecommerce`, `cobros`, `distribucion`). Un módulo nunca lee las tablas de otro; solo usa su interfaz. Spring Modulith hace cumplir esto: lo que está en el paquete raíz del módulo es su API pública, los subpaquetes son internos, y las dependencias permitidas se declaran en el `package-info.java` de cada módulo. `ModularidadTests` falla si un módulo usa otro que no tiene permitido o una clase interna de otro módulo.
+
+| Módulo | Provee | Requiere |
+| --- | --- | --- |
+| Seguridad | IAutenticacion | — |
+| E-commerce (catálogo, inventario, pedidos) | IProductos, IStock, IPedidos | IAutenticacion |
+| Cobros | IPagos | IAutenticacion, IPedidos |
+| Distribución | IEntregas | IAutenticacion, IPedidos |
+
+Cobros llama a IPedidos para pasar el pedido a Confirmado al aprobar un pago. No al revés.
+
+Estructura de carpetas:
+
+```
+backend/   API REST (Spring Boot)
+app/       Flutter: Tienda (móvil) y Panel (web). Aún no se crea; ver «Comandos».
+docs/      Documentos del proyecto
+```
+
+## Comandos
+
+Todos los comandos del backend se ejecutan desde `backend/`. Usa el wrapper (`./mvnw` o `mvnw.cmd`); no hace falta instalar Maven.
+
+```
+./mvnw test              # pruebas (usan H2 en memoria en modo PostgreSQL; no requieren PostgreSQL)
+./mvnw spring-boot:run   # levanta la API en http://localhost:8080
+```
+
+**Base de datos local (una sola vez):** crea el usuario y la base en PostgreSQL y copia `backend/.env.example` como `backend/.env` con la contraseña. `.env` no se versiona.
+
+```sql
+CREATE USER dulces_aromas WITH PASSWORD '...';
+CREATE DATABASE dulces_aromas OWNER dulces_aromas;
+```
+
+Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`.
+
+**App Flutter:** pendiente hasta que Flutter esté instalado. Se creará en `app/` con `flutter create --org bo.dulcesaromas --platforms android,ios,web app`; entonces documenta aquí cómo ejecutarla y probarla.
+
+## Dominio
+
+### Roles
+
+Hay cuatro roles **fijos**. El administrador edita sus permisos, pero **no se crean roles nuevos**.
+
+- **Cliente:** usa la Tienda. Se registra solo y nunca puede tener un rol de personal.
+- **Administrador:** acceso total. Siempre conserva el acceso a Seguridad.
+- **Vendedor:** atiende pedidos y pagos, registra pedidos asistidos y asigna repartidores. Marca la preparación y verifica pagos solo si tiene ese permiso.
+- **Repartidor:** ve y actualiza solo sus propias entregas.
+
+La matriz completa de permisos está en la sección 8 de `docs/02-casos-de-uso.md`.
+
+### Estados
+
+El pedido y el pago tienen **máquinas de estado separadas**.
+
+- **Pedido:** Pendiente → Confirmado → En preparación → Listo → En camino → Entregado. También puede pasar a Cancelado.
+- **Pago:** Pendiente de pago → En verificación → Pagado o Rechazado. Un pago Rechazado vuelve a Pendiente de pago.
+- El único punto de contacto: **aprobar el pago pasa el pedido de Pendiente a Confirmado**.
+- **Recojo:** el pedido va de Listo a Entregado sin pasar por En camino.
+- **Entrega fallida:** el pedido vuelve de En camino a Listo, con una observación.
+- Implementa solo las transiciones de la tabla 2.2 de `docs/02-casos-de-uso.md`. Cualquier otra transición se rechaza en el servidor.
+
+### Reglas de negocio
+
+Cada una necesita al menos una prueba automatizada (RNF17).
+
+- **RN01:** un correo identifica una sola cuenta.
+- **RN02:** una cuenta desactivada no inicia sesión y conserva su historial.
+- **RN03:** siempre queda al menos un administrador activo, y nadie desactiva su propia cuenta.
+- **RN04:** el administrador siempre conserva el acceso a Seguridad.
+- **RN05:** un pedido pasa a Confirmado solo con el pago Pagado.
+- **RN06:** quien registró un pedido asistido no verifica el pago de ese pedido.
+- **RN07:** rechazar un pago exige observación, y el cobro se reabre.
+- **RN08:** no se confirma un pedido con productos no disponibles.
+- **RN09:** una salida de inventario no supera el stock, y al llegar al mínimo se genera una alerta.
+- **RN10:** un producto con pedidos se desactiva; no se elimina.
+- **RN11:** total = Σ(precio × cantidad) + recargos de personalización + tarifa de envío si es delivery.
+- **RN12:** el delivery exige dirección, teléfono y horario de entrega; el recojo no exige dirección.
+- **RN13:** una entrega fallida devuelve el pedido a Listo, con observación.
+- **RN14:** un pedido solo se cancela antes de En preparación. El reembolso se hace fuera del sistema.
+- **RN15:** el catálogo se ve sin sesión; para pedir hace falta cuenta.
+- **RN16:** un cliente no obtiene un rol de personal.
+- **RN17:** el mensaje sobre la torta tiene hasta 24 caracteres y no tiene recargo.
+
+### Decisiones ya tomadas (no reabrir sin preguntar)
+
+- **D1:** el pago se aprueba antes de preparar el pedido.
+- **D2:** la disponibilidad de un producto es un indicador manual; no sale del inventario de insumos.
+- **D3:** el Vendedor con permiso marca la preparación. No existe un rol Producción.
+- **D4:** el delivery tiene tarifa fija, guardada en Configuracion.
+- **D5:** el cliente recupera su contraseña por un enlace de correo (un solo uso, 60 min); al personal se la restablece el administrador.
+- **D6:** no hay roles personalizados.
+- **D7:** el pedido asistido (por teléfono o mostrador) es un canal oficial.
+- **D8:** se puede cancelar hasta antes de preparar.
+- **D9:** cada opción de personalización tiene un recargo fijo que define el negocio.
+- **D10:** catálogo e inventario están dentro del módulo E-commerce.
+- **D11:** el rol se llama «Vendedor», no «Empleado».
+
+## Convenciones
+
+- **Nombres del dominio en español**, como en el modelo de clases: `Pedido`, `LineaPedido`, `OpcionElegida`, `Pago`, `Verificacion`, `Entrega`, `HistorialEstado`, `ItemInventario`.
+- **Dinero:** usa tipos decimales, nunca `float` o `double`. Se muestra en bolivianos con 2 decimales («Bs 120.00»).
+- **Fechas y hora:** formato dd/mm/aaaa, zona horaria America/La_Paz.
+- **Copias en el pedido:** las opciones elegidas guardan una copia del nombre y del recargo, para que un cambio en el producto no altere pedidos anteriores.
+- **Transacciones:** confirmar un pedido es una sola transacción. Dos usuarios no pueden decidir el mismo pago a la vez (RNF14, RNF15).
+
+## Seguridad (no negociable)
+
+- **Contraseñas:** se guardan con hash y sal (por ejemplo BCrypt). Mínimo 8 caracteres, con al menos una letra y un número. El prototipo HTML las guardaba en texto plano; no copies eso.
+- **Bloqueo:** 5 intentos fallidos seguidos bloquean la cuenta 15 minutos.
+- **Sesión:** en el Panel se cierra tras 30 minutos de inactividad. Todo el tráfico va por HTTPS.
+- **Autorización:** cada endpoint valida el rol en el servidor; ocultar botones en la interfaz no basta. Un acceso no permitido devuelve «acceso denegado» y se registra.
+- **Auditoría:** se registran los cambios de usuarios, permisos y verificaciones de pago.
+- **Privacidad:** el Repartidor solo ve los datos de sus propias entregas.
+- **Credenciales:** nunca van en el código. Usa variables de entorno.
+
+## Interfaz
+
+- **Tipografías:** títulos en Fraunces y texto en Work Sans.
+- **Tema claro:** fondo #FBF4EC, texto #3A2A23, café #4A342C, rosa #EFC3CE, #E19DB0 y #B96C86.
+- **Tema oscuro:** fondo #1E1714, texto #EDE0D6. Sigue la preferencia del dispositivo.
+- **Accesibilidad:** el texto tiene contraste de 4.5:1 o más (RNF20). En el tema claro, oscurece el rosa #B96C86 y el café #8A6C5C antes de usarlos en texto pequeño.
+
+## Orden de trabajo
+
+Sigue el backlog por etapas. **A a D** forman el núcleo (73 de 101 puntos); **E** se hace solo si sobra tiempo.
+
+1. **A. Cuentas y acceso:** HU01–HU06, HU15.
+2. **B. Catálogo:** HU08, HU18, HU07.
+3. **C. Pedido y cobro:** HU10, HU11, HU12.
+4. **D. Entrega y seguimiento:** HU13, HU19.
+5. **E. Complementos:** HU09, HU20, HU21, HU14, HU16, HU17.
+
+Una historia está terminada cuando:
+
+- cumple todos sus criterios de aceptación,
+- respeta las RN y los RNF que le aplican,
+- tiene pruebas que pasan,
+- y la revisó una persona distinta de quien la hizo.
+
+## Fuera de alcance
+
+No implementes nada de esto sin que el equipo lo pida:
+
+- Pasarelas de pago o QR dinámico. El pago se verifica a mano.
+- Notificaciones automáticas.
+- Varias sucursales.
+- Recetas y descuento automático de insumos.
+- Roles personalizados.
+- Publicación de la app en tiendas.
+- Rastreo de entregas en mapa.
