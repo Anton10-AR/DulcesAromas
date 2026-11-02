@@ -32,22 +32,31 @@ class Opcion {
 }
 
 class Producto {
-  Producto({required this.id, required this.nombre, required this.descripcion, required this.precio,
-      required this.categoria, required this.activo, required this.disponible, required this.personalizable,
-      this.imagen, required this.opciones});
+  Producto({
+    required this.id,
+    required this.nombre,
+    required this.descripcion,
+    required this.precio,
+    required this.categoria,
+    required this.activo,
+    required this.disponible,
+    required this.personalizable,
+    this.imagen,
+    required this.opciones,
+  });
 
   factory Producto.deJson(Json j) => Producto(
-        id: j['id'] as int,
-        nombre: j['nombre'] as String,
-        descripcion: j['descripcion'] as String,
-        precio: decimalDe(j['precio']),
-        categoria: Categoria.deJson(j['categoria'] as Json),
-        activo: j['activo'] as bool,
-        disponible: j['disponible'] as bool,
-        personalizable: j['personalizable'] as bool,
-        imagen: j['imagen'] as String?,
-        opciones: lista(j['opciones'], Opcion.deJson),
-      );
+    id: j['id'] as int,
+    nombre: j['nombre'] as String,
+    descripcion: j['descripcion'] as String,
+    precio: decimalDe(j['precio']),
+    categoria: Categoria.deJson(j['categoria'] as Json),
+    activo: j['activo'] as bool,
+    disponible: j['disponible'] as bool,
+    personalizable: j['personalizable'] as bool,
+    imagen: j['imagen'] as String?,
+    opciones: lista(j['opciones'], Opcion.deJson),
+  );
 
   final int id;
   final String nombre;
@@ -71,19 +80,27 @@ class Producto {
 }
 
 class LineaVista {
-  LineaVista({required this.productoId, required this.nombre, required this.cantidad, required this.precioUnitario,
-      required this.opciones, this.mensaje, required this.subtotal, required this.disponible});
+  LineaVista({
+    required this.productoId,
+    required this.nombre,
+    required this.cantidad,
+    required this.precioUnitario,
+    required this.opciones,
+    this.mensaje,
+    required this.subtotal,
+    required this.disponible,
+  });
 
   factory LineaVista.deJson(Json j) => LineaVista(
-        productoId: j['productoId'] as int,
-        nombre: j['nombre'] as String,
-        cantidad: j['cantidad'] as int,
-        precioUnitario: decimalDe(j['precioUnitario']),
-        opciones: lista(j['opciones'], Opcion.deJson),
-        mensaje: j['mensaje'] as String?,
-        subtotal: decimalDe(j['subtotal']),
-        disponible: j['disponible'] as bool,
-      );
+    productoId: j['productoId'] as int,
+    nombre: j['nombre'] as String,
+    cantidad: j['cantidad'] as int,
+    precioUnitario: decimalDe(j['precioUnitario']),
+    opciones: lista(j['opciones'], Opcion.deJson),
+    mensaje: j['mensaje'] as String?,
+    subtotal: decimalDe(j['subtotal']),
+    disponible: j['disponible'] as bool,
+  );
 
   final int productoId;
   final String nombre;
@@ -99,8 +116,13 @@ class LineaVista {
 class Cotizacion {
   Cotizacion(this.lineas, this.costoEnvio, this.total, this.confirmable, this.noDisponibles);
 
-  factory Cotizacion.deJson(Json j) => Cotizacion(lista(j['lineas'], LineaVista.deJson), decimalDe(j['costoEnvio']),
-      decimalDe(j['total']), j['confirmable'] as bool, List<String>.from(j['noDisponibles'] as List));
+  factory Cotizacion.deJson(Json j) => Cotizacion(
+    lista(j['lineas'], LineaVista.deJson),
+    decimalDe(j['costoEnvio']),
+    decimalDe(j['total']),
+    j['confirmable'] as bool,
+    List<String>.from(j['noDisponibles'] as List),
+  );
 
   final List<LineaVista> lineas;
   final Decimal costoEnvio;
@@ -127,19 +149,27 @@ const nombresEstadoPago = {
 };
 
 class PedidoResumen {
-  PedidoResumen({required this.id, required this.estado, required this.tipoEntrega, required this.fechaCreacion,
-      required this.horarioEntrega, required this.productos, required this.total, required this.asistido});
+  PedidoResumen({
+    required this.id,
+    required this.estado,
+    required this.tipoEntrega,
+    required this.fechaCreacion,
+    required this.horarioEntrega,
+    required this.productos,
+    required this.total,
+    required this.asistido,
+  });
 
   factory PedidoResumen.deJson(Json j) => PedidoResumen(
-        id: j['id'] as int,
-        estado: j['estado'] as String,
-        tipoEntrega: j['tipoEntrega'] as String,
-        fechaCreacion: instante(j['fechaCreacion'])!,
-        horarioEntrega: instante(j['horarioEntrega'])!,
-        productos: j['productos'] as int,
-        total: decimalDe(j['total']),
-        asistido: j['asistido'] as bool,
-      );
+    id: j['id'] as int,
+    estado: j['estado'] as String,
+    tipoEntrega: j['tipoEntrega'] as String,
+    fechaCreacion: instante(j['fechaCreacion'])!,
+    horarioEntrega: instante(j['horarioEntrega'])!,
+    productos: j['productos'] as int,
+    total: decimalDe(j['total']),
+    asistido: j['asistido'] as bool,
+  );
 
   final int id;
   final String estado;
@@ -154,8 +184,13 @@ class PedidoResumen {
 class Cambio {
   Cambio(this.anterior, this.nuevo, this.fecha, this.usuario, this.observacion);
 
-  factory Cambio.deJson(Json j) => Cambio(j['anterior'] as String?, j['nuevo'] as String, instante(j['fecha'])!,
-      j['usuario'] as String?, j['observacion'] as String?);
+  factory Cambio.deJson(Json j) => Cambio(
+    j['anterior'] as String?,
+    j['nuevo'] as String,
+    instante(j['fecha'])!,
+    j['usuario'] as String?,
+    j['observacion'] as String?,
+  );
 
   final String? anterior;
   final String nuevo;
@@ -165,25 +200,37 @@ class Cambio {
 }
 
 class Pedido {
-  Pedido({required this.id, required this.estado, required this.tipoEntrega, this.direccion, required this.telefono,
-      required this.horarioEntrega, required this.lineas, required this.costoEnvio, required this.total,
-      required this.fechaCreacion, required this.asistido, this.motivoCancelacion, required this.historial});
+  Pedido({
+    required this.id,
+    required this.estado,
+    required this.tipoEntrega,
+    this.direccion,
+    required this.telefono,
+    required this.horarioEntrega,
+    required this.lineas,
+    required this.costoEnvio,
+    required this.total,
+    required this.fechaCreacion,
+    required this.asistido,
+    this.motivoCancelacion,
+    required this.historial,
+  });
 
   factory Pedido.deJson(Json j) => Pedido(
-        id: j['id'] as int,
-        estado: j['estado'] as String,
-        tipoEntrega: j['tipoEntrega'] as String,
-        direccion: j['direccion'] as String?,
-        telefono: j['telefono'] as String,
-        horarioEntrega: instante(j['horarioEntrega'])!,
-        lineas: lista(j['lineas'], LineaVista.deJson),
-        costoEnvio: decimalDe(j['costoEnvio']),
-        total: decimalDe(j['total']),
-        fechaCreacion: instante(j['fechaCreacion'])!,
-        asistido: j['asistido'] as bool,
-        motivoCancelacion: j['motivoCancelacion'] as String?,
-        historial: lista(j['historial'], Cambio.deJson),
-      );
+    id: j['id'] as int,
+    estado: j['estado'] as String,
+    tipoEntrega: j['tipoEntrega'] as String,
+    direccion: j['direccion'] as String?,
+    telefono: j['telefono'] as String,
+    horarioEntrega: instante(j['horarioEntrega'])!,
+    lineas: lista(j['lineas'], LineaVista.deJson),
+    costoEnvio: decimalDe(j['costoEnvio']),
+    total: decimalDe(j['total']),
+    fechaCreacion: instante(j['fechaCreacion'])!,
+    asistido: j['asistido'] as bool,
+    motivoCancelacion: j['motivoCancelacion'] as String?,
+    historial: lista(j['historial'], Cambio.deJson),
+  );
 
   final int id;
   final String estado;
@@ -208,8 +255,12 @@ class Pedido {
 class Verificacion {
   Verificacion(this.decision, this.observacion, this.verificador, this.fecha);
 
-  factory Verificacion.deJson(Json j) => Verificacion(j['decision'] as String, j['observacion'] as String?,
-      j['verificador'] as String?, instante(j['fecha'])!);
+  factory Verificacion.deJson(Json j) => Verificacion(
+    j['decision'] as String,
+    j['observacion'] as String?,
+    j['verificador'] as String?,
+    instante(j['fecha'])!,
+  );
 
   final String decision;
   final String? observacion;
@@ -218,20 +269,29 @@ class Verificacion {
 }
 
 class Pago {
-  Pago({required this.id, required this.pedidoId, required this.monto, required this.estado, this.metodo,
-      this.referencia, this.registrado, this.comprobante, this.verificacion});
+  Pago({
+    required this.id,
+    required this.pedidoId,
+    required this.monto,
+    required this.estado,
+    this.metodo,
+    this.referencia,
+    this.registrado,
+    this.comprobante,
+    this.verificacion,
+  });
 
   factory Pago.deJson(Json j) => Pago(
-        id: j['id'] as int,
-        pedidoId: j['pedidoId'] as int,
-        monto: decimalDe(j['monto']),
-        estado: j['estado'] as String,
-        metodo: j['metodo'] as String?,
-        referencia: j['referencia'] as String?,
-        registrado: instante(j['registrado']),
-        comprobante: j['comprobante'] as String?,
-        verificacion: j['verificacion'] == null ? null : Verificacion.deJson(j['verificacion'] as Json),
-      );
+    id: j['id'] as int,
+    pedidoId: j['pedidoId'] as int,
+    monto: decimalDe(j['monto']),
+    estado: j['estado'] as String,
+    metodo: j['metodo'] as String?,
+    referencia: j['referencia'] as String?,
+    registrado: instante(j['registrado']),
+    comprobante: j['comprobante'] as String?,
+    verificacion: j['verificacion'] == null ? null : Verificacion.deJson(j['verificacion'] as Json),
+  );
 
   final int id;
   final int pedidoId;
@@ -248,8 +308,13 @@ class Pago {
 class Cobro {
   Cobro(this.pedidoId, this.pagoId, this.estado, this.monto, this.observacionRechazo);
 
-  factory Cobro.deJson(Json j) => Cobro(j['pedidoId'] as int, j['pagoId'] as int, j['estado'] as String,
-      decimalDe(j['monto']), j['observacionRechazo'] as String?);
+  factory Cobro.deJson(Json j) => Cobro(
+    j['pedidoId'] as int,
+    j['pagoId'] as int,
+    j['estado'] as String,
+    decimalDe(j['monto']),
+    j['observacionRechazo'] as String?,
+  );
 
   final int pedidoId;
   final int pagoId;
@@ -281,22 +346,31 @@ class Persona {
 
 /// Una entrega de un pedido con delivery, con lo que necesita el repartidor (CU08).
 class Entrega {
-  Entrega({required this.pedidoId, required this.estado, this.cliente, this.direccion, required this.telefono,
-      required this.horarioEntrega, required this.productos, required this.total, required this.repartidor,
-      this.observacionFallo});
+  Entrega({
+    required this.pedidoId,
+    required this.estado,
+    this.cliente,
+    this.direccion,
+    required this.telefono,
+    required this.horarioEntrega,
+    required this.productos,
+    required this.total,
+    required this.repartidor,
+    this.observacionFallo,
+  });
 
   factory Entrega.deJson(Json j) => Entrega(
-        pedidoId: j['pedidoId'] as int,
-        estado: j['estado'] as String,
-        cliente: j['cliente'] as String?,
-        direccion: j['direccion'] as String?,
-        telefono: j['telefono'] as String,
-        horarioEntrega: instante(j['horarioEntrega'])!,
-        productos: List<String>.from(j['productos'] as List),
-        total: decimalDe(j['total']),
-        repartidor: Persona.deJson(j['repartidor'] as Json),
-        observacionFallo: j['observacionFallo'] as String?,
-      );
+    pedidoId: j['pedidoId'] as int,
+    estado: j['estado'] as String,
+    cliente: j['cliente'] as String?,
+    direccion: j['direccion'] as String?,
+    telefono: j['telefono'] as String,
+    horarioEntrega: instante(j['horarioEntrega'])!,
+    productos: List<String>.from(j['productos'] as List),
+    total: decimalDe(j['total']),
+    repartidor: Persona.deJson(j['repartidor'] as Json),
+    observacionFallo: j['observacionFallo'] as String?,
+  );
 
   final int pedidoId;
   final String estado;
@@ -313,8 +387,13 @@ class Entrega {
 class MetodoPago {
   MetodoPago(this.id, this.nombre, this.instrucciones, this.activo, this.qr);
 
-  factory MetodoPago.deJson(Json j) => MetodoPago(j['id'] as int, j['nombre'] as String,
-      j['instrucciones'] as String, j['activo'] as bool, j['qr'] as String?);
+  factory MetodoPago.deJson(Json j) => MetodoPago(
+    j['id'] as int,
+    j['nombre'] as String,
+    j['instrucciones'] as String,
+    j['activo'] as bool,
+    j['qr'] as String?,
+  );
 
   final int id;
   final String nombre;

@@ -43,8 +43,9 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
 
   void _buscar() {
     setState(() {
-      _productos = _api.get('/api/catalogo/productos',
-          {'buscar': _busqueda.text.trim(), 'categoria': _categoria?.toString()}).then((j) => lista(j, Producto.deJson));
+      _productos = _api
+          .get('/api/catalogo/productos', {'buscar': _busqueda.text.trim(), 'categoria': _categoria?.toString()})
+          .then((j) => lista(j, Producto.deJson));
     });
   }
 
@@ -66,71 +67,80 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
       appBar: AppBar(title: const Text('Dulces Aromas'), actions: accionesTienda(context)),
       body: Contenido(
         ancho: 1100,
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: TextField(
-              controller: _busqueda,
-              onChanged: _alEscribir,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), labelText: 'Buscar por nombre'),
-            ),
-          ),
-          FutureBuilder(
-            future: _categorias,
-            builder: (context, estado) => SizedBox(
-              height: 56,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                children: [
-                  _chip('Todo', null),
-                  for (final c in estado.data ?? const <Categoria>[]) _chip(c.nombre, c.id),
-                ],
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: TextField(
+                controller: _busqueda,
+                onChanged: _alEscribir,
+                textInputAction: TextInputAction.search,
+                decoration: const InputDecoration(prefixIcon: Icon(Icons.search), labelText: 'Buscar por nombre'),
               ),
             ),
-          ),
-          Expanded(
-            child: Cargador(
-              futuro: _productos,
-              reintentar: _buscar,
-              constructor: (context, productos) {
-                if (productos.isEmpty) {
-                  // CU04, alt. 1: sin resultados, se sugiere quitar los filtros.
-                  return Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const Text('No encontramos productos con esa búsqueda.'),
-                      const SizedBox(height: 8),
-                      OutlinedButton(onPressed: _quitarFiltros, child: const Text('Quitar filtros')),
-                    ]),
-                  );
-                }
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 260, mainAxisSpacing: 16, crossAxisSpacing: 16, childAspectRatio: 0.7),
-                  itemCount: productos.length,
-                  itemBuilder: (_, i) => _TarjetaProducto(productos[i]),
-                );
-              },
+            FutureBuilder(
+              future: _categorias,
+              builder: (context, estado) => SizedBox(
+                height: 56,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  children: [
+                    _chip('Todo', null),
+                    for (final c in estado.data ?? const <Categoria>[]) _chip(c.nombre, c.id),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ]),
+            Expanded(
+              child: Cargador(
+                futuro: _productos,
+                reintentar: _buscar,
+                constructor: (context, productos) {
+                  if (productos.isEmpty) {
+                    // CU04, alt. 1: sin resultados, se sugiere quitar los filtros.
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('No encontramos productos con esa búsqueda.'),
+                          const SizedBox(height: 8),
+                          OutlinedButton(onPressed: _quitarFiltros, child: const Text('Quitar filtros')),
+                        ],
+                      ),
+                    );
+                  }
+                  return GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 260,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.7,
+                    ),
+                    itemCount: productos.length,
+                    itemBuilder: (_, i) => _TarjetaProducto(productos[i]),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _chip(String nombre, int? id) => Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: ChoiceChip(
-          label: Text(nombre),
-          selected: _categoria == id,
-          onSelected: (_) {
-            _categoria = id;
-            _buscar();
-          },
-        ),
-      );
+    padding: const EdgeInsets.only(right: 8),
+    child: ChoiceChip(
+      label: Text(nombre),
+      selected: _categoria == id,
+      onSelected: (_) {
+        _categoria = id;
+        _buscar();
+      },
+    ),
+  );
 }
 
 class _TarjetaProducto extends StatelessWidget {
@@ -145,22 +155,30 @@ class _TarjetaProducto extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => context.push('/producto/${producto.id}'),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          // La imagen cede espacio al texto, para que la tarjeta no se desborde en pantallas angostas (RNF12).
-          Expanded(child: ImagenProducto(ruta: producto.imagen, descripcion: producto.nombre)),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(producto.nombre, style: textos.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 4),
-              Text(bolivianos(producto.precio), style: textos.bodyLarge),
-              if (!producto.disponible) ...[
-                const SizedBox(height: 4),
-                Text('No disponible', style: textos.bodySmall),
-              ],
-            ]),
-          ),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // La imagen cede espacio al texto, para que la tarjeta no se desborde en pantallas angostas (RNF12).
+            Expanded(
+              child: ImagenProducto(ruta: producto.imagen, descripcion: producto.nombre),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(producto.nombre, style: textos.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text(bolivianos(producto.precio), style: textos.bodyLarge),
+                  if (!producto.disponible) ...[
+                    const SizedBox(height: 4),
+                    Text('No disponible', style: textos.bodySmall),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

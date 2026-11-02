@@ -6,17 +6,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Un producto en el carrito con sus opciones y su mensaje. Los precios no se guardan: el total siempre lo
 /// calcula el servidor con los precios actuales (RN11).
 class LineaCarrito {
-  LineaCarrito({required this.productoId, required this.nombre, required this.cantidad, this.opciones = const [],
-      this.nombresOpciones = const [], this.mensaje});
+  LineaCarrito({
+    required this.productoId,
+    required this.nombre,
+    required this.cantidad,
+    this.opciones = const [],
+    this.nombresOpciones = const [],
+    this.mensaje,
+  });
 
   factory LineaCarrito.deJson(Map<String, dynamic> j) => LineaCarrito(
-        productoId: j['productoId'] as int,
-        nombre: j['nombre'] as String,
-        cantidad: j['cantidad'] as int,
-        opciones: List<int>.from(j['opciones'] as List),
-        nombresOpciones: List<String>.from(j['nombresOpciones'] as List),
-        mensaje: j['mensaje'] as String?,
-      );
+    productoId: j['productoId'] as int,
+    nombre: j['nombre'] as String,
+    cantidad: j['cantidad'] as int,
+    opciones: List<int>.from(j['opciones'] as List),
+    nombresOpciones: List<String>.from(j['nombresOpciones'] as List),
+    mensaje: j['mensaje'] as String?,
+  );
 
   final int productoId;
   final String nombre;
@@ -32,21 +38,21 @@ class LineaCarrito {
       (mensaje ?? '') == (otra.mensaje ?? '');
 
   Map<String, dynamic> aJson() => {
-        'productoId': productoId,
-        'nombre': nombre,
-        'cantidad': cantidad,
-        'opciones': opciones,
-        'nombresOpciones': nombresOpciones,
-        'mensaje': mensaje,
-      };
+    'productoId': productoId,
+    'nombre': nombre,
+    'cantidad': cantidad,
+    'opciones': opciones,
+    'nombresOpciones': nombresOpciones,
+    'mensaje': mensaje,
+  };
 
   /// La línea como la espera la API.
   Map<String, dynamic> aSolicitud() => {
-        'productoId': productoId,
-        'cantidad': cantidad,
-        'opciones': opciones,
-        if (mensaje != null && mensaje!.isNotEmpty) 'mensaje': mensaje,
-      };
+    'productoId': productoId,
+    'cantidad': cantidad,
+    'opciones': opciones,
+    if (mensaje != null && mensaje!.isNotEmpty) 'mensaje': mensaje,
+  };
 }
 
 /// El carrito vive en el dispositivo, así que se conserva sin sesión y al iniciarla (HU10, RN15).
@@ -106,7 +112,6 @@ class Carrito extends ChangeNotifier {
 
   void _cambio() {
     notifyListeners();
-    SharedPreferences.getInstance()
-        .then((p) => p.setString(_clave, jsonEncode(lineas.map((l) => l.aJson()).toList())));
+    SharedPreferences.getInstance().then((p) => p.setString(_clave, jsonEncode(lineas.map((l) => l.aJson()).toList())));
   }
 }

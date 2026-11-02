@@ -48,11 +48,14 @@ class _MisPedidosPantallaState extends State<MisPedidosPantalla> {
             if (pedidos.isEmpty) {
               // CU15, alt. 1.
               return Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Text('Todavía no hiciste pedidos.'),
-                  const SizedBox(height: 8),
-                  FilledButton(onPressed: () => context.go('/'), child: const Text('Ver el catálogo')),
-                ]),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Todavía no hiciste pedidos.'),
+                    const SizedBox(height: 8),
+                    FilledButton(onPressed: () => context.go('/'), child: const Text('Ver el catálogo')),
+                  ],
+                ),
               );
             }
             final cobroDe = {for (final c in cobros) c.pedidoId: c};
@@ -83,32 +86,43 @@ class _TarjetaPedido extends StatelessWidget {
         onTap: () => context.push('/pedidos/${pedido.id}'),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text('Pedido #${pedido.id}', style: textos.titleMedium),
-              const Spacer(),
-              Text(bolivianos(pedido.total), style: textos.titleMedium),
-            ]),
-            Text('${fecha(pedido.fechaCreacion)} · ${pedido.productos} productos', style: textos.bodySmall),
-            const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
-              if (cobro != null) Etiqueta('Pago: ${nombresEstadoPago[cobro!.estado]}'),
-            ]),
-            // HU19: si el pago fue rechazado, se ve la observación y se puede volver a pagar.
-            if (cobro?.observacionRechazo != null) ...[
-              const SizedBox(height: 8),
-              Text('Pago rechazado: ${cobro!.observacionRechazo}',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ],
-            if (debePagar) ...[
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: () => context.push('/pedidos/${pedido.id}/pagar'),
-                child: Text(cobro?.observacionRechazo != null ? 'Volver a pagar' : 'Pagar'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('Pedido #${pedido.id}', style: textos.titleMedium),
+                  const Spacer(),
+                  Text(bolivianos(pedido.total), style: textos.titleMedium),
+                ],
               ),
+              Text('${fecha(pedido.fechaCreacion)} · ${pedido.productos} productos', style: textos.bodySmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
+                  if (cobro != null) Etiqueta('Pago: ${nombresEstadoPago[cobro!.estado]}'),
+                ],
+              ),
+              // HU19: si el pago fue rechazado, se ve la observación y se puede volver a pagar.
+              if (cobro?.observacionRechazo != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Pago rechazado: ${cobro!.observacionRechazo}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              if (debePagar) ...[
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () => context.push('/pedidos/${pedido.id}/pagar'),
+                  child: Text(cobro?.observacionRechazo != null ? 'Volver a pagar' : 'Pagar'),
+                ),
+              ],
             ],
-          ]),
+          ),
         ),
       ),
     );

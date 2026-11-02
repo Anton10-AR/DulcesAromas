@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +8,7 @@ import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
 import 'dialogos.dart';
+import 'formulario.dart';
 
 /// Detalle de un pedido en el Panel con las acciones que permite el rol (CU08, CU10, CU16).
 class PedidoPanel extends StatefulWidget {
@@ -73,8 +75,13 @@ class _PedidoPanelState extends State<PedidoPanel> {
   }
 
   Future<void> _cancelar() async {
-    final motivo = await pedirTexto(context,
-        titulo: '¿Cancelar el pedido #${widget.id}?', etiqueta: 'Motivo', confirmar: 'Cancelar pedido', maximo: 255);
+    final motivo = await pedirTexto(
+      context,
+      titulo: '¿Cancelar el pedido #${widget.id}?',
+      etiqueta: 'Motivo',
+      confirmar: 'Cancelar pedido',
+      maximo: 255,
+    );
     if (motivo != null) {
       await _accion(() => _api.post('/api/pedidos/${widget.id}/cancelar', {'motivo': motivo}), 'Pedido cancelado.');
     }
@@ -87,21 +94,31 @@ class _PedidoPanelState extends State<PedidoPanel> {
       reintentar: _cargar,
       constructor: (context, datos) {
         final (pedido, pagos, entrega) = datos;
-        return ListView(padding: const EdgeInsets.all(16), children: [
-          Contenido(
-            ancho: 900,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              _encabezado(pedido, pagos),
-              const SizedBox(height: 16),
-              Wrap(spacing: 8, runSpacing: 8, children: _acciones(pedido, entrega)),
-              if (pedido.esDelivery && _usuario.puede('DISTRIBUCION_ASIGNAR')) _repartidor(pedido, entrega),
-              const Divider(height: 32),
-              _productos(pedido),
-              const Divider(height: 32),
-              _historial(pedido),
-            ]),
-          ),
-        ]);
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Contenido(
+              ancho: 900,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _encabezado(pedido, pagos),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _acciones(pedido, entrega, pagos.lastOrNull?.estado == 'PENDIENTE_DE_PAGO'),
+                  ),
+                  if (pedido.esDelivery && _usuario.puede('DISTRIBUCION_ASIGNAR')) _repartidor(pedido, entrega),
+                  const Divider(height: 32),
+                  _productos(pedido),
+                  const Divider(height: 32),
+                  _historial(pedido),
+                ],
+              ),
+            ),
+          ],
+        );
       },
     );
   }
@@ -109,38 +126,120 @@ class _PedidoPanelState extends State<PedidoPanel> {
   Widget _encabezado(Pedido pedido, List<Pago> pagos) {
     final textos = Theme.of(context).textTheme;
     final pago = pagos.lastOrNull;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Pedido #${pedido.id}${pedido.asistido ? ' · Asistido' : ''}', style: textos.headlineSmall),
-      const SizedBox(height: 8),
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
-        if (pago != null) Etiqueta('Pago: ${nombresEstadoPago[pago.estado]}'),
-      ]),
-      const SizedBox(height: 8),
-      Text('${pedido.esDelivery ? 'Delivery' : 'Recojo en tienda'} · ${fechaHora(pedido.horarioEntrega)}'),
-      if (pedido.direccion != null) Text(pedido.direccion!),
-      Text('Teléfono: ${pedido.telefono}'),
-      if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Pedido #${pedido.id}${pedido.asistido ? ' · Asistido' : ''}', style: textos.headlineSmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
+            if (pago != null) Etiqueta('Pago: ${nombresEstadoPago[pago.estado]}'),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text('${pedido.esDelivery ? 'Delivery' : 'Recojo en tienda'} · ${fechaHora(pedido.horarioEntrega)}'),
+        if (pedido.direccion != null) Text(pedido.direccion!),
+        Text('Teléfono: ${pedido.telefono}'),
+        if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
+      ],
+    );
   }
 
   /// Solo las acciones que el rol permite y el estado admite; el servidor las valida igual (RNF07).
-  List<Widget> _acciones(Pedido p, Entrega? entrega) {
+  List<Widget> _acciones(Pedido p, Entrega? entrega, bool pagoPendiente) {
     final u = _usuario;
     Widget boton(String texto, Future<dynamic> Function() llamada, String hecho) =>
         FilledButton(onPressed: _ocupado ? null : () => _accion(llamada, hecho), child: Text(texto));
     return [
       if (p.estado == 'CONFIRMADO' && u.puede('PEDIDOS_PREPARAR'))
-        boton('Marcar en preparación', () => _api.post('/api/pedidos/${p.id}/en-preparacion'), 'Pedido en preparación.'),
+        boton(
+          'Marcar en preparación',
+          () => _api.post('/api/pedidos/${p.id}/en-preparacion'),
+          'Pedido en preparación.',
+        ),
       if (p.estado == 'EN_PREPARACION' && u.puede('PEDIDOS_PREPARAR'))
         boton('Marcar listo', () => _api.post('/api/pedidos/${p.id}/listo'), 'Pedido listo.'),
       if (p.estado == 'LISTO' && !p.esDelivery && u.puede('DISTRIBUCION_ASIGNAR'))
         boton('El cliente lo retiró', () => _api.post('/api/pedidos/${p.id}/retirado'), 'Pedido entregado.'),
       if (p.estado == 'LISTO' && p.esDelivery && entrega != null && u.puede('DISTRIBUCION_ASIGNAR'))
         boton('Sale en camino', () => _api.post('/api/entregas/${p.id}/en-camino'), 'Pedido en camino.'),
+      if (p.asistido && p.estado == 'PENDIENTE' && pagoPendiente && u.puede('COBRANZA_REGISTRAR'))
+        FilledButton.tonal(onPressed: _ocupado ? null : _registrarPago, child: const Text('Registrar pago')),
       if (p.cancelable && u.puede('PEDIDOS_CANCELAR'))
         OutlinedButton(onPressed: _ocupado ? null : _cancelar, child: const Text('Cancelar pedido')),
     ];
+  }
+
+  /// CU17, alt. 2: en un pedido asistido, el vendedor registra el pago recibido; otra persona lo verifica (RN06).
+  Future<void> _registrarPago() async {
+    final metodos = lista(await _api.get('/api/metodos-pago'), MetodoPago.deJson);
+    if (!mounted) return;
+    if (metodos.isEmpty) {
+      avisar(context, 'No hay métodos de pago activos. Actívalos en Configuración.');
+      return;
+    }
+    MetodoPago metodo = metodos.first;
+    String? nombreArchivo;
+    List<int>? bytes;
+    final referencia = CampoDialogo('referencia', 'Referencia o número de operación');
+    final hecho = await formularioEnDialogo(
+      context,
+      titulo: 'Registrar el pago del pedido #${widget.id}',
+      campos: [referencia],
+      confirmar: 'Registrar',
+      extra: [
+        StatefulBuilder(
+          builder: (_, actualizar) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DropdownButtonFormField<MetodoPago>(
+                initialValue: metodo,
+                decoration: const InputDecoration(labelText: 'Método'),
+                items: [for (final m in metodos) DropdownMenuItem(value: m, child: Text(m.nombre))],
+                onChanged: (m) => actualizar(() => metodo = m!),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final archivo = await FilePicker.pickFile(
+                    type: FileType.custom,
+                    allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
+                  );
+                  if (archivo == null) return;
+                  final leidos = await archivo.readAsBytes();
+                  actualizar(() {
+                    nombreArchivo = archivo.name;
+                    bytes = leidos;
+                  });
+                },
+                icon: const Icon(Icons.attach_file),
+                label: Text(nombreArchivo ?? 'Adjuntar comprobante (JPG, PNG o PDF, hasta 5 MB)'),
+              ),
+            ],
+          ),
+        ),
+      ],
+      enviar: () {
+        if (bytes == null) {
+          throw ErrorApi(400, 'ARCHIVO_FALTANTE', 'Adjunta el comprobante.');
+        }
+        return _api.multipart(
+          'POST',
+          '/api/pagos',
+          campos: {'pedidoId': '${widget.id}', 'metodoPagoId': '${metodo.id}', 'referencia': referencia.texto},
+          nombreArchivo: 'comprobante',
+          bytes: bytes!,
+          archivo: nombreArchivo!,
+        );
+      },
+    );
+    if (hecho != null && mounted) {
+      avisar(context, 'Pago registrado. Otra persona con permiso debe verificarlo.');
+      _cargar();
+    }
   }
 
   /// Asignar o cambiar el repartidor hasta que el pedido sale (CU08).
@@ -148,58 +247,84 @@ class _PedidoPanelState extends State<PedidoPanel> {
     final asignable = ['CONFIRMADO', 'EN_PREPARACION', 'LISTO'].contains(pedido.estado);
     return Padding(
       padding: const EdgeInsets.only(top: 16),
-      child: Row(children: [
-        const Text('Repartidor: '),
-        const SizedBox(width: 8),
-        if (!asignable || _repartidores == null)
-          Text(entrega?.repartidor.nombre ?? 'Sin asignar')
-        else
-          DropdownButton<int>(
-            value: entrega?.repartidor.id,
-            hint: const Text('Elegir repartidor'),
-            items: [for (final r in _repartidores!) DropdownMenuItem(value: r.id, child: Text(r.nombre))],
-            onChanged: _ocupado
-                ? null
-                : (id) => _accion(() => _api.put('/api/entregas/${pedido.id}/repartidor', {'repartidorId': id}),
-                    'Repartidor asignado.'),
-          ),
-        if (entrega?.observacionFallo != null) ...[
-          const SizedBox(width: 16),
-          Flexible(child: Text('Última entrega fallida: ${entrega!.observacionFallo}')),
+      child: Row(
+        children: [
+          const Text('Repartidor: '),
+          const SizedBox(width: 8),
+          if (!asignable || _repartidores == null)
+            Text(entrega?.repartidor.nombre ?? 'Sin asignar')
+          else
+            DropdownButton<int>(
+              value: entrega?.repartidor.id,
+              hint: const Text('Elegir repartidor'),
+              items: [for (final r in _repartidores!) DropdownMenuItem(value: r.id, child: Text(r.nombre))],
+              onChanged: _ocupado
+                  ? null
+                  : (id) => _accion(
+                      () => _api.put('/api/entregas/${pedido.id}/repartidor', {'repartidorId': id}),
+                      'Repartidor asignado.',
+                    ),
+            ),
+          if (entrega?.observacionFallo != null) ...[
+            const SizedBox(width: 16),
+            Flexible(child: Text('Última entrega fallida: ${entrega!.observacionFallo}')),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
   Widget _productos(Pedido pedido) {
     final textos = Theme.of(context).textTheme;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Productos', style: textos.titleLarge),
-      for (final l in pedido.lineas)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text('${l.cantidad} × ${l.nombre}'),
-          subtitle: Text([...l.opciones.map((o) => '${o.tipo}: ${o.nombre}'), if (l.mensaje != null) 'Mensaje: «${l.mensaje}»']
-              .join(' · ')),
-          trailing: Text(bolivianos(l.subtotal)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Productos', style: textos.titleLarge),
+        for (final l in pedido.lineas)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('${l.cantidad} × ${l.nombre}'),
+            subtitle: Text(
+              [
+                ...l.opciones.map((o) => '${o.tipo}: ${o.nombre}'),
+                if (l.mensaje != null) 'Mensaje: «${l.mensaje}»',
+              ].join(' · '),
+            ),
+            trailing: Text(bolivianos(l.subtotal)),
+          ),
+        if (pedido.esDelivery)
+          Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
+        Row(
+          children: [
+            Text('Total', style: textos.titleMedium),
+            const Spacer(),
+            Text(bolivianos(pedido.total), style: textos.titleMedium),
+          ],
         ),
-      if (pedido.esDelivery) Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
-      Row(children: [Text('Total', style: textos.titleMedium), const Spacer(), Text(bolivianos(pedido.total), style: textos.titleMedium)]),
-    ]);
+      ],
+    );
   }
 
   /// Cada cambio de estado con quién lo hizo y cuándo (RF43).
   Widget _historial(Pedido pedido) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Text('Historial', style: Theme.of(context).textTheme.titleLarge),
-      for (final c in pedido.historial)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.circle, size: 12),
-          title: Text(nombresEstadoPedido[c.nuevo]!),
-          subtitle: Text([fechaHora(c.fecha), if (c.usuario != null) c.usuario!, if (c.observacion != null) c.observacion!]
-              .join(' · ')),
-        ),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Historial', style: Theme.of(context).textTheme.titleLarge),
+        for (final c in pedido.historial)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.circle, size: 12),
+            title: Text(nombresEstadoPedido[c.nuevo]!),
+            subtitle: Text(
+              [
+                fechaHora(c.fecha),
+                if (c.usuario != null) c.usuario!,
+                if (c.observacion != null) c.observacion!,
+              ].join(' · '),
+            ),
+          ),
+      ],
+    );
   }
 }

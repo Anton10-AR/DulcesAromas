@@ -16,15 +16,29 @@ class Contenido extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
-      child: ConstrainedBox(constraints: BoxConstraints(maxWidth: ancho), child: child),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: ancho),
+        child: child,
+      ),
     );
   }
 }
 
 /// Campo de texto que muestra el error que mandó el servidor para ese campo (RNF01).
 class Campo extends StatelessWidget {
-  const Campo({super.key, required this.controlador, required this.etiqueta, required this.nombre, this.errores,
-      this.oculto = false, this.teclado, this.ayuda, this.lineas = 1, this.maximo, this.autocompletar});
+  const Campo({
+    super.key,
+    required this.controlador,
+    required this.etiqueta,
+    required this.nombre,
+    this.errores,
+    this.oculto = false,
+    this.teclado,
+    this.ayuda,
+    this.lineas = 1,
+    this.maximo,
+    this.autocompletar,
+  });
 
   final TextEditingController controlador;
   final String etiqueta;
@@ -50,7 +64,12 @@ class Campo extends StatelessWidget {
         maxLines: oculto ? 1 : lineas,
         maxLength: maximo,
         autofillHints: autocompletar,
-        decoration: InputDecoration(labelText: etiqueta, helperText: ayuda, errorText: errores?[nombre], errorMaxLines: 3),
+        decoration: InputDecoration(
+          labelText: etiqueta,
+          helperText: ayuda,
+          errorText: errores?[nombre],
+          errorMaxLines: 3,
+        ),
       ),
     );
   }
@@ -75,11 +94,15 @@ class AvisoError extends StatelessWidget {
           border: Border.all(color: colores.error),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(children: [
-          Icon(Icons.error_outline, color: colores.error),
-          const SizedBox(width: 8),
-          Expanded(child: Text(mensaje, style: TextStyle(color: colores.error))),
-        ]),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: colores.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(mensaje, style: TextStyle(color: colores.error)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -103,10 +126,13 @@ class Cargador<T> extends StatelessWidget {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                AvisoError(error is ErrorApi ? error.mensaje : 'Ocurrió un error inesperado.'),
-                OutlinedButton(onPressed: reintentar, child: const Text('Reintentar')),
-              ]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AvisoError(error is ErrorApi ? error.mensaje : 'Ocurrió un error inesperado.'),
+                  OutlinedButton(onPressed: reintentar, child: const Text('Reintentar')),
+                ],
+              ),
             ),
           );
         }

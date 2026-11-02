@@ -6,15 +6,20 @@ import '../comun/api.dart';
 import '../comun/perfil.dart';
 import '../comun/sesion.dart';
 import '../comun/tema.dart';
+import 'pantallas/asistido_panel.dart';
 import 'pantallas/catalogo_panel.dart';
+import 'pantallas/configuracion_panel.dart';
 import 'pantallas/entregas_panel.dart';
 import 'pantallas/ingresar_panel.dart';
 import 'pantallas/inicio_panel.dart';
+import 'pantallas/inventario_panel.dart';
 import 'pantallas/mis_entregas_panel.dart';
 import 'pantallas/pagos_panel.dart';
 import 'pantallas/pedido_panel.dart';
 import 'pantallas/pedidos_panel.dart';
 import 'pantallas/producto_panel.dart';
+import 'pantallas/reportes_panel.dart';
+import 'pantallas/seguridad_panel.dart';
 
 /// Una sección del menú del Panel y los permisos que la muestran. Mostrarla o no es comodidad: el servidor
 /// valida igual cada acción (HU06, RNF07).
@@ -31,12 +36,19 @@ class Seccion {
 
 const secciones = [
   Seccion('/', 'Inicio', Icons.home_outlined, []),
-  Seccion('/pedidos', 'Pedidos', Icons.receipt_long_outlined,
-      ['PEDIDOS_CONSULTAR', 'PEDIDOS_PREPARAR', 'DISTRIBUCION_ASIGNAR']),
+  Seccion('/pedidos', 'Pedidos', Icons.receipt_long_outlined, [
+    'PEDIDOS_CONSULTAR',
+    'PEDIDOS_PREPARAR',
+    'DISTRIBUCION_ASIGNAR',
+  ]),
   Seccion('/pagos', 'Verificar pagos', Icons.fact_check_outlined, ['COBRANZA_VERIFICAR']),
   Seccion('/entregas', 'Entregas', Icons.local_shipping_outlined, ['DISTRIBUCION_ASIGNAR']),
   Seccion('/mis-entregas', 'Mis entregas', Icons.delivery_dining_outlined, ['DISTRIBUCION_ENTREGAS']),
   Seccion('/catalogo', 'Catálogo', Icons.cake_outlined, ['CATALOGO_GESTIONAR', 'CATALOGO_DISPONIBILIDAD']),
+  Seccion('/inventario', 'Inventario', Icons.inventory_2_outlined, ['INVENTARIO_CONSULTAR', 'INVENTARIO_MOVIMIENTOS']),
+  Seccion('/reportes', 'Reportes', Icons.bar_chart_outlined, ['REPORTES']),
+  Seccion('/seguridad', 'Seguridad', Icons.admin_panel_settings_outlined, ['SEGURIDAD']),
+  Seccion('/configuracion', 'Configuración', Icons.settings_outlined, ['CONFIGURACION']),
   Seccion('/perfil', 'Mi perfil', Icons.person_outline, []),
 ];
 
@@ -59,16 +71,29 @@ GoRouter rutasPanel(Sesion sesion) {
         routes: [
           GoRoute(path: '/', builder: (_, _) => const InicioPanel()),
           GoRoute(path: '/pedidos', builder: (_, _) => const PedidosPanel()),
-          GoRoute(path: '/pedidos/:id', builder: (_, e) => PedidoPanel(id: int.parse(e.pathParameters['id']!))),
+          // Antes que /pedidos/:id, que tomaría «asistido» como un número.
+          GoRoute(path: '/pedidos/asistido', builder: (_, _) => const AsistidoPanel()),
+          GoRoute(
+            path: '/pedidos/:id',
+            builder: (_, e) => PedidoPanel(id: int.parse(e.pathParameters['id']!)),
+          ),
           GoRoute(path: '/pagos', builder: (_, _) => const PagosPanel()),
           GoRoute(path: '/entregas', builder: (_, _) => const EntregasPanel()),
           GoRoute(path: '/mis-entregas', builder: (_, _) => const MisEntregasPanel()),
           GoRoute(path: '/catalogo', builder: (_, _) => const CatalogoPanel()),
           GoRoute(path: '/catalogo/nuevo', builder: (_, _) => const ProductoPanel()),
-          GoRoute(path: '/catalogo/:id', builder: (_, e) => ProductoPanel(id: int.parse(e.pathParameters['id']!))),
           GoRoute(
-              path: '/perfil',
-              builder: (context, _) => PantallaPerfil(conDireccion: false, alCerrarSesion: () => context.go('/ingresar'))),
+            path: '/catalogo/:id',
+            builder: (_, e) => ProductoPanel(id: int.parse(e.pathParameters['id']!)),
+          ),
+          GoRoute(path: '/inventario', builder: (_, _) => const InventarioPanel()),
+          GoRoute(path: '/reportes', builder: (_, _) => const ReportesPanel()),
+          GoRoute(path: '/seguridad', builder: (_, _) => const SeguridadPanel()),
+          GoRoute(path: '/configuracion', builder: (_, _) => const ConfiguracionPanel()),
+          GoRoute(
+            path: '/perfil',
+            builder: (context, _) => PantallaPerfil(conDireccion: false, alCerrarSesion: () => context.go('/ingresar')),
+          ),
         ],
       ),
     ],
@@ -134,23 +159,30 @@ class MarcoPanel extends StatelessWidget {
 
     if (ancho) {
       return Scaffold(
-        body: Row(children: [
-          NavigationRail(
-            extended: true,
-            minExtendedWidth: 220,
-            selectedIndex: actual < 0 ? null : actual,
-            onDestinationSelected: ir,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text('Dulces Aromas', style: Theme.of(context).textTheme.titleLarge),
+        body: Row(
+          children: [
+            NavigationRail(
+              extended: true,
+              minExtendedWidth: 220,
+              selectedIndex: actual < 0 ? null : actual,
+              onDestinationSelected: ir,
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text('Dulces Aromas', style: Theme.of(context).textTheme.titleLarge),
+              ),
+              destinations: [
+                for (final s in visibles) NavigationRailDestination(icon: Icon(s.icono), label: Text(s.titulo)),
+              ],
             ),
-            destinations: [
-              for (final s in visibles) NavigationRailDestination(icon: Icon(s.icono), label: Text(s.titulo)),
-            ],
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: Scaffold(appBar: AppBar(title: Text(titulo)), body: child)),
-        ]),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: Scaffold(
+                appBar: AppBar(title: Text(titulo)),
+                body: child,
+              ),
+            ),
+          ],
+        ),
       );
     }
     return Scaffold(

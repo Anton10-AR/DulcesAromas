@@ -12,17 +12,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Una API falsa con un catálogo de dos productos. [respuestas] cambia lo que contesta una ruta.
 Api apiFalsa({Map<String, http.Response Function(http.Request)> respuestas = const {}}) {
   Map<String, dynamic> producto(int id, String nombre, {bool disponible = true}) => {
-        'id': id,
-        'nombre': nombre,
-        'descripcion': 'Hecha en casa',
-        'precio': 120.0,
-        'categoria': {'id': 1, 'nombre': 'Tortas'},
-        'activo': true,
-        'disponible': disponible,
-        'personalizable': false,
-        'imagen': null,
-        'opciones': [],
-      };
+    'id': id,
+    'nombre': nombre,
+    'descripcion': 'Hecha en casa',
+    'precio': 120.0,
+    'categoria': {'id': 1, 'nombre': 'Tortas'},
+    'activo': true,
+    'disponible': disponible,
+    'personalizable': false,
+    'imagen': null,
+    'opciones': [],
+  };
   http.Response json(Object cuerpo, [int estado = 200]) =>
       http.Response(jsonEncode(cuerpo), estado, headers: {'content-type': 'application/json; charset=utf-8'});
   return Api(
@@ -32,9 +32,12 @@ Api apiFalsa({Map<String, http.Response Function(http.Request)> respuestas = con
       if (respuestas.containsKey(ruta)) return respuestas[ruta]!(solicitud);
       return switch (ruta) {
         '/api/catalogo/categorias' => json([
-            {'id': 1, 'nombre': 'Tortas'}
-          ]),
-        '/api/catalogo/productos' => json([producto(1, 'Torta de chocolate'), producto(2, 'Torta de fresa', disponible: false)]),
+          {'id': 1, 'nombre': 'Tortas'},
+        ]),
+        '/api/catalogo/productos' => json([
+          producto(1, 'Torta de chocolate'),
+          producto(2, 'Torta de fresa', disponible: false),
+        ]),
         '/api/catalogo/productos/1' => json(producto(1, 'Torta de chocolate')),
         '/api/catalogo/productos/2' => json(producto(2, 'Torta de fresa', disponible: false)),
         _ => json({'codigo': 'NO_ENCONTRADO', 'mensaje': 'No existe.'}, 404),
@@ -70,8 +73,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Este producto no está disponible por ahora.'), findsOneWidget);
-    final boton = tester.widget<ButtonStyleButton>(find.ancestor(
-        of: find.text('Agregar al carrito'), matching: find.byWidgetPredicate((w) => w is ButtonStyleButton)));
+    final boton = tester.widget<ButtonStyleButton>(
+      find.ancestor(
+        of: find.text('Agregar al carrito'),
+        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+      ),
+    );
     expect(boton.onPressed, isNull);
   });
 
@@ -97,16 +104,19 @@ void main() {
   });
 
   testWidgets('RNF01: el error de un campo aparece junto al campo', (tester) async {
-    final api = apiFalsa(respuestas: {
-      '/api/clientes': (_) => http.Response(
+    final api = apiFalsa(
+      respuestas: {
+        '/api/clientes': (_) => http.Response(
           jsonEncode({
             'codigo': 'DATOS_INVALIDOS',
             'mensaje': 'Revisa los campos marcados.',
             'campos': {'contrasena': 'Usa al menos 8 caracteres, con al menos una letra y un número.'},
           }),
           400,
-          headers: {'content-type': 'application/json; charset=utf-8'}),
-    });
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      },
+    );
     await abrir(tester, api);
     await tester.tap(find.text('Ingresar'));
     await tester.pumpAndSettle();
@@ -121,15 +131,18 @@ void main() {
   });
 
   testWidgets('HU15: si el correo ya existe, ofrece iniciar sesión o recuperar la contraseña', (tester) async {
-    final api = apiFalsa(respuestas: {
-      '/api/clientes': (_) => http.Response(
+    final api = apiFalsa(
+      respuestas: {
+        '/api/clientes': (_) => http.Response(
           jsonEncode({
             'codigo': 'CORREO_REGISTRADO',
             'mensaje': 'Ya existe una cuenta con este correo. Puedes iniciar sesión o recuperar tu contraseña.',
           }),
           409,
-          headers: {'content-type': 'application/json; charset=utf-8'}),
-    });
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      },
+    );
     await abrir(tester, api);
     await tester.tap(find.text('Ingresar'));
     await tester.pumpAndSettle();

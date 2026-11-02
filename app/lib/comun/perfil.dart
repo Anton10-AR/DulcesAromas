@@ -91,56 +91,63 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
       padding: const EdgeInsets.all(16),
       child: Contenido(
         ancho: 520,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (sesion.debeCambiarContrasena)
-            const AvisoError('El administrador restableció tu contraseña. Cámbiala para continuar.'),
-          Text('Tus datos', style: textos.titleLarge),
-          Text(_correo, style: textos.bodySmall),
-          const SizedBox(height: 16),
-          if (_errorDatos != null && _errorDatos!.campos.isEmpty) AvisoError(_errorDatos!.mensaje),
-          Campo(controlador: _nombre, etiqueta: 'Nombre', nombre: 'nombre', errores: _errorDatos?.campos),
-          Campo(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (sesion.debeCambiarContrasena)
+              const AvisoError('El administrador restableció tu contraseña. Cámbiala para continuar.'),
+            Text('Tus datos', style: textos.titleLarge),
+            Text(_correo, style: textos.bodySmall),
+            const SizedBox(height: 16),
+            if (_errorDatos != null && _errorDatos!.campos.isEmpty) AvisoError(_errorDatos!.mensaje),
+            Campo(controlador: _nombre, etiqueta: 'Nombre', nombre: 'nombre', errores: _errorDatos?.campos),
+            Campo(
               controlador: _telefono,
               etiqueta: 'Teléfono',
               nombre: 'telefono',
               errores: _errorDatos?.campos,
-              teclado: TextInputType.phone),
-          if (widget.conDireccion)
-            Campo(
+              teclado: TextInputType.phone,
+            ),
+            if (widget.conDireccion)
+              Campo(
                 controlador: _direccion,
                 etiqueta: 'Dirección habitual',
                 nombre: 'direccionHabitual',
                 errores: _errorDatos?.campos,
-                lineas: 2),
-          FilledButton(onPressed: _guardarDatos, child: const Text('Guardar datos')),
-          const Divider(height: 48),
-          Text('Cambiar contraseña', style: textos.titleLarge),
-          const SizedBox(height: 16),
-          if (_errorContrasena != null && _errorContrasena!.campos.isEmpty) AvisoError(_errorContrasena!.mensaje),
-          Campo(
+                lineas: 2,
+              ),
+            FilledButton(onPressed: _guardarDatos, child: const Text('Guardar datos')),
+            const Divider(height: 48),
+            Text('Cambiar contraseña', style: textos.titleLarge),
+            const SizedBox(height: 16),
+            if (_errorContrasena != null && _errorContrasena!.campos.isEmpty) AvisoError(_errorContrasena!.mensaje),
+            Campo(
               controlador: _actual,
               etiqueta: 'Contraseña actual',
               nombre: 'actual',
               errores: _errorContrasena?.campos,
-              oculto: true),
-          Campo(
+              oculto: true,
+            ),
+            Campo(
               controlador: _nueva,
               etiqueta: 'Contraseña nueva',
               nombre: 'nueva',
               errores: _errorContrasena?.campos,
               oculto: true,
-              ayuda: 'Al menos 8 caracteres, con una letra y un número.'),
-          FilledButton(onPressed: _cambiarContrasena, child: const Text('Cambiar contraseña')),
-          const Divider(height: 48),
-          OutlinedButton.icon(
-            onPressed: () async {
-              await context.read<Sesion>().cerrar();
-              widget.alCerrarSesion?.call();
-            },
-            icon: const Icon(Icons.logout),
-            label: const Text('Cerrar sesión'),
-          ),
-        ]),
+              ayuda: 'Al menos 8 caracteres, con una letra y un número.',
+            ),
+            FilledButton(onPressed: _cambiarContrasena, child: const Text('Cambiar contraseña')),
+            const Divider(height: 48),
+            OutlinedButton.icon(
+              onPressed: () async {
+                await context.read<Sesion>().cerrar();
+                widget.alCerrarSesion?.call();
+              },
+              icon: const Icon(Icons.logout),
+              label: const Text('Cerrar sesión'),
+            ),
+          ],
+        ),
       ),
     );
   }

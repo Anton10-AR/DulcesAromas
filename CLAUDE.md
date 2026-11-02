@@ -63,6 +63,7 @@ Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden defini
 
 ```
 flutter test                                                  # pruebas
+dart format lib test                                           # formato (ancho 120, en analysis_options.yaml)
 flutter run -d chrome --web-port 8081                         # Tienda en el navegador
 flutter run -d chrome --web-port 8081 -t lib/main_panel.dart  # Panel
 flutter build apk --dart-define=API_URL=https://...           # Tienda para Android (requiere Android SDK)
@@ -70,7 +71,7 @@ flutter build apk --dart-define=API_URL=https://...           # Tienda para Andr
 
 La dirección de la API se pasa con `--dart-define=API_URL=...` (por defecto `http://localhost:8080`; desde el emulador de Android es `http://10.0.2.2:8080`). El Panel corre en el puerto 8081 porque la API solo acepta llamadas de navegador desde `CORS_ORIGENES`.
 
-Convenciones de la app: los montos llegan del servidor y se convierten con `decimalDe` (paquete `decimal`); la app nunca calcula totales. Los errores de la API llegan como `ErrorApi` con `campos`, que `Campo` muestra junto a cada campo. Las fechas se muestran con `fecha`/`fechaHora` en hora de La Paz. Los colores salen de `Colores` en `lib/comun/tema.dart`; `test/tema_test.dart` comprueba el contraste de 4.5:1.
+Convenciones de la app: los montos llegan del servidor y se convierten con `decimalDe` (paquete `decimal`); la app nunca calcula totales. Los errores de la API llegan como `ErrorApi` con `campos`, que `Campo` muestra junto a cada campo. Las fechas se muestran con `fecha`/`fechaHora` en hora de La Paz. Los colores salen de `Colores` en `lib/comun/tema.dart`; `test/tema_test.dart` comprueba el contraste de 4.5:1. En `setState`, usa un bloque (`setState(() { _x = ...; })`) cuando asignas un `Future`: la forma con flecha devuelve el `Future` y Flutter lo rechaza.
 
 ## Dominio
 

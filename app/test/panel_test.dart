@@ -12,7 +12,13 @@ http.Response json(Object cuerpo, [int estado = 200]) =>
     http.Response(jsonEncode(cuerpo), estado, headers: {'content-type': 'application/json; charset=utf-8'});
 
 /// Una API falsa en la que ingresa una cuenta con el tipo, el rol y los permisos indicados.
-Api apiCon({required String tipo, String? rol, List<String> permisos = const [], bool sesionVencida = false}) {
+Api apiCon({
+  required String tipo,
+  String? rol,
+  List<String> permisos = const [],
+  bool sesionVencida = false,
+  Map<String, Object> respuestas = const {},
+}) {
   return Api(
     base: 'http://api',
     cliente: MockClient((solicitud) async {
@@ -20,11 +26,19 @@ Api apiCon({required String tipo, String? rol, List<String> permisos = const [],
       if (ruta == '/api/auth/login') {
         return json({
           'token': 't',
-          'usuario': {'id': 1, 'nombre': 'Luz', 'correo': 'luz@dulces.bo', 'tipo': tipo, 'rol': rol, 'permisos': permisos},
+          'usuario': {
+            'id': 1,
+            'nombre': 'Luz',
+            'correo': 'luz@dulces.bo',
+            'tipo': tipo,
+            'rol': rol,
+            'permisos': permisos,
+          },
           'debeCambiarContrasena': false,
         });
       }
       if (sesionVencida) return json({'codigo': 'SIN_SESION', 'mensaje': 'Inicia sesión para continuar.'}, 401);
+      if (respuestas.containsKey(ruta)) return json(respuestas[ruta]!);
       return switch (ruta) {
         '/api/auth/logout' => http.Response('', 204),
         _ => json([]),
@@ -50,10 +64,19 @@ void main() {
 
   testWidgets('HU06: el Vendedor ve pedidos, entregas y catálogo, pero no la verificación de pagos', (tester) async {
     await ingresar(
-        tester,
-        apiCon(tipo: 'PERSONAL', rol: 'VENDEDOR', permisos: [
-          'INICIO_PENDIENTES', 'CATALOGO_DISPONIBILIDAD', 'PEDIDOS_CONSULTAR', 'PEDIDOS_CANCELAR', 'DISTRIBUCION_ASIGNAR',
-        ]));
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'VENDEDOR',
+        permisos: [
+          'INICIO_PENDIENTES',
+          'CATALOGO_DISPONIBILIDAD',
+          'PEDIDOS_CONSULTAR',
+          'PEDIDOS_CANCELAR',
+          'DISTRIBUCION_ASIGNAR',
+        ],
+      ),
+    );
 
     expect(find.text('Hola, Luz'), findsOneWidget);
     for (final visible in ['Pedidos', 'Entregas', 'Catálogo', 'Mi perfil']) {
@@ -80,8 +103,100 @@ void main() {
   });
 
   testWidgets('RNF06: si la sesión venció, vuelve al ingreso y lo explica', (tester) async {
-    await ingresar(tester, apiCon(tipo: 'PERSONAL', rol: 'ADMINISTRADOR', permisos: ['PEDIDOS_PREPARAR'], sesionVencida: true));
+    await ingresar(
+      tester,
+      apiCon(tipo: 'PERSONAL', rol: 'ADMINISTRADOR', permisos: ['PEDIDOS_PREPARAR'], sesionVencida: true),
+    );
 
     expect(find.text('Tu sesión se cerró tras 30 minutos sin uso. Ingresa de nuevo.'), findsOneWidget);
+  });
+
+  const todosLosPermisos = [
+    'INICIO_VENTAS',
+    'INICIO_PENDIENTES',
+    'CATALOGO_GESTIONAR',
+    'CATALOGO_DISPONIBILIDAD',
+    'INVENTARIO_CONSULTAR',
+    'INVENTARIO_MOVIMIENTOS',
+    'PEDIDOS_CONSULTAR',
+    'PEDIDOS_CANCELAR',
+    'PEDIDOS_PREPARAR',
+    'COBRANZA_REGISTRAR',
+    'COBRANZA_VERIFICAR',
+    'DISTRIBUCION_ASIGNAR',
+    'DISTRIBUCION_ENTREGAS',
+    'REPORTES',
+    'CONFIGURACION',
+    'SEGURIDAD',
+  ];
+
+  testWidgets('HU06: el administrador ve también inventario, reportes, seguridad y configuración', (tester) async {
+    await ingresar(tester, apiCon(tipo: 'PERSONAL', rol: 'ADMINISTRADOR', permisos: todosLosPermisos));
+
+    for (final seccion in ['Inventario', 'Reportes', 'Seguridad', 'Configuración', 'Verificar pagos']) {
+      expect(find.text(seccion), findsOneWidget, reason: seccion);
+    }
+  });
+
+  testWidgets('RN04: al administrador no se le puede quitar el acceso a Seguridad', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'ADMINISTRADOR',
+        permisos: todosLosPermisos,
+        respuestas: {
+          '/api/roles': [
+            {
+              'codigo': 'ADMINISTRADOR',
+              'nombre': 'Administrador',
+              'descripcion': 'Acceso total.',
+              'permisos': ['SEGURIDAD', 'REPORTES'],
+            },
+          ],
+          '/api/permisos': [
+            {'codigo': 'SEGURIDAD', 'modulo': 'Seguridad', 'accion': 'Usuarios y permisos'},
+            {'codigo': 'REPORTES', 'modulo': 'Reportes', 'accion': 'Reportes de pedidos y ventas'},
+          ],
+        },
+      ),
+    );
+    await tester.tap(find.text('Seguridad'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Roles y permisos'));
+    await tester.pumpAndSettle();
+
+    final seguridad = tester.widget<CheckboxListTile>(
+      find.widgetWithText(CheckboxListTile, 'Seguridad: Usuarios y permisos'),
+    );
+    final reportes = tester.widget<CheckboxListTile>(
+      find.widgetWithText(CheckboxListTile, 'Reportes: Reportes de pedidos y ventas'),
+    );
+    expect(seguridad.onChanged, isNull);
+    expect(reportes.onChanged, isNotNull);
+  });
+
+  testWidgets('RN09: el inventario marca los insumos en su mínimo', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'VENDEDOR',
+        permisos: ['INVENTARIO_CONSULTAR'],
+        respuestas: {
+          '/api/inventario': [
+            {'id': 1, 'nombre': 'Harina', 'unidad': 'kg', 'stock': 3, 'minimo': 5, 'alerta': true},
+            {'id': 2, 'nombre': 'Azúcar', 'unidad': 'kg', 'stock': 20, 'minimo': 5, 'alerta': false},
+          ],
+        },
+      ),
+    );
+    await tester.tap(find.text('Inventario'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.warning_amber), findsOneWidget);
+    expect(find.textContaining('Stock: 3 kg · Mínimo: 5 · En el mínimo'), findsOneWidget);
+    // El Vendedor solo consulta: no ve el botón de movimientos.
+    expect(find.text('Movimiento'), findsNothing);
   });
 }

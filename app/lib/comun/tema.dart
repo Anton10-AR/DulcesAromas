@@ -32,15 +32,17 @@ const _fuenteTitulos = 'Fraunces';
 
 TextTheme _textos(Color color, Color suave) {
   TextStyle titulo(double tamano) => TextStyle(
-      fontFamily: _fuenteTitulos,
-      fontSize: tamano,
-      color: color,
-      fontVariations: const [FontVariation('wght', 600)]);
+    fontFamily: _fuenteTitulos,
+    fontSize: tamano,
+    color: color,
+    fontVariations: const [FontVariation('wght', 600)],
+  );
   TextStyle cuerpo(double tamano, {double peso = 400, Color? c}) => TextStyle(
-      fontFamily: _fuenteTexto,
-      fontSize: tamano,
-      color: c ?? color,
-      fontVariations: [FontVariation('wght', peso)]);
+    fontFamily: _fuenteTexto,
+    fontSize: tamano,
+    color: c ?? color,
+    fontVariations: [FontVariation('wght', peso)],
+  );
   return TextTheme(
     displaySmall: titulo(34),
     headlineMedium: titulo(28),

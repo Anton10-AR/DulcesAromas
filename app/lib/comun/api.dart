@@ -45,9 +45,9 @@ class Api {
   String absoluta(String ruta) => '$base$ruta';
 
   Map<String, String> get _cabeceras => {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    if (token != null) 'Authorization': 'Bearer $token',
+  };
 
   Future<dynamic> get(String ruta, [Map<String, String?>? parametros]) =>
       _enviar(() => _cliente.get(uri(ruta, parametros), headers: _cabeceras));
@@ -64,7 +64,11 @@ class Api {
     try {
       respuesta = await _cliente.get(uri(ruta), headers: _cabeceras);
     } catch (_) {
-      throw ErrorApi(0, ErrorApi.sinConexion, 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.');
+      throw ErrorApi(
+        0,
+        ErrorApi.sinConexion,
+        'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.',
+      );
     }
     if (respuesta.statusCode != 200) {
       throw _error(respuesta.statusCode, utf8.decode(respuesta.bodyBytes, allowMalformed: true));
@@ -73,9 +77,14 @@ class Api {
   }
 
   /// Formulario con un archivo, como el comprobante de pago.
-  Future<dynamic> multipart(String metodo, String ruta,
-      {Map<String, String> campos = const {}, required String nombreArchivo, required List<int> bytes,
-      required String archivo}) {
+  Future<dynamic> multipart(
+    String metodo,
+    String ruta, {
+    Map<String, String> campos = const {},
+    required String nombreArchivo,
+    required List<int> bytes,
+    required String archivo,
+  }) {
     return _enviar(() async {
       final solicitud = http.MultipartRequest(metodo, uri(ruta))
         ..fields.addAll(campos)
@@ -90,7 +99,11 @@ class Api {
     try {
       respuesta = await llamada();
     } catch (_) {
-      throw ErrorApi(0, ErrorApi.sinConexion, 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.');
+      throw ErrorApi(
+        0,
+        ErrorApi.sinConexion,
+        'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.',
+      );
     }
     final texto = utf8.decode(respuesta.bodyBytes, allowMalformed: true);
     if (respuesta.statusCode >= 200 && respuesta.statusCode < 300) {
@@ -106,8 +119,12 @@ class Api {
     try {
       final json = jsonDecode(texto) as Map<String, dynamic>;
       final campos = (json['campos'] as Map<String, dynamic>? ?? {}).map((k, v) => MapEntry(k, v.toString()));
-      return ErrorApi(estado, json['codigo'] as String? ?? 'ERROR', json['mensaje'] as String? ?? 'Ocurrió un error.',
-          campos);
+      return ErrorApi(
+        estado,
+        json['codigo'] as String? ?? 'ERROR',
+        json['mensaje'] as String? ?? 'Ocurrió un error.',
+        campos,
+      );
     } catch (_) {
       return ErrorApi(estado, 'ERROR', 'Ocurrió un error inesperado ($estado). Inténtalo de nuevo.');
     }

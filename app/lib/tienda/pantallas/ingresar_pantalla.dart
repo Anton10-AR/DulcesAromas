@@ -40,8 +40,13 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
       if (!mounted) return;
       if (!sesion.usuario!.esCliente) {
         await sesion.cerrar();
-        setState(() => _error =
-            ErrorApi(403, 'CUENTA_DE_PERSONAL', 'Esta cuenta es del personal. Ingresa desde el Panel de administración.'));
+        setState(
+          () => _error = ErrorApi(
+            403,
+            'CUENTA_DE_PERSONAL',
+            'Esta cuenta es del personal. Ingresa desde el Panel de administración.',
+          ),
+        );
         return;
       }
       context.go(sesion.debeCambiarContrasena ? '/perfil' : (widget.volver ?? '/'));
@@ -62,33 +67,38 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
         child: Contenido(
           ancho: 440,
           child: AutofillGroup(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              if (widget.volver != null)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Text('Para hacer tu pedido, ingresa o crea una cuenta. Tu carrito se conserva.'),
-                ),
-              if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
-              Campo(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.volver != null)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Text('Para hacer tu pedido, ingresa o crea una cuenta. Tu carrito se conserva.'),
+                  ),
+                if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
+                Campo(
                   controlador: _correo,
                   etiqueta: 'Correo',
                   nombre: 'correo',
                   errores: _error?.campos,
                   teclado: TextInputType.emailAddress,
-                  autocompletar: const [AutofillHints.email]),
-              Campo(
+                  autocompletar: const [AutofillHints.email],
+                ),
+                Campo(
                   controlador: _contrasena,
                   etiqueta: 'Contraseña',
                   nombre: 'contrasena',
                   errores: _error?.campos,
                   oculto: true,
-                  autocompletar: const [AutofillHints.password]),
-              FilledButton(onPressed: _enviando ? null : _ingresar, child: const Text('Ingresar')),
-              const SizedBox(height: 8),
-              TextButton(onPressed: () => context.push('/recuperar'), child: const Text('¿Olvidaste tu contraseña?')),
-              const Divider(height: 32),
-              OutlinedButton(onPressed: () => context.go('/registro$volver'), child: const Text('Crear una cuenta')),
-            ]),
+                  autocompletar: const [AutofillHints.password],
+                ),
+                FilledButton(onPressed: _enviando ? null : _ingresar, child: const Text('Ingresar')),
+                const SizedBox(height: 8),
+                TextButton(onPressed: () => context.push('/recuperar'), child: const Text('¿Olvidaste tu contraseña?')),
+                const Divider(height: 32),
+                OutlinedButton(onPressed: () => context.go('/registro$volver'), child: const Text('Crear una cuenta')),
+              ],
+            ),
           ),
         ),
       ),

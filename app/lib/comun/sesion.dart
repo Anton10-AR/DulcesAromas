@@ -5,17 +5,23 @@ import 'api.dart';
 
 /// El usuario con sesión iniciada, como lo devuelve la API.
 class Usuario {
-  Usuario({required this.id, required this.nombre, required this.correo, required this.tipo, this.rol,
-      required this.permisos});
+  Usuario({
+    required this.id,
+    required this.nombre,
+    required this.correo,
+    required this.tipo,
+    this.rol,
+    required this.permisos,
+  });
 
   factory Usuario.deJson(Map<String, dynamic> j) => Usuario(
-        id: j['id'] as int,
-        nombre: j['nombre'] as String,
-        correo: j['correo'] as String,
-        tipo: j['tipo'] as String,
-        rol: j['rol'] as String?,
-        permisos: Set<String>.from(j['permisos'] as List),
-      );
+    id: j['id'] as int,
+    nombre: j['nombre'] as String,
+    correo: j['correo'] as String,
+    tipo: j['tipo'] as String,
+    rol: j['rol'] as String?,
+    permisos: Set<String>.from(j['permisos'] as List),
+  );
 
   final int id;
   final String nombre;

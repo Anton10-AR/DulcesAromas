@@ -37,17 +37,32 @@ GoRouter rutasTienda(Sesion sesion) {
     routes: [
       GoRoute(path: '/', builder: (_, _) => const CatalogoPantalla()),
       GoRoute(
-          path: '/producto/:id',
-          builder: (_, e) => ProductoPantalla(id: int.parse(e.pathParameters['id']!))),
+        path: '/producto/:id',
+        builder: (_, e) => ProductoPantalla(id: int.parse(e.pathParameters['id']!)),
+      ),
       GoRoute(path: '/carrito', builder: (_, _) => const CarritoPantalla()),
-      GoRoute(path: '/ingresar', builder: (_, e) => IngresarPantalla(volver: e.uri.queryParameters['volver'])),
-      GoRoute(path: '/registro', builder: (_, e) => RegistroPantalla(volver: e.uri.queryParameters['volver'])),
-      GoRoute(path: '/recuperar', builder: (_, e) => RecuperarPantalla(token: e.uri.queryParameters['token'])),
+      GoRoute(
+        path: '/ingresar',
+        builder: (_, e) => IngresarPantalla(volver: e.uri.queryParameters['volver']),
+      ),
+      GoRoute(
+        path: '/registro',
+        builder: (_, e) => RegistroPantalla(volver: e.uri.queryParameters['volver']),
+      ),
+      GoRoute(
+        path: '/recuperar',
+        builder: (_, e) => RecuperarPantalla(token: e.uri.queryParameters['token']),
+      ),
       GoRoute(path: '/confirmar', builder: (_, _) => const ConfirmarPantalla()),
       GoRoute(path: '/pedidos', builder: (_, _) => const MisPedidosPantalla()),
-      GoRoute(path: '/pedidos/:id', builder: (_, e) => PedidoPantalla(id: int.parse(e.pathParameters['id']!))),
       GoRoute(
-          path: '/pedidos/:id/pagar', builder: (_, e) => PagarPantalla(pedidoId: int.parse(e.pathParameters['id']!))),
+        path: '/pedidos/:id',
+        builder: (_, e) => PedidoPantalla(id: int.parse(e.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/pedidos/:id/pagar',
+        builder: (_, e) => PagarPantalla(pedidoId: int.parse(e.pathParameters['id']!)),
+      ),
       GoRoute(path: '/perfil', builder: (_, _) => const PerfilPantalla()),
     ],
   );

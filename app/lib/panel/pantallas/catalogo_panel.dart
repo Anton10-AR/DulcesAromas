@@ -19,12 +19,24 @@ class CatalogoPanel extends StatelessWidget {
     final gestiona = context.watch<Sesion>().usuario!.puede('CATALOGO_GESTIONAR');
     return DefaultTabController(
       length: 2,
-      child: Column(children: [
-        const TabBar(tabs: [Tab(text: 'Productos'), Tab(text: 'Categorías')]),
-        Expanded(
-          child: TabBarView(children: [_Productos(gestiona: gestiona), _Categorias(gestiona: gestiona)]),
-        ),
-      ]),
+      child: Column(
+        children: [
+          const TabBar(
+            tabs: [
+              Tab(text: 'Productos'),
+              Tab(text: 'Categorías'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _Productos(gestiona: gestiona),
+                _Categorias(gestiona: gestiona),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -50,7 +62,9 @@ class _ProductosState extends State<_Productos> {
   }
 
   void _cargar() {
-    setState(() => _productos = _api.get('/api/productos').then((j) => lista(j, Producto.deJson)));
+    setState(() {
+      _productos = _api.get('/api/productos').then((j) => lista(j, Producto.deJson));
+    });
   }
 
   /// D2: la disponibilidad es un indicador manual.
@@ -69,7 +83,10 @@ class _ProductosState extends State<_Productos> {
     return Scaffold(
       floatingActionButton: widget.gestiona
           ? FloatingActionButton.extended(
-              onPressed: () => context.go('/catalogo/nuevo'), icon: const Icon(Icons.add), label: const Text('Nuevo producto'))
+              onPressed: () => context.go('/catalogo/nuevo'),
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo producto'),
+            )
           : null,
       body: Cargador(
         futuro: _productos,
@@ -86,13 +103,13 @@ class _ProductosState extends State<_Productos> {
                 onTap: widget.gestiona ? () => context.go('/catalogo/${p.id}') : null,
                 title: Text('${p.nombre}${p.activo ? '' : ' (desactivado)'}'),
                 subtitle: Text('${p.categoria.nombre} · ${bolivianos(p.precio)}'),
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(p.disponible ? 'Disponible' : 'No disponible'),
-                  Switch(
-                    value: p.disponible,
-                    onChanged: puedeDisponibilidad ? (v) => _disponibilidad(p, v) : null,
-                  ),
-                ]),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(p.disponible ? 'Disponible' : 'No disponible'),
+                    Switch(value: p.disponible, onChanged: puedeDisponibilidad ? (v) => _disponibilidad(p, v) : null),
+                  ],
+                ),
               );
             },
           );
@@ -123,7 +140,9 @@ class _CategoriasState extends State<_Categorias> {
   }
 
   void _cargar() {
-    setState(() => _categorias = _api.get('/api/categorias').then((j) => lista(j, CategoriaPanel.deJson)));
+    setState(() {
+      _categorias = _api.get('/api/categorias').then((j) => lista(j, CategoriaPanel.deJson));
+    });
   }
 
   Future<void> _ejecutar(Future<dynamic> Function() llamada) async {
@@ -136,15 +155,19 @@ class _CategoriasState extends State<_Categorias> {
   }
 
   Future<void> _nombre({CategoriaPanel? categoria}) async {
-    final nombre = await pedirTexto(context,
-        titulo: categoria == null ? 'Nueva categoría' : 'Renombrar categoría',
-        etiqueta: 'Nombre',
-        confirmar: 'Guardar',
-        maximo: 60);
+    final nombre = await pedirTexto(
+      context,
+      titulo: categoria == null ? 'Nueva categoría' : 'Renombrar categoría',
+      etiqueta: 'Nombre',
+      confirmar: 'Guardar',
+      maximo: 60,
+    );
     if (nombre == null) return;
-    await _ejecutar(() => categoria == null
-        ? _api.post('/api/categorias', {'nombre': nombre})
-        : _api.put('/api/categorias/${categoria.id}', {'nombre': nombre}));
+    await _ejecutar(
+      () => categoria == null
+          ? _api.post('/api/categorias', {'nombre': nombre})
+          : _api.put('/api/categorias/${categoria.id}', {'nombre': nombre}),
+    );
   }
 
   /// HU18: si tiene productos, el servidor dice cuántos afecta y se pide confirmación.
@@ -167,7 +190,10 @@ class _CategoriasState extends State<_Categorias> {
     return Scaffold(
       floatingActionButton: widget.gestiona
           ? FloatingActionButton.extended(
-              onPressed: () => _nombre(), icon: const Icon(Icons.add), label: const Text('Nueva categoría'))
+              onPressed: () => _nombre(),
+              icon: const Icon(Icons.add),
+              label: const Text('Nueva categoría'),
+            )
           : null,
       body: Cargador(
         futuro: _categorias,
@@ -182,14 +208,21 @@ class _CategoriasState extends State<_Categorias> {
               title: Text('${c.nombre}${c.activa ? '' : ' (desactivada)'}'),
               subtitle: Text('${c.productosActivos} productos activos'),
               trailing: widget.gestiona
-                  ? Wrap(children: [
-                      IconButton(tooltip: 'Renombrar', onPressed: () => _nombre(categoria: c), icon: const Icon(Icons.edit_outlined)),
-                      c.activa
-                          ? TextButton(onPressed: () => _desactivar(c), child: const Text('Desactivar'))
-                          : TextButton(
-                              onPressed: () => _ejecutar(() => _api.post('/api/categorias/${c.id}/activar')),
-                              child: const Text('Activar')),
-                    ])
+                  ? Wrap(
+                      children: [
+                        IconButton(
+                          tooltip: 'Renombrar',
+                          onPressed: () => _nombre(categoria: c),
+                          icon: const Icon(Icons.edit_outlined),
+                        ),
+                        c.activa
+                            ? TextButton(onPressed: () => _desactivar(c), child: const Text('Desactivar'))
+                            : TextButton(
+                                onPressed: () => _ejecutar(() => _api.post('/api/categorias/${c.id}/activar')),
+                                child: const Text('Activar'),
+                              ),
+                      ],
+                    )
                   : null,
             );
           },

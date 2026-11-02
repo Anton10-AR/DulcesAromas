@@ -36,7 +36,9 @@ class _IngresarPanelState extends State<IngresarPanel> {
       await sesion.iniciar(_correo.text.trim(), _contrasena.text);
       if (sesion.usuario!.esCliente) {
         await sesion.cerrar();
-        setState(() => _error = ErrorApi(403, 'CUENTA_DE_CLIENTE', 'Esta cuenta es de cliente. Usa la Tienda para pedir.'));
+        setState(
+          () => _error = ErrorApi(403, 'CUENTA_DE_CLIENTE', 'Esta cuenta es de cliente. Usa la Tienda para pedir.'),
+        );
       }
       // Si entró, el router lo lleva al inicio.
     } on ErrorApi catch (e) {
@@ -57,33 +59,41 @@ class _IngresarPanelState extends State<IngresarPanel> {
           child: Contenido(
             ancho: 400,
             child: AutofillGroup(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Text('Dulces Aromas', style: textos.headlineMedium, textAlign: TextAlign.center),
-                Text('Panel del personal', style: textos.bodyLarge, textAlign: TextAlign.center),
-                const SizedBox(height: 32),
-                if (sesion.vencida && _error == null)
-                  const AvisoError('Tu sesión se cerró tras 30 minutos sin uso. Ingresa de nuevo.'),
-                if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
-                Campo(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Dulces Aromas', style: textos.headlineMedium, textAlign: TextAlign.center),
+                  Text('Panel del personal', style: textos.bodyLarge, textAlign: TextAlign.center),
+                  const SizedBox(height: 32),
+                  if (sesion.vencida && _error == null)
+                    const AvisoError('Tu sesión se cerró tras 30 minutos sin uso. Ingresa de nuevo.'),
+                  if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
+                  Campo(
                     controlador: _correo,
                     etiqueta: 'Correo',
                     nombre: 'correo',
                     errores: _error?.campos,
                     teclado: TextInputType.emailAddress,
-                    autocompletar: const [AutofillHints.email]),
-                Campo(
+                    autocompletar: const [AutofillHints.email],
+                  ),
+                  Campo(
                     controlador: _contrasena,
                     etiqueta: 'Contraseña',
                     nombre: 'contrasena',
                     errores: _error?.campos,
                     oculto: true,
-                    autocompletar: const [AutofillHints.password]),
-                FilledButton(onPressed: _enviando ? null : _ingresar, child: const Text('Ingresar')),
-                const SizedBox(height: 16),
-                // D5: al personal la contraseña se la restablece el administrador.
-                Text('¿Olvidaste tu contraseña? Pide al administrador que la restablezca.',
-                    style: textos.bodySmall, textAlign: TextAlign.center),
-              ]),
+                    autocompletar: const [AutofillHints.password],
+                  ),
+                  FilledButton(onPressed: _enviando ? null : _ingresar, child: const Text('Ingresar')),
+                  const SizedBox(height: 16),
+                  // D5: al personal la contraseña se la restablece el administrador.
+                  Text(
+                    '¿Olvidaste tu contraseña? Pide al administrador que la restablezca.',
+                    style: textos.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

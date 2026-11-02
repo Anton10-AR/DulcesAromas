@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 /// Pide un texto obligatorio, como el motivo de una cancelación o la observación de un rechazo.
 /// Devuelve nulo si se cancela.
-Future<String?> pedirTexto(BuildContext context,
-    {required String titulo, required String etiqueta, required String confirmar, int maximo = 500}) {
+Future<String?> pedirTexto(
+  BuildContext context, {
+  required String titulo,
+  required String etiqueta,
+  required String confirmar,
+  int maximo = 500,
+}) {
   final controlador = TextEditingController();
   return showDialog<String>(
     context: context,
@@ -30,7 +35,12 @@ Future<String?> pedirTexto(BuildContext context,
   );
 }
 
-Future<bool> confirmar(BuildContext context, {required String titulo, required String mensaje, required String accion}) async {
+Future<bool> confirmar(
+  BuildContext context, {
+  required String titulo,
+  required String mensaje,
+  required String accion,
+}) async {
   final respuesta = await showDialog<bool>(
     context: context,
     builder: (contexto) => AlertDialog(

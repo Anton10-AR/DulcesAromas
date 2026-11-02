@@ -41,10 +41,10 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
 
   void _cotizar() {
     setState(() {
-      _cotizacion = context.read<Api>().post('/api/pedidos/cotizacion', {
-        'lineas': context.read<Carrito>().aSolicitud(),
-        'tipoEntrega': _tipo,
-      }).then((j) => Cotizacion.deJson(j as Json));
+      _cotizacion = context
+          .read<Api>()
+          .post('/api/pedidos/cotizacion', {'lineas': context.read<Carrito>().aSolicitud(), 'tipoEntrega': _tipo})
+          .then((j) => Cotizacion.deJson(j as Json));
     });
   }
 
@@ -67,7 +67,10 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
 
   Future<void> _elegirHora() async {
     final hora = await showTimePicker(
-        context: context, initialTime: _hora ?? const TimeOfDay(hour: 10, minute: 0), helpText: 'Hora de entrega');
+      context: context,
+      initialTime: _hora ?? const TimeOfDay(hour: 10, minute: 0),
+      helpText: 'Hora de entrega',
+    );
     if (hora != null) setState(() => _hora = hora);
   }
 
@@ -103,84 +106,106 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Contenido(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('¿Cómo lo recibes?', style: textos.titleMedium),
-            const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'RECOJO', label: Text('Recojo en tienda'), icon: Icon(Icons.storefront_outlined)),
-                ButtonSegment(value: 'DELIVERY', label: Text('Delivery'), icon: Icon(Icons.delivery_dining_outlined)),
-              ],
-              selected: {_tipo},
-              onSelectionChanged: (s) {
-                _tipo = s.first;
-                _cotizar();
-              },
-            ),
-            const SizedBox(height: 16),
-            if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
-            if (_error?.codigo == 'PRODUCTOS_NO_DISPONIBLES')
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: OutlinedButton(onPressed: () => context.go('/carrito'), child: const Text('Volver al carrito')),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('¿Cómo lo recibes?', style: textos.titleMedium),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'RECOJO',
+                    label: Text('Recojo en tienda'),
+                    icon: Icon(Icons.storefront_outlined),
+                  ),
+                  ButtonSegment(value: 'DELIVERY', label: Text('Delivery'), icon: Icon(Icons.delivery_dining_outlined)),
+                ],
+                selected: {_tipo},
+                onSelectionChanged: (s) {
+                  _tipo = s.first;
+                  _cotizar();
+                },
               ),
-            // RN12: el delivery exige dirección; el recojo no.
-            if (_tipo == 'DELIVERY')
-              Campo(
+              const SizedBox(height: 16),
+              if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
+              if (_error?.codigo == 'PRODUCTOS_NO_DISPONIBLES')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: OutlinedButton(
+                    onPressed: () => context.go('/carrito'),
+                    child: const Text('Volver al carrito'),
+                  ),
+                ),
+              // RN12: el delivery exige dirección; el recojo no.
+              if (_tipo == 'DELIVERY')
+                Campo(
                   controlador: _direccion,
                   etiqueta: 'Dirección de entrega',
                   nombre: 'direccion',
                   errores: _error?.campos,
                   lineas: 2,
-                  autocompletar: const [AutofillHints.fullStreetAddress]),
-            Campo(
+                  autocompletar: const [AutofillHints.fullStreetAddress],
+                ),
+              Campo(
                 controlador: _telefono,
                 etiqueta: 'Teléfono de contacto',
                 nombre: 'telefono',
                 errores: _error?.campos,
                 teclado: TextInputType.phone,
-                autocompletar: const [AutofillHints.telephoneNumber]),
-            Text(_tipo == 'DELIVERY' ? 'Horario de entrega' : 'Horario de recojo', style: textos.titleMedium),
-            const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              OutlinedButton.icon(
-                onPressed: _elegirDia,
-                icon: const Icon(Icons.calendar_today_outlined),
-                label: Text(_dia == null ? 'Elegir día' : localizaciones.formatShortDate(_dia!)),
+                autocompletar: const [AutofillHints.telephoneNumber],
               ),
-              OutlinedButton.icon(
-                onPressed: _elegirHora,
-                icon: const Icon(Icons.schedule),
-                label: Text(_hora == null ? 'Elegir hora' : localizaciones.formatTimeOfDay(_hora!)),
+              Text(_tipo == 'DELIVERY' ? 'Horario de entrega' : 'Horario de recojo', style: textos.titleMedium),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _elegirDia,
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    label: Text(_dia == null ? 'Elegir día' : localizaciones.formatShortDate(_dia!)),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _elegirHora,
+                    icon: const Icon(Icons.schedule),
+                    label: Text(_hora == null ? 'Elegir hora' : localizaciones.formatTimeOfDay(_hora!)),
+                  ),
+                ],
               ),
-            ]),
-            if (_error?.campos['horarioEntrega'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(_error!.campos['horarioEntrega']!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              ),
-            const Divider(height: 32),
-            if (_cotizacion != null)
-              Cargador(
-                futuro: _cotizacion!,
-                reintentar: _cotizar,
-                constructor: (context, c) => Column(children: [
-                  if (c.costoEnvio.sign > 0)
-                    Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(c.costoEnvio))]),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Text('Total', style: textos.titleMedium),
-                    const Spacer(),
-                    Text(bolivianos(c.total), style: textos.titleLarge),
-                  ]),
-                ]),
-              ),
-            const SizedBox(height: 24),
-            FilledButton(onPressed: _enviando ? null : _confirmar, child: const Text('Confirmar pedido')),
-            const SizedBox(height: 8),
-            Text('Después de confirmar, registras el pago con tu comprobante.', style: textos.bodySmall),
-          ]),
+              if (_error?.campos['horarioEntrega'] != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _error!.campos['horarioEntrega']!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              const Divider(height: 32),
+              if (_cotizacion != null)
+                Cargador(
+                  futuro: _cotizacion!,
+                  reintentar: _cotizar,
+                  constructor: (context, c) => Column(
+                    children: [
+                      if (c.costoEnvio.sign > 0)
+                        Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(c.costoEnvio))]),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text('Total', style: textos.titleMedium),
+                          const Spacer(),
+                          Text(bolivianos(c.total), style: textos.titleLarge),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 24),
+              FilledButton(onPressed: _enviando ? null : _confirmar, child: const Text('Confirmar pedido')),
+              const SizedBox(height: 8),
+              Text('Después de confirmar, registras el pago con tu comprobante.', style: textos.bodySmall),
+            ],
+          ),
         ),
       ),
     );

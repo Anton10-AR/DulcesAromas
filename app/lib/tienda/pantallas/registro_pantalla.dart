@@ -56,38 +56,50 @@ class _RegistroPantallaState extends State<RegistroPantalla> {
         child: Contenido(
           ancho: 440,
           child: AutofillGroup(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
-              // HU15: si el correo ya existe, se ofrece iniciar sesión o recuperar la contraseña.
-              if (correoRegistrado)
-                Wrap(spacing: 8, children: [
-                  OutlinedButton(onPressed: () => context.go('/ingresar'), child: const Text('Iniciar sesión')),
-                  TextButton(onPressed: () => context.push('/recuperar'), child: const Text('Recuperar contraseña')),
-                ]),
-              if (correoRegistrado) const SizedBox(height: 16),
-              Campo(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
+                // HU15: si el correo ya existe, se ofrece iniciar sesión o recuperar la contraseña.
+                if (correoRegistrado)
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      OutlinedButton(onPressed: () => context.go('/ingresar'), child: const Text('Iniciar sesión')),
+                      TextButton(
+                        onPressed: () => context.push('/recuperar'),
+                        child: const Text('Recuperar contraseña'),
+                      ),
+                    ],
+                  ),
+                if (correoRegistrado) const SizedBox(height: 16),
+                Campo(
                   controlador: _nombre,
                   etiqueta: 'Nombre',
                   nombre: 'nombre',
                   errores: _error?.campos,
-                  autocompletar: const [AutofillHints.name]),
-              Campo(
+                  autocompletar: const [AutofillHints.name],
+                ),
+                Campo(
                   controlador: _correo,
                   etiqueta: 'Correo',
                   nombre: 'correo',
                   errores: _error?.campos,
                   teclado: TextInputType.emailAddress,
-                  autocompletar: const [AutofillHints.email]),
-              Campo(
+                  autocompletar: const [AutofillHints.email],
+                ),
+                Campo(
                   controlador: _contrasena,
                   etiqueta: 'Contraseña',
                   nombre: 'contrasena',
                   errores: _error?.campos,
                   oculto: true,
                   ayuda: 'Al menos 8 caracteres, con una letra y un número.',
-                  autocompletar: const [AutofillHints.newPassword]),
-              FilledButton(onPressed: _enviando ? null : _registrar, child: const Text('Crear cuenta')),
-            ]),
+                  autocompletar: const [AutofillHints.newPassword],
+                ),
+                FilledButton(onPressed: _enviando ? null : _registrar, child: const Text('Crear cuenta')),
+              ],
+            ),
           ),
         ),
       ),

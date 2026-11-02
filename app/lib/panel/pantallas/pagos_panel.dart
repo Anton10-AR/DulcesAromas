@@ -31,22 +31,30 @@ class _PagosPanelState extends State<PagosPanel> {
   }
 
   void _cargar() {
-    setState(() => _pagos = _api.get('/api/pagos/en-verificacion').then((j) => lista(j, Pago.deJson)));
+    setState(() {
+      _pagos = _api.get('/api/pagos/en-verificacion').then((j) => lista(j, Pago.deJson));
+    });
   }
 
   /// Si otra persona ya decidió el pago, el servidor lo rechaza y la lista se actualiza (RNF15).
   Future<void> _decidir(Pago pago, {required bool aprobar}) async {
     String? observacion;
     if (aprobar) {
-      final ok = await confirmar(context,
-          titulo: '¿Aprobar el pago?',
-          mensaje: 'El pedido #${pago.pedidoId} pasará a Confirmado y se podrá preparar.',
-          accion: 'Aprobar');
+      final ok = await confirmar(
+        context,
+        titulo: '¿Aprobar el pago?',
+        mensaje: 'El pedido #${pago.pedidoId} pasará a Confirmado y se podrá preparar.',
+        accion: 'Aprobar',
+      );
       if (!ok) return;
     } else {
       // RN07: rechazar exige una observación que verá el cliente.
-      observacion = await pedirTexto(context,
-          titulo: 'Rechazar el pago', etiqueta: 'Motivo (lo verá el cliente)', confirmar: 'Rechazar');
+      observacion = await pedirTexto(
+        context,
+        titulo: 'Rechazar el pago',
+        etiqueta: 'Motivo (lo verá el cliente)',
+        confirmar: 'Rechazar',
+      );
       if (observacion == null) return;
     }
     try {
@@ -74,9 +82,10 @@ class _PagosPanelState extends State<PagosPanel> {
           actions: [
             TextButton(
               onPressed: () => FilePicker.saveFile(
-                  fileName: 'comprobante-pedido-${pago.pedidoId}${archivo.tipo.contains('pdf') ? '.pdf' : ''}',
-                  bytes: Uint8List.fromList(archivo.bytes),
-                  mimeType: archivo.tipo),
+                fileName: 'comprobante-pedido-${pago.pedidoId}${archivo.tipo.contains('pdf') ? '.pdf' : ''}',
+                bytes: Uint8List.fromList(archivo.bytes),
+                mimeType: archivo.tipo,
+              ),
               child: const Text('Descargar'),
             ),
             FilledButton(onPressed: () => Navigator.pop(contexto), child: const Text('Cerrar')),
@@ -108,25 +117,38 @@ class _PagosPanelState extends State<PagosPanel> {
                 child: Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        TextButton(
-                            onPressed: () => context.go('/pedidos/${p.pedidoId}'), child: Text('Pedido #${p.pedidoId}')),
-                        const Spacer(),
-                        Text(bolivianos(p.monto), style: textos.titleLarge),
-                      ]),
-                      Text('${p.metodo} · Referencia: ${p.referencia}'),
-                      if (p.registrado != null) Text('Registrado: ${fechaHora(p.registrado!)}', style: textos.bodySmall),
-                      const SizedBox(height: 12),
-                      Wrap(spacing: 8, runSpacing: 8, children: [
-                        OutlinedButton.icon(
-                            onPressed: () => _verComprobante(p),
-                            icon: const Icon(Icons.receipt_outlined),
-                            label: const Text('Ver comprobante')),
-                        FilledButton(onPressed: () => _decidir(p, aprobar: true), child: const Text('Aprobar')),
-                        OutlinedButton(onPressed: () => _decidir(p, aprobar: false), child: const Text('Rechazar')),
-                      ]),
-                    ]),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            TextButton(
+                              onPressed: () => context.go('/pedidos/${p.pedidoId}'),
+                              child: Text('Pedido #${p.pedidoId}'),
+                            ),
+                            const Spacer(),
+                            Text(bolivianos(p.monto), style: textos.titleLarge),
+                          ],
+                        ),
+                        Text('${p.metodo} · Referencia: ${p.referencia}'),
+                        if (p.registrado != null)
+                          Text('Registrado: ${fechaHora(p.registrado!)}', style: textos.bodySmall),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _verComprobante(p),
+                              icon: const Icon(Icons.receipt_outlined),
+                              label: const Text('Ver comprobante'),
+                            ),
+                            FilledButton(onPressed: () => _decidir(p, aprobar: true), child: const Text('Aprobar')),
+                            OutlinedButton(onPressed: () => _decidir(p, aprobar: false), child: const Text('Rechazar')),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

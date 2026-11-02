@@ -44,6 +44,11 @@ void main() {
     await recuperado.cargar();
 
     expect(recuperado.lineas.single.cantidad, 2);
-    expect(recuperado.aSolicitud().single, {'productoId': 1, 'cantidad': 2, 'opciones': [5], 'mensaje': 'Hola'});
+    expect(recuperado.aSolicitud().single, {
+      'productoId': 1,
+      'cantidad': 2,
+      'opciones': [5],
+      'mensaje': 'Hola',
+    });
   });
 }

@@ -33,3 +33,7 @@ linter:
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
+
+# Ancho de línea del formateador (dart format), igual para todo el equipo.
+formatter:
+  page_width: 120

@@ -25,7 +25,9 @@ class _EntregasPanelState extends State<EntregasPanel> {
   }
 
   void _cargar() {
-    setState(() => _entregas = context.read<Api>().get('/api/entregas').then((j) => lista(j, Entrega.deJson)));
+    setState(() {
+      _entregas = context.read<Api>().get('/api/entregas').then((j) => lista(j, Entrega.deJson));
+    });
   }
 
   @override
@@ -38,7 +40,10 @@ class _EntregasPanelState extends State<EntregasPanel> {
         constructor: (context, entregas) {
           if (entregas.isEmpty) {
             return const Center(
-                child: Text('No hay entregas abiertas. Asigna repartidores desde el detalle de cada pedido con delivery.'));
+              child: Text(
+                'No hay entregas abiertas. Asigna repartidores desde el detalle de cada pedido con delivery.',
+              ),
+            );
           }
           return ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -49,10 +54,12 @@ class _EntregasPanelState extends State<EntregasPanel> {
               return ListTile(
                 onTap: () => context.go('/pedidos/${e.pedidoId}'),
                 title: Text('Pedido #${e.pedidoId} · ${e.repartidor.nombre}'),
-                subtitle: Text([
-                  '${fechaHora(e.horarioEntrega)} · ${e.direccion ?? ''}',
-                  if (e.observacionFallo != null) 'Entrega fallida: ${e.observacionFallo}',
-                ].join('\n')),
+                subtitle: Text(
+                  [
+                    '${fechaHora(e.horarioEntrega)} · ${e.direccion ?? ''}',
+                    if (e.observacionFallo != null) 'Entrega fallida: ${e.observacionFallo}',
+                  ].join('\n'),
+                ),
                 isThreeLine: e.observacionFallo != null,
                 trailing: Text(nombresEstadoPedido[e.estado]!),
               );

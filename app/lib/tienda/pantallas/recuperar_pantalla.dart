@@ -58,35 +58,46 @@ class _RecuperarPantallaState extends State<RecuperarPantalla> {
         padding: const EdgeInsets.all(16),
         child: Contenido(
           ancho: 440,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (_listo != null) ...[
-              Text(_listo!, style: Theme.of(context).textTheme.bodyLarge),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: () => context.go('/ingresar'), child: const Text('Ir a ingresar')),
-            ] else ...[
-              Text(_definiendo
-                  ? 'Escribe tu contraseña nueva.'
-                  : 'Escribe tu correo y te enviaremos un enlace para definir una contraseña nueva.'),
-              const SizedBox(height: 16),
-              if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
-              // CU12, alt. 2: si el enlace venció o ya se usó, se pide otro.
-              if (_error?.codigo == 'ENLACE_VENCIDO')
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: OutlinedButton(onPressed: () => context.go('/recuperar'), child: const Text('Pedir otro enlace')),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_listo != null) ...[
+                Text(_listo!, style: Theme.of(context).textTheme.bodyLarge),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: () => context.go('/ingresar'), child: const Text('Ir a ingresar')),
+              ] else ...[
+                Text(
+                  _definiendo
+                      ? 'Escribe tu contraseña nueva.'
+                      : 'Escribe tu correo y te enviaremos un enlace para definir una contraseña nueva.',
                 ),
-              Campo(
-                controlador: _texto,
-                etiqueta: _definiendo ? 'Contraseña nueva' : 'Correo',
-                nombre: _definiendo ? 'contrasenaNueva' : 'correo',
-                errores: _error?.campos,
-                oculto: _definiendo,
-                teclado: _definiendo ? null : TextInputType.emailAddress,
-                ayuda: _definiendo ? 'Al menos 8 caracteres, con una letra y un número.' : null,
-              ),
-              FilledButton(onPressed: _enviando ? null : _enviar, child: Text(_definiendo ? 'Guardar' : 'Enviar enlace')),
+                const SizedBox(height: 16),
+                if (_error != null && _error!.campos.isEmpty) AvisoError(_error!.mensaje),
+                // CU12, alt. 2: si el enlace venció o ya se usó, se pide otro.
+                if (_error?.codigo == 'ENLACE_VENCIDO')
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: OutlinedButton(
+                      onPressed: () => context.go('/recuperar'),
+                      child: const Text('Pedir otro enlace'),
+                    ),
+                  ),
+                Campo(
+                  controlador: _texto,
+                  etiqueta: _definiendo ? 'Contraseña nueva' : 'Correo',
+                  nombre: _definiendo ? 'contrasenaNueva' : 'correo',
+                  errores: _error?.campos,
+                  oculto: _definiendo,
+                  teclado: _definiendo ? null : TextInputType.emailAddress,
+                  ayuda: _definiendo ? 'Al menos 8 caracteres, con una letra y un número.' : null,
+                ),
+                FilledButton(
+                  onPressed: _enviando ? null : _enviar,
+                  child: Text(_definiendo ? 'Guardar' : 'Enviar enlace'),
+                ),
+              ],
             ],
-          ]),
+          ),
         ),
       ),
     );

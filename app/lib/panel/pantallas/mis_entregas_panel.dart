@@ -27,7 +27,9 @@ class _MisEntregasPanelState extends State<MisEntregasPanel> {
   }
 
   void _cargar() {
-    setState(() => _entregas = _api.get('/api/entregas/mias').then((j) => lista(j, Entrega.deJson)));
+    setState(() {
+      _entregas = _api.get('/api/entregas/mias').then((j) => lista(j, Entrega.deJson));
+    });
   }
 
   Future<void> _accion(Future<dynamic> Function() llamada, String hecho) async {
@@ -42,11 +44,17 @@ class _MisEntregasPanelState extends State<MisEntregasPanel> {
 
   /// RN13: la entrega fallida exige observación y el pedido vuelve a Listo.
   Future<void> _fallida(Entrega e) async {
-    final observacion = await pedirTexto(context,
-        titulo: 'No se pudo entregar', etiqueta: '¿Qué pasó?', confirmar: 'Registrar entrega fallida');
+    final observacion = await pedirTexto(
+      context,
+      titulo: 'No se pudo entregar',
+      etiqueta: '¿Qué pasó?',
+      confirmar: 'Registrar entrega fallida',
+    );
     if (observacion != null) {
-      await _accion(() => _api.post('/api/entregas/${e.pedidoId}/fallida', {'observacion': observacion}),
-          'Registramos la entrega fallida. El pedido volvió a Listo.');
+      await _accion(
+        () => _api.post('/api/entregas/${e.pedidoId}/fallida', {'observacion': observacion}),
+        'Registramos la entrega fallida. El pedido volvió a Listo.',
+      );
     }
   }
 
@@ -69,35 +77,50 @@ class _MisEntregasPanelState extends State<MisEntregasPanel> {
                 child: Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Text('Pedido #${e.pedidoId}', style: textos.titleMedium),
-                        const Spacer(),
-                        Etiqueta(nombresEstadoPedido[e.estado]!, resaltada: true),
-                      ]),
-                      const SizedBox(height: 8),
-                      Text(e.cliente ?? ''),
-                      SelectableText(e.direccion ?? '', style: textos.bodyLarge),
-                      SelectableText('Teléfono: ${e.telefono}'),
-                      Text('Horario: ${fechaHora(e.horarioEntrega)}'),
-                      const SizedBox(height: 8),
-                      for (final p in e.productos) Text('• $p'),
-                      if (e.observacionFallo != null) Text('Intento anterior: ${e.observacionFallo}', style: textos.bodySmall),
-                      const SizedBox(height: 12),
-                      Wrap(spacing: 8, runSpacing: 8, children: [
-                        if (e.estado == 'LISTO')
-                          FilledButton(
-                              onPressed: () => _accion(() => _api.post('/api/entregas/${e.pedidoId}/en-camino'), 'En camino.'),
-                              child: const Text('Salgo en camino')),
-                        if (e.estado == 'EN_CAMINO') ...[
-                          FilledButton(
-                              onPressed: () =>
-                                  _accion(() => _api.post('/api/entregas/${e.pedidoId}/entregado'), 'Pedido entregado.'),
-                              child: const Text('Entregado')),
-                          OutlinedButton(onPressed: () => _fallida(e), child: const Text('No se pudo entregar')),
-                        ],
-                      ]),
-                    ]),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text('Pedido #${e.pedidoId}', style: textos.titleMedium),
+                            const Spacer(),
+                            Etiqueta(nombresEstadoPedido[e.estado]!, resaltada: true),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(e.cliente ?? ''),
+                        SelectableText(e.direccion ?? '', style: textos.bodyLarge),
+                        SelectableText('Teléfono: ${e.telefono}'),
+                        Text('Horario: ${fechaHora(e.horarioEntrega)}'),
+                        const SizedBox(height: 8),
+                        for (final p in e.productos) Text('• $p'),
+                        if (e.observacionFallo != null)
+                          Text('Intento anterior: ${e.observacionFallo}', style: textos.bodySmall),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (e.estado == 'LISTO')
+                              FilledButton(
+                                onPressed: () =>
+                                    _accion(() => _api.post('/api/entregas/${e.pedidoId}/en-camino'), 'En camino.'),
+                                child: const Text('Salgo en camino'),
+                              ),
+                            if (e.estado == 'EN_CAMINO') ...[
+                              FilledButton(
+                                onPressed: () => _accion(
+                                  () => _api.post('/api/entregas/${e.pedidoId}/entregado'),
+                                  'Pedido entregado.',
+                                ),
+                                child: const Text('Entregado'),
+                              ),
+                              OutlinedButton(onPressed: () => _fallida(e), child: const Text('No se pudo entregar')),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

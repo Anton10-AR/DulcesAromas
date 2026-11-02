@@ -79,7 +79,10 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
           final (pedido, pagos) = datos;
           return RefreshIndicator(
             onRefresh: () async => _cargar(),
-            child: ListView(padding: const EdgeInsets.all(16), children: [Contenido(child: _detalle(pedido, pagos))]),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [Contenido(child: _detalle(pedido, pagos))],
+            ),
           );
         },
       ),
@@ -90,51 +93,60 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
     final textos = Theme.of(context).textTheme;
     final vigente = pagos.lastOrNull;
     final debePagar = pedido.estado == 'PENDIENTE' && vigente?.estado == 'PENDIENTE_DE_PAGO';
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Wrap(spacing: 8, runSpacing: 8, children: [
-        Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
-        if (vigente != null) Etiqueta('Pago: ${nombresEstadoPago[vigente.estado]}'),
-      ]),
-      const SizedBox(height: 16),
-      if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
-      if (debePagar)
-        FilledButton(onPressed: () => context.push('/pedidos/${pedido.id}/pagar'), child: const Text('Pagar')),
-      const SizedBox(height: 16),
-      Text('Productos', style: textos.titleLarge),
-      for (final l in pedido.lineas)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text('${l.cantidad} × ${l.nombre}'),
-          subtitle: Text([
-            ...l.opciones.map((o) => o.nombre),
-            if (l.mensaje != null) 'Mensaje: «${l.mensaje}»',
-          ].join(' · ')),
-          trailing: Text(bolivianos(l.subtotal)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
+            if (vigente != null) Etiqueta('Pago: ${nombresEstadoPago[vigente.estado]}'),
+          ],
         ),
-      if (pedido.esDelivery) Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
-      Row(children: [
-        Text('Total', style: textos.titleMedium),
-        const Spacer(),
-        Text(bolivianos(pedido.total), style: textos.titleMedium),
-      ]),
-      const Divider(height: 32),
-      Text(pedido.esDelivery ? 'Delivery' : 'Recojo en tienda', style: textos.titleLarge),
-      if (pedido.direccion != null) Text(pedido.direccion!),
-      Text('Teléfono: ${pedido.telefono}'),
-      Text('Horario: ${fechaHora(pedido.horarioEntrega)}'),
-      const Divider(height: 32),
-      Text('Historial', style: textos.titleLarge),
-      for (final c in pedido.historial)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.circle, size: 12),
-          title: Text(nombresEstadoPedido[c.nuevo]!),
-          subtitle: Text([fechaHora(c.fecha), if (c.observacion != null) c.observacion!].join(' · ')),
-        ),
-      if (pedido.cancelable) ...[
         const SizedBox(height: 16),
-        OutlinedButton(onPressed: _cancelar, child: const Text('Cancelar pedido')),
+        if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
+        if (debePagar)
+          FilledButton(onPressed: () => context.push('/pedidos/${pedido.id}/pagar'), child: const Text('Pagar')),
+        const SizedBox(height: 16),
+        Text('Productos', style: textos.titleLarge),
+        for (final l in pedido.lineas)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('${l.cantidad} × ${l.nombre}'),
+            subtitle: Text(
+              [...l.opciones.map((o) => o.nombre), if (l.mensaje != null) 'Mensaje: «${l.mensaje}»'].join(' · '),
+            ),
+            trailing: Text(bolivianos(l.subtotal)),
+          ),
+        if (pedido.esDelivery)
+          Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
+        Row(
+          children: [
+            Text('Total', style: textos.titleMedium),
+            const Spacer(),
+            Text(bolivianos(pedido.total), style: textos.titleMedium),
+          ],
+        ),
+        const Divider(height: 32),
+        Text(pedido.esDelivery ? 'Delivery' : 'Recojo en tienda', style: textos.titleLarge),
+        if (pedido.direccion != null) Text(pedido.direccion!),
+        Text('Teléfono: ${pedido.telefono}'),
+        Text('Horario: ${fechaHora(pedido.horarioEntrega)}'),
+        const Divider(height: 32),
+        Text('Historial', style: textos.titleLarge),
+        for (final c in pedido.historial)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.circle, size: 12),
+            title: Text(nombresEstadoPedido[c.nuevo]!),
+            subtitle: Text([fechaHora(c.fecha), if (c.observacion != null) c.observacion!].join(' · ')),
+          ),
+        if (pedido.cancelable) ...[
+          const SizedBox(height: 16),
+          OutlinedButton(onPressed: _cancelar, child: const Text('Cancelar pedido')),
+        ],
       ],
-    ]);
+    );
   }
 }
