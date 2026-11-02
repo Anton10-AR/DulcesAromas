@@ -48,6 +48,7 @@ Todos los comandos del backend se ejecutan desde `backend/`. Usa el wrapper (`./
 ```
 ./mvnw test              # pruebas (usan H2 en memoria en modo PostgreSQL; no requieren PostgreSQL)
 ./mvnw spring-boot:run   # levanta la API en http://localhost:8080
+docker build -t dulces-aromas-api .   # imagen para la nube (render.yaml en la raíz la despliega en Render)
 ```
 
 **Base de datos local (una sola vez):** crea el usuario y la base en PostgreSQL y copia `backend/.env.example` como `backend/.env` con la contraseña. `.env` no se versiona.
@@ -57,7 +58,7 @@ CREATE USER dulces_aromas WITH PASSWORD '...';
 CREATE DATABASE dulces_aromas OWNER dulces_aromas;
 ```
 
-Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo. Para que la recuperación de contraseña envíe correos, define `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA` y `MAIL_REMITENTE`; sin `MAIL_HOST`, el correo se escribe en el registro de la API, lo que solo sirve en desarrollo. `RECUPERACION_URL` es la pantalla de la app que recibe el enlace.
+Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo. Para que la recuperación de contraseña envíe correos, define `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA` y `MAIL_REMITENTE`; en la nube, donde SMTP suele estar bloqueado, define `BREVO_CLAVE` y el correo sale por la API de Brevo (`ConfiguracionCorreo` elige). Sin ninguno, el correo se escribe en el registro de la API, lo que solo sirve en desarrollo. `RECUPERACION_URL` es la pantalla de la app que recibe el enlace.
 
 **Datos de demostración:** con la API corriendo sobre una base recién creada, `python demo/cargar_demo.py` (desde `backend/`, requiere Pillow) carga catálogo, inventario, personal, clientes y pedidos en todos los estados. Todas las cuentas usan la contraseña de `DEMO_CONTRASENA`. Se niega a correr si ya hay catálogo.
 

@@ -62,7 +62,9 @@ Copia `backend/.env.example` como `backend/.env` y completa los valores. `.env` 
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Sí | Conexión a PostgreSQL |
 | `ADMIN_CORREO`, `ADMIN_CONTRASENA` | La primera vez | Primer administrador. Se crea al arrancar solo si no hay ningún administrador activo |
 | `CORS_ORIGENES` | Sí, para el Panel | Direcciones desde las que el navegador puede llamar a la API, separadas por comas. En desarrollo, `http://localhost:8081` |
-| `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA`, `MAIL_REMITENTE` | No | Correo para recuperar contraseñas. Sin `MAIL_HOST`, el enlace se escribe en el registro de la API (solo sirve en desarrollo) |
+| `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA`, `MAIL_REMITENTE` | No | Correo por SMTP para recuperar contraseñas. Sin `MAIL_HOST` ni `BREVO_CLAVE`, el enlace se escribe en el registro de la API (solo sirve en desarrollo) |
+| `BREVO_CLAVE` | En la nube | Clave de la API de Brevo. Si está, el correo sale por Brevo (HTTPS) y no por SMTP, que el plan gratuito de Render bloquea. `MAIL_REMITENTE` debe estar verificado en Brevo |
+| `PORT` | No | Puerto de la API; por defecto 8080. Los servicios en la nube lo definen solos |
 | `RECUPERACION_URL` | No | Pantalla de la app que recibe el enlace de recuperación |
 | `DEMO_CONTRASENA` | No | Contraseña de las cuentas de demostración |
 
@@ -139,11 +141,19 @@ Los roles son fijos; el administrador edita los permisos del Vendedor y del Repa
 
 ## Despliegue en la nube (RNF21)
 
-El sistema se despliega desde este repositorio sin cambiar código:
+El sistema se despliega desde este repositorio sin cambiar código, y puede hacerse con planes gratuitos:
 
-1. Una base PostgreSQL administrada.
-2. La API (`./mvnw package` genera el JAR en `backend/target/`) con las variables de la tabla de configuración definidas en el servicio. Las imágenes y comprobantes se guardan en la base, así que no hace falta disco propio.
-3. El Panel como sitio estático: `flutter build web -t lib/main_panel.dart --dart-define=API_URL=https://...`, publicando `app/build/web`. Su dirección va en `CORS_ORIGENES`.
-4. Todo el tráfico por HTTPS (RNF06).
+1. **Base de datos:** PostgreSQL administrado, por ejemplo Neon. `DB_URL` lleva el formato `jdbc:postgresql://<host>/<base>?sslmode=require`.
+2. **API:** la imagen de `backend/Dockerfile`. `render.yaml` la describe para Render (New → Blueprint), que pide las variables secretas al crear el servicio. Las imágenes y comprobantes se guardan en la base, así que no hace falta disco propio. En el plan gratuito, la API se apaga tras 15 minutos sin uso y tarda cerca de un minuto en despertar.
+3. **Correo:** una cuenta de Brevo con el remitente verificado; su clave va en `BREVO_CLAVE`.
+4. **Panel:** sitio estático con `flutter build web -t lib/main_panel.dart --dart-define=API_URL=https://...`, publicando `app/build/web`. Su dirección va en `CORS_ORIGENES`.
+5. Todo el tráfico por HTTPS (RNF06); Render lo incluye.
+
+Para probar la imagen de la API en local, desde `backend/`:
+
+```
+docker build -t dulces-aromas-api .
+docker run -p 8080:8080 --env-file .env -e DB_URL=jdbc:postgresql://host.docker.internal:5432/dulces_aromas dulces-aromas-api
+```
 
 Fuera de alcance de esta versión: pasarelas de pago, notificaciones automáticas, varias sucursales, recetas, roles personalizados, publicación en tiendas de aplicaciones y rastreo en mapa.

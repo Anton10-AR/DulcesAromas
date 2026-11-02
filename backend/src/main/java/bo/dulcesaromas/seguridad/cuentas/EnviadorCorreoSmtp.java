@@ -7,14 +7,13 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
  * Envía por el servidor SMTP de {@code spring.mail.*} (variables MAIL_HOST, MAIL_USUARIO, MAIL_CONTRASENA). Sin
- * servidor configurado, como en desarrollo, escribe el correo en el registro en vez de enviarlo.
+ * servidor configurado, como en desarrollo, escribe el correo en el registro en vez de enviarlo. Lo elige
+ * {@link ConfiguracionCorreo} cuando no hay clave de Brevo.
  */
-@Component
 class EnviadorCorreoSmtp implements EnviadorCorreo {
 
 	private static final Logger log = LoggerFactory.getLogger(EnviadorCorreoSmtp.class);

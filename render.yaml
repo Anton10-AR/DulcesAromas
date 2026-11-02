@@ -1,0 +1,34 @@
+# Despliegue en Render desde este repositorio (RNF21). En Render: New → Blueprint → elegir el repositorio.
+# Los valores con «sync: false» los pide Render al crear el servicio; nunca se escriben aquí.
+services:
+  - type: web
+    name: dulces-aromas-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/catalogo/categorias
+    envVars:
+      # Base PostgreSQL (por ejemplo, Neon). DB_URL con el formato
+      # jdbc:postgresql://<host>/<base>?sslmode=require
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # Primer administrador; se crea solo si no hay ninguno activo.
+      - key: ADMIN_CORREO
+        sync: false
+      - key: ADMIN_CONTRASENA
+        sync: false
+      # Correo de recuperación por la API de Brevo (el plan gratuito de Render bloquea SMTP).
+      - key: BREVO_CLAVE
+        sync: false
+      - key: MAIL_REMITENTE
+        sync: false
+      # Dirección pública del Panel y pantalla que recibe el enlace de recuperación.
+      - key: CORS_ORIGENES
+        sync: false
+      - key: RECUPERACION_URL
+        sync: false

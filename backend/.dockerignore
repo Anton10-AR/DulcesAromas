@@ -1,0 +1,8 @@
+# Nada de esto entra a la imagen. En especial .env, que tiene credenciales.
+.env
+target
+demo
+.idea
+.vscode
+*.iml
+HELP.md

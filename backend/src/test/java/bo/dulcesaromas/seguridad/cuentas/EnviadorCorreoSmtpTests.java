@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 class EnviadorCorreoSmtpTests {
 
 	private static final PropiedadesSeguridad PROPIEDADES = new PropiedadesSeguridad(null, null, null,
-			new PropiedadesSeguridad.Recuperacion(Duration.ofMinutes(60), "http://x", "a@b.bo"));
+			new PropiedadesSeguridad.Recuperacion(Duration.ofMinutes(60), "http://x", "a@b.bo", null));
 
 	@Test
 	void sinServidorDeCorreoNoFalla() {

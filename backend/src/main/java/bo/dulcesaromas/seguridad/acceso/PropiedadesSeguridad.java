@@ -34,11 +34,12 @@ public record PropiedadesSeguridad(@DefaultValue Sesion sesion, @DefaultValue Bl
 
 	/**
 	 * Enlace para que el cliente defina una contraseña nueva (CU12). {@code enlace} es la dirección de la pantalla
-	 * de la Tienda que recibe el token; se le agrega {@code ?token=...}.
+	 * de la Tienda que recibe el token; se le agrega {@code ?token=...}. Con {@code brevoClave}, el correo sale por
+	 * la API de Brevo en vez de SMTP.
 	 */
 	public record Recuperacion(@DefaultValue("60m") Duration vigencia,
 			@DefaultValue("http://localhost:8081/recuperar") String enlace,
-			@DefaultValue("no-responder@dulcesaromas.bo") String remitente) {
+			@DefaultValue("no-responder@dulcesaromas.bo") String remitente, String brevoClave) {
 	}
 
 }
