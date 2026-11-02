@@ -1,0 +1,11 @@
+package bo.dulcesaromas.seguridad.auditoria;
+
+/**
+ * Lo que queda en la auditoría (RF28, RNF05, RNF07, RNF08).
+ */
+public enum AccionAuditada {
+
+	CUENTA_CREADA, CUENTA_EDITADA, ROL_CAMBIADO, CUENTA_ACTIVADA, CUENTA_DESACTIVADA, PERMISOS_EDITADOS,
+	CUENTA_BLOQUEADA, ACCESO_DENEGADO
+
+}

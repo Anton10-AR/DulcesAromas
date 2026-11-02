@@ -57,7 +57,7 @@ CREATE USER dulces_aromas WITH PASSWORD '...';
 CREATE DATABASE dulces_aromas OWNER dulces_aromas;
 ```
 
-Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`.
+Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo.
 
 **App Flutter:** pendiente hasta que Flutter esté instalado. Se creará en `app/` con `flutter create --org bo.dulcesaromas --platforms android,ios,web app`; entonces documenta aquí cómo ejecutarla y probarla.
 
@@ -128,6 +128,14 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 - **Fechas y hora:** formato dd/mm/aaaa, zona horaria America/La_Paz.
 - **Copias en el pedido:** las opciones elegidas guardan una copia del nombre y del recargo, para que un cambio en el producto no altere pedidos anteriores.
 - **Transacciones:** confirmar un pedido es una sola transacción. Dos usuarios no pueden decidir el mismo pago a la vez (RNF14, RNF15).
+
+### Convenciones de la API
+
+- **Sesión:** `POST /api/auth/login` devuelve un token opaco; la app lo manda en `Authorization: Bearer <token>`. La sesión vive en la tabla `sesion`, así que cerrarla, desactivar la cuenta o cambiar permisos rige en la siguiente solicitud.
+- **Autorización:** cada controlador nuevo declara su permiso con `@PreAuthorize("hasAuthority('PERMISO')")`, usando los nombres del enum `seguridad.Permiso`. Las rutas de la Tienda usan `hasAuthority('CLIENTE')`. Las rutas públicas (como el catálogo, RN15) se abren en `ConfiguracionSeguridad`.
+- **Usuario actual:** los otros módulos lo obtienen con `IAutenticacion.usuarioActual()`; nunca leen las tablas de Seguridad.
+- **Errores de negocio:** lanza `compartido.ReglaNegocioException` con estado HTTP, un código en MAYÚSCULAS (la interfaz reacciona a él) y un mensaje para el usuario. Los errores de validación devuelven `campos` con el mensaje de cada campo (RNF01).
+- **Pruebas:** las de integración heredan de `PruebaIntegracion` (base H2 limpia en cada prueba y un `RelojDePrueba` para adelantar el tiempo). Nombra la prueba con la regla que cubre, por ejemplo `rn03SiempreQuedaAlMenosUnAdministradorActivo`.
 
 ## Seguridad (no negociable)
 

@@ -1,0 +1,39 @@
+package bo.dulcesaromas.compartido;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+/**
+ * Convierte las excepciones conocidas en {@link ErrorRespuesta}. No captura excepciones genéricas,
+ * para que los accesos denegados lleguen a Spring Security y queden registrados.
+ */
+@RestControllerAdvice
+class ManejadorErrores {
+
+	@ExceptionHandler
+	ResponseEntity<ErrorRespuesta> reglaNegocio(ReglaNegocioException ex) {
+		return ResponseEntity.status(ex.getEstado()).body(new ErrorRespuesta(ex.getCodigo(), ex.getMessage()));
+	}
+
+	@ExceptionHandler
+	ResponseEntity<ErrorRespuesta> datosInvalidos(MethodArgumentNotValidException ex) {
+		Map<String, String> campos = new LinkedHashMap<>();
+		ex.getBindingResult().getFieldErrors().forEach(e -> campos.putIfAbsent(e.getField(), e.getDefaultMessage()));
+		return ResponseEntity.badRequest()
+			.body(new ErrorRespuesta("DATOS_INVALIDOS", "Revisa los campos marcados.", campos));
+	}
+
+	@ExceptionHandler
+	ResponseEntity<ErrorRespuesta> cuerpoIlegible(HttpMessageNotReadableException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(new ErrorRespuesta("SOLICITUD_INVALIDA", "La solicitud no tiene el formato esperado."));
+	}
+
+}
