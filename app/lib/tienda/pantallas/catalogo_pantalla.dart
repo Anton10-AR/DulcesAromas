@@ -110,16 +110,22 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
                       ),
                     );
                   }
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 260,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 0.7,
-                    ),
-                    itemCount: productos.length,
-                    itemBuilder: (_, i) => _TarjetaProducto(productos[i]),
+                  return LayoutBuilder(
+                    builder: (context, limites) {
+                      // Al arrancar en Android, el primer cuadro puede llegar con ancho 0 y la cuadrícula falla.
+                      if (limites.maxWidth <= 32) return const SizedBox.shrink();
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 260,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.7,
+                        ),
+                        itemCount: productos.length,
+                        itemBuilder: (_, i) => _TarjetaProducto(productos[i]),
+                      );
+                    },
                   );
                 },
               ),
