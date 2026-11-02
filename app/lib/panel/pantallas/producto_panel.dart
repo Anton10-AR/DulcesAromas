@@ -140,7 +140,7 @@ class _ProductoPanelState extends State<ProductoPanel> {
     }
   }
 
-  /// RNF10: JPG, PNG o WebP, cuadrada, desde 800 px y hasta 2 MB; el servidor la valida.
+  /// RNF10: JPG, PNG o WebP, desde 800 px por lado y hasta 2 MB; el servidor la valida y recorta al centro.
   Future<void> _subirImagen() async {
     final archivo = await FilePicker.pickFile(
       type: FileType.custom,
@@ -238,7 +238,7 @@ class _ProductoPanelState extends State<ProductoPanel> {
               OutlinedButton.icon(
                 onPressed: _subirImagen,
                 icon: const Icon(Icons.image_outlined),
-                label: const Text('Cambiar imagen (cuadrada, desde 800 px, hasta 2 MB)'),
+                label: const Text('Cambiar imagen (desde 800 px por lado, hasta 2 MB; se recorta al centro)'),
               ),
               const Divider(height: 32),
               _producto!.activo

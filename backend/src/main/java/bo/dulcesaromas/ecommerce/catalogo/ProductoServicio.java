@@ -116,9 +116,9 @@ class ProductoServicio {
 	@Transactional
 	Producto guardarImagen(Long id, byte[] datos) {
 		Producto producto = obtener(id);
-		String tipo = ValidadorImagen.validar(datos);
-		imagenes.findById(id).ifPresentOrElse(imagen -> imagen.reemplazar(tipo, datos),
-				() -> imagenes.save(new ImagenProducto(id, tipo, datos)));
+		ValidadorImagen.Imagen lista = ValidadorImagen.preparar(datos);
+		imagenes.findById(id).ifPresentOrElse(imagen -> imagen.reemplazar(lista.tipo(), lista.datos()),
+				() -> imagenes.save(new ImagenProducto(id, lista.tipo(), lista.datos())));
 		producto.imagenCambiada(reloj.instant());
 		return producto;
 	}

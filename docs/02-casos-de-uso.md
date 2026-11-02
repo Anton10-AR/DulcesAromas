@@ -215,7 +215,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Precondición | El administrador tiene sesión iniciada y existe al menos una categoría |
 | Postcondición | El catálogo refleja el cambio |
 | Secuencia normal | 1. El administrador abre Catálogo. 2. Elige Nuevo producto o selecciona uno existente. 3. Completa o modifica los datos, la imagen, la disponibilidad y las opciones de personalización con su recargo. 4. El sistema valida y guarda. 5. El producto aparece en la Tienda si está activo |
-| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos; no se elimina si tiene pedidos asociados (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
+| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada, la recorta al centro. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos; no se elimina si tiene pedidos asociados (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
 | Rendimiento | 2 s o menos por operación |
 | Frecuencia | Semanal |
 | Importancia | Alta |
@@ -533,6 +533,7 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. Las de
 | Recargo (RN11) | Se cobra por unidad: (precio + recargos) × cantidad |
 | Opciones de personalización | Como máximo una de cada tipo; ninguna es obligatoria |
 | Recojo (RN12) | Exige teléfono y horario, no dirección |
+| Imagen de producto (RNF10) | Una JPG o PNG que no es cuadrada se recorta al centro, respetando la orientación de las fotos de celular. Una WebP debe venir cuadrada |
 | Métodos de pago (RNF18) | Tabla editable desde el Panel; nacen desactivados hasta que el administrador escribe los datos para pagar |
 
 ### 10.2 Por revisar con el equipo
@@ -544,7 +545,6 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. Las de
 | Permiso de Seguridad | Se puede dar a un Vendedor; nunca quitar al administrador (RN04) |
 | Cuenta desactivada | Al ingresar recibe el mismo mensaje que con datos incorrectos |
 | Imágenes y comprobantes | Se guardan en la base de datos, para desplegar en la nube sin disco propio (RNF21) |
-| Imagen de producto | Debe ser cuadrada exacta (mismo ancho y alto) |
 | Producto sin imagen | Se puede crear y luego subir la imagen |
 | Borrar productos | No hay forma de borrar; solo desactivar (RN10) |
 | Categoría desactivada | Sus productos dejan de verse en la Tienda |

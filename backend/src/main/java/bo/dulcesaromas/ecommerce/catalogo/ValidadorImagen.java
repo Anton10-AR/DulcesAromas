@@ -14,8 +14,9 @@ import bo.dulcesaromas.compartido.TipoArchivo;
 import org.springframework.http.HttpStatus;
 
 /**
- * Imagen de producto: JPG, PNG o WebP, cuadrada, desde 800 px y hasta 2 MB (RNF10). El formato se reconoce por
- * el contenido del archivo, no por su nombre, y las medidas se leen de la cabecera sin decodificar la imagen.
+ * Imagen de producto: JPG, PNG o WebP, cuadrada, desde 800 px y hasta 2 MB (RNF10). Una JPG o PNG que no es
+ * cuadrada se recorta al centro. El formato se reconoce por el contenido del archivo, no por su nombre, y las
+ * medidas se leen de la cabecera antes de decodificar la imagen.
  */
 final class ValidadorImagen {
 
@@ -23,13 +24,19 @@ final class ValidadorImagen {
 
 	static final int LADO_MINIMO = 800;
 
+	/** Una imagen comprimida de 2 MB puede ocupar mucha memoria al abrirla; más allá de esto no se recorta. */
+	private static final long PIXELES_MAXIMOS = 40_000_000L;
+
+	/**
+	 * La imagen lista para guardar: la original si ya era cuadrada, o el recorte al centro.
+	 */
+	record Imagen(String tipo, byte[] datos) {
+	}
+
 	private ValidadorImagen() {
 	}
 
-	/**
-	 * @return el tipo de contenido de la imagen, por ejemplo {@code image/png}
-	 */
-	static String validar(byte[] datos) {
+	static Imagen preparar(byte[] datos) {
 		if (datos.length == 0) {
 			throw invalida("Elige una imagen.");
 		}
@@ -43,13 +50,31 @@ final class ValidadorImagen {
 		int[] medidas = formato == TipoArchivo.WEBP ? medidasWebp(datos) : medidasImageIo(datos, tipo);
 		int ancho = medidas[0];
 		int alto = medidas[1];
-		if (ancho != alto) {
-			throw invalida("La imagen debe ser cuadrada; esta mide %d × %d px.".formatted(ancho, alto));
+		if (Math.min(ancho, alto) < LADO_MINIMO) {
+			throw invalida("La imagen debe medir al menos 800 px por lado; esta mide %d × %d px.".formatted(ancho, alto));
 		}
-		if (ancho < LADO_MINIMO) {
-			throw invalida("La imagen debe medir al menos 800 × 800 px; esta mide %d × %d px.".formatted(ancho, alto));
+		if (ancho == alto) {
+			return new Imagen(tipo, datos);
 		}
-		return tipo;
+		if (formato == TipoArchivo.WEBP) {
+			throw invalida(("Una imagen WebP debe ser cuadrada; esta mide %d × %d px. Usa JPG o PNG y el sistema "
+					+ "la recortará al centro.").formatted(ancho, alto));
+		}
+		if ((long) ancho * alto > PIXELES_MAXIMOS) {
+			throw invalida("La imagen es demasiado grande para recortarla (%d × %d px). Redúcela e inténtalo de nuevo."
+				.formatted(ancho, alto));
+		}
+		try {
+			byte[] recortada = RecorteCuadrado.recortar(datos, formato);
+			if (recortada == null) {
+				throw ilegible();
+			}
+			return new Imagen(tipo, recortada);
+		}
+		catch (IOException | RuntimeException ex) {
+			// Un EXIF o una imagen dañada no deben producir un error 500: se trata como imagen ilegible.
+			throw ilegible();
+		}
 	}
 
 	private static int[] medidasImageIo(byte[] datos, String tipo) {

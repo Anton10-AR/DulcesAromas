@@ -251,7 +251,7 @@ Cada requisito tiene un valor que se puede comprobar y una forma de verificarlo.
 | RNF07 | Autorización | Cada acción se valida en el servidor según el rol, no solo ocultando el menú. Un acceso no permitido devuelve «acceso denegado» y queda registrado | Prueba con URL directas por cada rol |
 | RNF08 | Auditoría | Se registra usuario, acción y fecha en cambios de usuarios, roles, permisos y verificaciones de pago; se conserva 12 meses | Consulta del registro tras una prueba |
 | RNF09 | Comprobantes de pago | Formatos JPG, PNG o PDF, hasta 5 MB | Prueba de carga de archivos |
-| RNF10 | Imágenes de producto | JPG, PNG o WebP, cuadradas, desde 800 px, hasta 2 MB | Prueba de carga de archivos |
+| RNF10 | Imágenes de producto | JPG, PNG o WebP, desde 800 px por lado y hasta 2 MB. Se guardan cuadradas: una JPG o PNG que no lo es se recorta al centro | Prueba de carga de archivos |
 | RNF11 | Compatibilidad | Panel: últimas 2 versiones de Chrome, Edge, Firefox y Safari. Tienda: Android 8.0 (API 26) o superior | Prueba manual en cada navegador |
 | RNF12 | Adaptabilidad | Tienda y Panel se usan sin scroll horizontal entre 360 y 1920 px de ancho | Prueba en 3 tamaños de pantalla |
 | RNF13 | Disponibilidad | 99 % mensual dentro del horario de atención del negocio (lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00, según la landing page) | Registro de caídas del hosting |

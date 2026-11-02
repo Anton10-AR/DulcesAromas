@@ -1,6 +1,9 @@
 package bo.dulcesaromas.ecommerce;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
+
+import javax.imageio.ImageIO;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -160,12 +163,27 @@ class ProductosTests extends PruebaCatalogo {
 	}
 
 	@Test
+	void rnf10UnaImagenNoCuadradaSeRecortaAlCentro() throws Exception {
+		long id = crearProducto(tortas, "Torta de chocolate");
+
+		String ruta = JsonPath.read(subirImagen(admin, id, imagen("jpg", 1600, 1200)).andExpect(status().isOk())
+			.andReturn().getResponse().getContentAsString(), "$.imagen");
+
+		byte[] guardada = mvc.perform(get(ruta)).andExpect(status().isOk())
+			.andExpect(header().string("Content-Type", "image/jpeg"))
+			.andReturn().getResponse().getContentAsByteArray();
+		var leida = ImageIO.read(new ByteArrayInputStream(guardada));
+		assertThat(leida.getWidth()).isEqualTo(1200);
+		assertThat(leida.getHeight()).isEqualTo(1200);
+	}
+
+	@Test
 	void rnf10RechazaImagenesQueNoCumplen() throws Exception {
 		long id = crearProducto(tortas, "Torta de chocolate");
 		byte[] demasiadoGrande = new byte[2 * 1024 * 1024 + 1];
 		System.arraycopy(imagen("png", 800, 800), 0, demasiadoGrande, 0, 8);
 
-		for (byte[] mala : new byte[][] { imagen("png", 1200, 800), imagen("jpg", 600, 600), imagen("gif", 900, 900),
+		for (byte[] mala : new byte[][] { imagen("png", 1200, 700), imagen("jpg", 600, 600), imagen("gif", 900, 900),
 				"no soy una imagen".getBytes(), demasiadoGrande }) {
 			subirImagen(admin, id, mala).andExpect(status().isUnprocessableContent())
 				.andExpect(jsonPath("$.codigo").value("IMAGEN_INVALIDA"));
