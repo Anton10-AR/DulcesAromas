@@ -134,6 +134,7 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 - **Sesión:** `POST /api/auth/login` devuelve un token opaco; la app lo manda en `Authorization: Bearer <token>`. La sesión vive en la tabla `sesion`, así que cerrarla, desactivar la cuenta o cambiar permisos rige en la siguiente solicitud.
 - **Autorización:** cada controlador nuevo declara su permiso con `@PreAuthorize("hasAuthority('PERMISO')")`, usando los nombres del enum `seguridad.Permiso`. Las rutas de la Tienda usan `hasAuthority('CLIENTE')`. Las rutas públicas (como el catálogo, RN15) se abren en `ConfiguracionSeguridad`.
 - **Usuario actual:** los otros módulos lo obtienen con `IAutenticacion.usuarioActual()`; nunca leen las tablas de Seguridad.
+- **Datos de entrada:** usa `Boolean`, `Integer`, etc. con `@NotNull` en los records de las solicitudes, no tipos primitivos. Jackson 3 rechaza un primitivo ausente con un error genérico y el usuario no sabe qué campo falta.
 - **Errores de negocio:** lanza `compartido.ReglaNegocioException` con estado HTTP, un código en MAYÚSCULAS (la interfaz reacciona a él) y un mensaje para el usuario. Los errores de validación devuelven `campos` con el mensaje de cada campo (RNF01).
 - **Pruebas:** las de integración heredan de `PruebaIntegracion` (base H2 limpia en cada prueba y un `RelojDePrueba` para adelantar el tiempo). Nombra la prueba con la regla que cubre, por ejemplo `rn03SiempreQuedaAlMenosUnAdministradorActivo`.
 

@@ -33,6 +33,8 @@ class ConfiguracionSeguridad {
 			.logout(AbstractHttpConfigurer::disable)
 			.authorizeHttpRequests(a -> a
 				.requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/clientes").permitAll()
+				// RN15: el catálogo se consulta sin sesión.
+				.requestMatchers(HttpMethod.GET, "/api/catalogo/**").permitAll()
 				.requestMatchers("/error").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new FiltroToken(sesiones), UsernamePasswordAuthenticationFilter.class)
