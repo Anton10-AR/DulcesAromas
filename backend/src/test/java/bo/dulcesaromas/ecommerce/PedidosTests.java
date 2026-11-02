@@ -7,6 +7,7 @@ import org.springframework.http.MediaType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -127,6 +128,38 @@ class PedidosTests extends PruebaPedidos {
 			.andExpect(jsonPath("$.campos.telefono").isNotEmpty())
 			.andExpect(jsonPath("$.campos.horarioEntrega").isNotEmpty())
 			.andExpect(jsonPath("$.campos.direccion").doesNotExist());
+	}
+
+	@Test
+	void rn10UnProductoConPedidosNoSeBorraSoloSeDesactiva() throws Exception {
+		crearPedido(cliente, pedidoSimple(galletas));
+
+		mvc.perform(con(admin, delete("/api/productos/" + galletas))).andExpect(status().isConflict())
+			.andExpect(jsonPath("$.codigo").value("PRODUCTO_CON_PEDIDOS"));
+		mvc.perform(con(admin, post("/api/productos/" + galletas + "/desactivar"))).andExpect(status().isOk());
+
+		assertThat(filas("producto")).isEqualTo(2);
+	}
+
+	@Test
+	void elHorarioEsConAlMenos24HorasDeAnticipacion() throws Exception {
+		// El reloj de prueba marca el lunes 02/11 a las 10:00 en La Paz.
+		pedir(cliente, pedidoSimple(galletas).replace(MANANA, "2026-11-03T09:30:00-04:00"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.campos.horarioEntrega").value(containsString("24 horas")));
+		pedir(cliente, pedidoSimple(galletas)).andExpect(status().isCreated());
+	}
+
+	@Test
+	void elHorarioCaeDentroDeLaAtencion() throws Exception {
+		for (String fueraDeHorario : new String[] { "2026-11-04T08:59:00-04:00", "2026-11-04T20:30:00-04:00",
+				"2026-11-08T15:00:00-04:00" }) {
+			pedir(cliente, pedidoSimple(galletas).replace(MANANA, fueraDeHorario)).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.campos.horarioEntrega").value(containsString("horario de atención")));
+		}
+		// Domingo 08/11 a las 11:00 y miércoles 04/11 a las 20:00 sí.
+		pedir(cliente, pedidoSimple(galletas).replace(MANANA, "2026-11-08T11:00:00-04:00")).andExpect(status().isCreated());
+		pedir(cliente, pedidoSimple(galletas).replace(MANANA, "2026-11-04T20:00:00-04:00")).andExpect(status().isCreated());
 	}
 
 	@Test

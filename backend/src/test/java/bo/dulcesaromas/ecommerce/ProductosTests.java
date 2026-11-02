@@ -110,10 +110,20 @@ class ProductosTests extends PruebaCatalogo {
 	}
 
 	@Test
-	void rn10UnProductoSeDesactivaYNoSeElimina() throws Exception {
+	void rn10UnProductoSinPedidosSePuedeBorrar() throws Exception {
+		long id = crearProducto(tortas, "Torta creada por error");
+		subirImagen(admin, id, imagen("png", 800, 800)).andExpect(status().isOk());
+
+		mvc.perform(con(admin, delete("/api/productos/" + id))).andExpect(status().isNoContent());
+
+		mvc.perform(con(admin, get("/api/productos/" + id))).andExpect(status().isNotFound());
+		assertThat(jdbc.queryForObject("select count(*) from imagen_producto", Integer.class)).isZero();
+	}
+
+	@Test
+	void unProductoDesactivadoNoSeVeEnLaTienda() throws Exception {
 		long id = crearProducto(tortas, "Torta de chocolate");
 
-		mvc.perform(con(admin, delete("/api/productos/" + id))).andExpect(status().is4xxClientError());
 		mvc.perform(con(admin, post("/api/productos/" + id + "/desactivar"))).andExpect(status().isOk())
 			.andExpect(jsonPath("$.activo").value(false));
 
@@ -137,6 +147,7 @@ class ProductosTests extends PruebaCatalogo {
 		mvc.perform(con(vendedor, post("/api/productos")).content(producto(tortas, "Otra", "1")))
 			.andExpect(status().isForbidden());
 		mvc.perform(con(vendedor, post("/api/productos/" + id + "/desactivar"))).andExpect(status().isForbidden());
+		mvc.perform(con(vendedor, delete("/api/productos/" + id))).andExpect(status().isForbidden());
 		subirImagen(vendedor, id, imagen("png", 800, 800)).andExpect(status().isForbidden());
 	}
 

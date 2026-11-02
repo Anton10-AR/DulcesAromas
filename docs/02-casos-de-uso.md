@@ -133,7 +133,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Precondición | El administrador tiene sesión iniciada |
 | Postcondición | Los cambios quedan guardados y registrados en la auditoría |
 | Secuencia normal | 1. El administrador abre Seguridad. 2. Elige Usuarios o Permisos. 3. En Usuarios, crea una cuenta con nombre, correo, rol y contraseña inicial, o edita, activa o desactiva una existente. 4. En Permisos, marca o desmarca los permisos de un rol. 5. El sistema valida, guarda y registra quién hizo el cambio y cuándo (RNF08) |
-| Secuencia opcional | Alt. 1: el correo ya existe. El sistema rechaza la cuenta (RN01). Alt. 2: se desactiva una cuenta. Pierde el acceso y conserva su historial (RN02). Alt. 3: se intenta desactivar el último administrador activo o la propia cuenta. El sistema lo impide (RN03). Alt. 4: se intenta quitar al administrador el acceso a Seguridad. El sistema lo impide (RN04). Alt. 5: se intenta asignar rol de personal a un cliente. Solo se crean cuentas de personal desde aquí (RN16) |
+| Secuencia opcional | Alt. 1: el correo ya existe. El sistema rechaza la cuenta (RN01). Alt. 2: se desactiva una cuenta. Pierde el acceso y conserva su historial (RN02). Alt. 3: se intenta desactivar el último administrador activo o la propia cuenta. El sistema lo impide (RN03). Alt. 4: se intenta quitar al administrador el acceso a Seguridad o dárselo a otro rol. El sistema lo impide (RN04). Alt. 5: se intenta asignar rol de personal a un cliente. Solo se crean cuentas de personal desde aquí (RN16) |
 | Rendimiento | 2 s o menos por operación |
 | Frecuencia | Ocasional |
 | Importancia | Alta |
@@ -215,7 +215,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Precondición | El administrador tiene sesión iniciada y existe al menos una categoría |
 | Postcondición | El catálogo refleja el cambio |
 | Secuencia normal | 1. El administrador abre Catálogo. 2. Elige Nuevo producto o selecciona uno existente. 3. Completa o modifica los datos, la imagen, la disponibilidad y las opciones de personalización con su recargo. 4. El sistema valida y guarda. 5. El producto aparece en la Tienda si está activo |
-| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada, la recorta al centro. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos; no se elimina si tiene pedidos asociados (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
+| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada, la recorta al centro. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos. Se puede borrar solo si nunca se pidió; si tiene pedidos asociados, el sistema lo impide y solo se desactiva (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
 | Rendimiento | 2 s o menos por operación |
 | Frecuencia | Semanal |
 | Importancia | Alta |
@@ -295,7 +295,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Precondición | El cliente tiene sesión iniciada |
 | Postcondición | Existe un pedido Pendiente con su pago Pendiente de pago |
 | Secuencia normal | 1. El cliente agrega un producto al carrito, eligiendo las opciones si las tiene. 2. Cambia cantidades o quita productos. 3. El sistema calcula el total (RN11). 4. El cliente elige recojo o delivery e ingresa teléfono y horario; si es delivery, también la dirección. 5. El sistema valida la disponibilidad (RN08). 6. El cliente confirma. 7. El sistema crea el pedido y pasa a CU06 |
-| Secuencia opcional | Alt. 1: un producto dejó de estar disponible. El sistema avisa y no permite confirmar hasta quitarlo (RN08). Alt. 2: el cliente sin sesión intenta confirmar. El sistema le pide iniciar sesión o registrarse y conserva el carrito (RN15). Alt. 3: faltan datos de entrega. El sistema pide completarlos: dirección, teléfono y horario para el delivery; teléfono y horario para el recojo (RN12). Alt. 3b: el mensaje para la torta supera los 24 caracteres. El sistema no lo acepta (RN17). Alt. 4: el cliente abandona. El carrito se conserva en su sesión |
+| Secuencia opcional | Alt. 1: un producto dejó de estar disponible. El sistema avisa y no permite confirmar hasta quitarlo (RN08). Alt. 2: el cliente sin sesión intenta confirmar. El sistema le pide iniciar sesión o registrarse y conserva el carrito (RN15). Alt. 3: faltan datos de entrega. El sistema pide completarlos: dirección, teléfono y horario para el delivery; teléfono y horario para el recojo (RN12). Alt. 3a: el horario está fuera de la atención (lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00) o tiene menos de 24 horas de anticipación. El sistema pide otro. Alt. 3b: el mensaje para la torta supera los 24 caracteres. El sistema no lo acepta (RN17). Alt. 4: el cliente abandona. El carrito se conserva en su sesión |
 | Rendimiento | Carrito y total en 1 s o menos (RNF02) |
 | Frecuencia | Alta |
 | Importancia | Alta |
@@ -448,7 +448,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 
 ## 8. Matriz de permisos por rol
 
-«Sí» significa permitido. El administrador puede editar los permisos del Vendedor y del Repartidor (CU09), salvo el acceso del propio administrador a Seguridad (RN04).
+«Sí» significa permitido. El administrador puede editar los permisos del Vendedor y del Repartidor (CU09), salvo el acceso a Seguridad: es solo del administrador, no se da a otro rol y no se le quita (RN04).
 
 | Permiso | Administrador | Vendedor | Repartidor | CU |
 | --- | --- | --- | --- | --- |
@@ -521,6 +521,7 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | Matriz de permisos | Se agrega el permiso «Configuración: tarifa de envío y métodos de pago». Ningún permiso cubría editar la tarifa fija de envío (D4) ni los métodos de pago (RNF18) |
 | RN11, RN12 | El recargo se cobra por unidad; el recojo exige teléfono y horario. Lo decidió el equipo al implementar la etapa C |
 | Matriz de permisos | El permiso de asignar repartidor también permite marcar En camino (tabla 2.2) y cerrar un recojo, que no tenían permiso propio |
+| CU02, CU05, CU09 | El equipo confirmó el horario de atención con 24 horas de anticipación, el borrado de productos sin pedidos y que Seguridad es solo del administrador (sección 10.1) |
 
 ## 10. Decisiones de implementación
 
@@ -535,21 +536,21 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. Las de
 | Recojo (RN12) | Exige teléfono y horario, no dirección |
 | Imagen de producto (RNF10) | Una JPG o PNG que no es cuadrada se recorta al centro, respetando la orientación de las fotos de celular. Una WebP debe venir cuadrada |
 | Métodos de pago (RNF18) | Tabla editable desde el Panel; nacen desactivados hasta que el administrador escribe los datos para pagar |
+| Horario de entrega (CU05, CU17) | Dentro de la atención (lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00) y con al menos 24 horas de anticipación |
+| Borrar productos (RN10) | Un producto sin pedidos se puede borrar; uno con pedidos solo se desactiva |
+| Sesión de la Tienda | Se cierra tras 30 días sin uso (el Panel, tras 30 minutos, según RNF06) |
+| Permiso de Seguridad (RN04) | Es solo del administrador: no se da a otro rol ni se le quita |
 
 ### 10.2 Por revisar con el equipo
 
 | Tema | Decisión propuesta |
 | --- | --- |
-| Sesión de la Tienda | Se cierra tras 30 días sin uso (el Panel, tras 30 minutos, según RNF06) |
 | Cambio del propio rol | Un administrador no puede cambiar su propio rol |
-| Permiso de Seguridad | Se puede dar a un Vendedor; nunca quitar al administrador (RN04) |
 | Cuenta desactivada | Al ingresar recibe el mismo mensaje que con datos incorrectos |
 | Imágenes y comprobantes | Se guardan en la base de datos, para desplegar en la nube sin disco propio (RNF21) |
 | Producto sin imagen | Se puede crear y luego subir la imagen |
-| Borrar productos | No hay forma de borrar; solo desactivar (RN10) |
 | Categoría desactivada | Sus productos dejan de verse en la Tienda |
 | Mensaje sobre la torta | Solo lo admiten los productos personalizables |
-| Horario de entrega | Solo se valida que no haya pasado; no se revisa el horario de atención |
 | Tarifa inicial de envío | Bs 10.00, por la landing («desde Bs 10»); el administrador la cambia |
 | Permiso Configuración | Nuevo, solo para el administrador: tarifa de envío y métodos de pago |
 | Confirmar un pedido (RNF14) | La disponibilidad es manual (D2), así que no cambia; se bloquean los productos mientras se confirma |

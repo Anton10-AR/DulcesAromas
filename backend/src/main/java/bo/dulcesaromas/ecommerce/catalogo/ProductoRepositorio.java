@@ -20,6 +20,13 @@ public interface ProductoRepositorio extends JpaRepository<Producto, Long>, JpaS
 	List<Object[]> contarActivosPorCategoria();
 
 	/**
+	 * Si el producto aparece en algún pedido. LineaPedido es de E-commerce, el mismo módulo, así que se puede
+	 * consultar aquí.
+	 */
+	@Query("select count(l) > 0 from LineaPedido l where l.productoId = :productoId")
+	boolean tienePedidos(Long productoId);
+
+	/**
 	 * Bloquea los productos hasta el fin de la transacción, para que nadie cambie su disponibilidad mientras se
 	 * confirma un pedido que los incluye (RN08, RNF14).
 	 */

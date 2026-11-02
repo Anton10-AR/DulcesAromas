@@ -162,7 +162,31 @@ class _ProductoPanelState extends State<ProductoPanel> {
     }
   }
 
-  /// RN10: un producto se desactiva; nunca se borra.
+  /// RN10: un producto que nunca se pidió se puede borrar; con pedidos, el servidor lo rechaza y solo se desactiva.
+  Future<void> _borrar() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        title: Text('¿Borrar «${_producto!.nombre}»?'),
+        content: const Text('Solo se puede borrar un producto que nunca se pidió. Esto no se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(contexto, false), child: const Text('Volver')),
+          FilledButton(onPressed: () => Navigator.pop(contexto, true), child: const Text('Borrar')),
+        ],
+      ),
+    );
+    if (confirmado != true) return;
+    try {
+      await _api.delete('/api/productos/${_producto!.id}');
+      if (!mounted) return;
+      avisar(context, 'Producto borrado.');
+      context.go('/catalogo');
+    } on ErrorApi catch (e) {
+      if (mounted) avisar(context, e.mensaje);
+    }
+  }
+
+  /// RN10: un producto con pedidos se desactiva para que deje de verse en la Tienda.
   Future<void> _activo(bool activo) async {
     try {
       final json = await _api.post('/api/productos/${_producto!.id}/${activo ? 'activar' : 'desactivar'}');
@@ -241,9 +265,20 @@ class _ProductoPanelState extends State<ProductoPanel> {
                 label: const Text('Cambiar imagen (desde 800 px por lado, hasta 2 MB; se recorta al centro)'),
               ),
               const Divider(height: 32),
-              _producto!.activo
-                  ? OutlinedButton(onPressed: () => _activo(false), child: const Text('Desactivar producto'))
-                  : FilledButton(onPressed: () => _activo(true), child: const Text('Activar producto')),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _producto!.activo
+                      ? OutlinedButton(onPressed: () => _activo(false), child: const Text('Desactivar producto'))
+                      : FilledButton(onPressed: () => _activo(true), child: const Text('Activar producto')),
+                  TextButton.icon(
+                    onPressed: _borrar,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Borrar producto'),
+                  ),
+                ],
+              ),
             ],
           ],
         ),

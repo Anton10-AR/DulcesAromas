@@ -58,6 +58,8 @@ class Api {
   Future<dynamic> put(String ruta, Object cuerpo) =>
       _enviar(() => _cliente.put(uri(ruta), headers: _cabeceras, body: jsonEncode(cuerpo)));
 
+  Future<dynamic> delete(String ruta) => _enviar(() => _cliente.delete(uri(ruta), headers: _cabeceras));
+
   /// Un archivo protegido, como un comprobante: con el token de la sesión, a diferencia de una imagen pública.
   Future<({List<int> bytes, String tipo})> archivo(String ruta) async {
     final http.Response respuesta;

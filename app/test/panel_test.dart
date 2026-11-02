@@ -142,7 +142,7 @@ void main() {
     }
   });
 
-  testWidgets('RN04: al administrador no se le puede quitar el acceso a Seguridad', (tester) async {
+  testWidgets('RN04: Seguridad es solo del administrador y no se le quita', (tester) async {
     await ingresar(
       tester,
       apiCon(
@@ -157,6 +157,12 @@ void main() {
               'descripcion': 'Acceso total.',
               'permisos': ['SEGURIDAD', 'REPORTES'],
             },
+            {
+              'codigo': 'VENDEDOR',
+              'nombre': 'Vendedor',
+              'descripcion': 'Atiende pedidos.',
+              'permisos': ['REPORTES'],
+            },
           ],
           '/api/permisos': [
             {'codigo': 'SEGURIDAD', 'modulo': 'Seguridad', 'accion': 'Usuarios y permisos'},
@@ -170,14 +176,15 @@ void main() {
     await tester.tap(find.text('Roles y permisos'));
     await tester.pumpAndSettle();
 
-    final seguridad = tester.widget<CheckboxListTile>(
+    final seguridad = tester.widgetList<CheckboxListTile>(
       find.widgetWithText(CheckboxListTile, 'Seguridad: Usuarios y permisos'),
     );
-    final reportes = tester.widget<CheckboxListTile>(
+    final reportes = tester.widgetList<CheckboxListTile>(
       find.widgetWithText(CheckboxListTile, 'Reportes: Reportes de pedidos y ventas'),
     );
-    expect(seguridad.onChanged, isNull);
-    expect(reportes.onChanged, isNotNull);
+    expect(seguridad.map((c) => c.value), [true, false]);
+    expect(seguridad.every((c) => c.onChanged == null), isTrue);
+    expect(reportes.every((c) => c.onChanged != null), isTrue);
   });
 
   testWidgets('RN09: el inventario marca los insumos en su mínimo', (tester) async {

@@ -2,7 +2,6 @@ package bo.dulcesaromas.ecommerce.pedidos;
 
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -224,7 +223,8 @@ class PedidoServicio {
 	}
 
 	/**
-	 * RN12: el delivery exige dirección, teléfono y horario; el recojo, teléfono y horario.
+	 * RN12: el delivery exige dirección, teléfono y horario; el recojo, teléfono y horario. El horario cae dentro de
+	 * la atención y con 24 horas de anticipación ({@link HorarioAtencion}).
 	 */
 	private void validarEntrega(SolicitudPedido s) {
 		Map<String, String> campos = new LinkedHashMap<>();
@@ -237,12 +237,12 @@ class PedidoServicio {
 		if (!StringUtils.hasText(s.telefono())) {
 			campos.put("telefono", "Escribe un teléfono de contacto.");
 		}
-		Instant ahora = reloj.instant();
 		if (s.horarioEntrega() == null) {
 			campos.put("horarioEntrega", "Elige el horario de entrega.");
 		}
-		else if (!s.horarioEntrega().toInstant().isAfter(ahora)) {
-			campos.put("horarioEntrega", "Elige un horario que todavía no haya pasado.");
+		else {
+			HorarioAtencion.problema(s.horarioEntrega().toInstant(), reloj.instant())
+				.ifPresent(problema -> campos.put("horarioEntrega", problema));
 		}
 		if (!campos.isEmpty()) {
 			throw new ReglaNegocioException(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Revisa los datos de entrega.",

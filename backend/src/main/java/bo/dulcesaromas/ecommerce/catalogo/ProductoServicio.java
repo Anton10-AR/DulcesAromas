@@ -104,13 +104,28 @@ class ProductoServicio {
 	}
 
 	/**
-	 * Deja de verse en la Tienda y conserva sus pedidos. No hay forma de borrar un producto (RN10).
+	 * Deja de verse en la Tienda y conserva sus pedidos (RN10).
 	 */
 	@Transactional
 	Producto desactivar(Long id) {
 		Producto producto = obtener(id);
 		producto.desactivar();
 		return producto;
+	}
+
+	/**
+	 * RN10: un producto que nunca se pidió se puede borrar, por ejemplo si se creó por error. Uno con pedidos solo
+	 * se desactiva, para conservar el historial.
+	 */
+	@Transactional
+	void borrar(Long id) {
+		Producto producto = obtener(id);
+		if (productos.tienePedidos(id)) {
+			throw new ReglaNegocioException(HttpStatus.CONFLICT, "PRODUCTO_CON_PEDIDOS",
+					"Este producto ya tiene pedidos, así que no se borra: desactívalo para que deje de verse en la Tienda.");
+		}
+		imagenes.deleteById(id);
+		productos.delete(producto);
 	}
 
 	@Transactional

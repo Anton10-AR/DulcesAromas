@@ -42,6 +42,11 @@ class RolServicio {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "ADMINISTRADOR_SIN_SEGURIDAD",
 					"El administrador siempre conserva el acceso a Seguridad.");
 		}
+		// Usuarios y permisos son solo del administrador (matriz de permisos; decisión del equipo, sección 10.1).
+		if (codigo != RolBase.ADMINISTRADOR && nuevos.contains(Permiso.SEGURIDAD)) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "SEGURIDAD_SOLO_ADMINISTRADOR",
+					"El acceso a Seguridad es solo del administrador.");
+		}
 		Rol rol = roles.findById(codigo).orElseThrow();
 		Set<Permiso> anteriores = copia(rol.getPermisos());
 		rol.reemplazarPermisos(nuevos);

@@ -55,12 +55,12 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
   }
 
   Future<void> _elegirDia() async {
-    final hoy = DateTime.now();
+    final primero = primerDiaDeEntrega();
     final dia = await showDatePicker(
       context: context,
-      initialDate: _dia ?? hoy,
-      firstDate: DateTime(hoy.year, hoy.month, hoy.day),
-      lastDate: hoy.add(const Duration(days: 60)),
+      initialDate: _dia ?? primero,
+      firstDate: primero,
+      lastDate: primero.add(const Duration(days: 60)),
       helpText: 'Día de entrega',
     );
     if (dia != null) setState(() => _dia = dia);
@@ -170,6 +170,7 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
                 'RECOJO' => 'Horario de recojo',
                 _ => 'Horario',
               }, style: textos.titleMedium),
+              Text(horarioDeAtencion, style: textos.bodySmall),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,

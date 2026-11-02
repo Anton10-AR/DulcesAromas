@@ -99,7 +99,7 @@ class PersonalTests extends PruebaIntegracion {
 
 	@Test
 	void rn03SiempreQuedaAlMenosUnAdministradorActivo() throws Exception {
-		// Un vendedor al que se le dio el permiso de Seguridad intenta dejar el sistema sin administradores.
+		// La API ya no deja dar Seguridad a un Vendedor; se fuerza en la base para comprobar la defensa de RN03.
 		jdbc.update("insert into rol_permiso (rol, permiso) values ('VENDEDOR', 'SEGURIDAD')");
 		crearPersonal("vendedor@dulces.bo", "VENDEDOR");
 		String vendedor = iniciarSesion("vendedor@dulces.bo");

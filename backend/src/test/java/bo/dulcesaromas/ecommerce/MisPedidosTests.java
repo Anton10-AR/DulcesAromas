@@ -24,7 +24,8 @@ class MisPedidosTests extends PruebaPedidos {
 	void veSusPedidosDelMasRecienteAlMasAntiguo() throws Exception {
 		long primero = crearPedido(cliente, pedidoSimple(galletas));
 		reloj.adelantar(Duration.ofMinutes(5));
-		long segundo = crearPedido(cliente, pedidoDelivery());
+		// Pasados 5 minutos, mañana a las 10:00 ya queda a menos de 24 horas: se pide para pasado mañana.
+		long segundo = crearPedido(cliente, pedidoDelivery().replace(MANANA, "2026-11-04T10:00:00-04:00"));
 
 		mvc.perform(con(cliente, get("/api/pedidos/mios"))).andExpect(status().isOk())
 			.andExpect(jsonPath("$[*].id", contains((int) segundo, (int) primero)))

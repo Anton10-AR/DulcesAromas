@@ -251,16 +251,19 @@ class _AsistidoPanelState extends State<AsistidoPanel> {
               errores: errores,
               teclado: TextInputType.phone,
             ),
+            Text(horarioDeAtencion, style: textos.bodySmall),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
                 OutlinedButton.icon(
                   onPressed: () async {
-                    final hoy = DateTime.now();
+                    final primero = primerDiaDeEntrega();
                     final dia = await showDatePicker(
                       context: context,
-                      firstDate: DateTime(hoy.year, hoy.month, hoy.day),
-                      lastDate: hoy.add(const Duration(days: 60)),
+                      initialDate: primero,
+                      firstDate: primero,
+                      lastDate: primero.add(const Duration(days: 60)),
                     );
                     if (dia != null) setState(() => _dia = dia);
                   },

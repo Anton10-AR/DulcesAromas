@@ -26,3 +26,12 @@ String instanteLaPaz(DateTime diaYHora) {
   final texto = DateFormat("yyyy-MM-dd'T'HH:mm:00").format(diaYHora);
   return '$texto-04:00';
 }
+
+/// Cuándo se entrega o recoge un pedido. El servidor lo valida; este texto solo lo explica.
+const horarioDeAtencion = 'Lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00, con 24 horas de anticipación.';
+
+/// El primer día que se puede elegir: mañana, porque hace falta 24 horas de anticipación.
+DateTime primerDiaDeEntrega() {
+  final hoy = aLaPaz(DateTime.now());
+  return DateTime(hoy.year, hoy.month, hoy.day).add(const Duration(days: 1));
+}

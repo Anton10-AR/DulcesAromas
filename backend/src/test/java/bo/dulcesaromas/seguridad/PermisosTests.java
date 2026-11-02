@@ -73,6 +73,16 @@ class PermisosTests extends PruebaIntegracion {
 	}
 
 	@Test
+	void elAccesoASeguridadEsSoloDelAdministrador() throws Exception {
+		mvc.perform(con(admin, put("/api/roles/VENDEDOR/permisos")).content("{\"permisos\":[\"PEDIDOS_CONSULTAR\",\"SEGURIDAD\"]}"))
+			.andExpect(status().isUnprocessableContent())
+			.andExpect(jsonPath("$.codigo").value("SEGURIDAD_SOLO_ADMINISTRADOR"));
+
+		assertThat(jdbc.queryForList("select permiso from rol_permiso where rol = 'VENDEDOR'", String.class))
+			.doesNotContain("SEGURIDAD");
+	}
+
+	@Test
 	void unPermisoDesconocidoSeRechaza() throws Exception {
 		mvc.perform(con(admin, put("/api/roles/VENDEDOR/permisos")).content("{\"permisos\":[\"BORRAR_TODO\"]}"))
 			.andExpect(status().isBadRequest());

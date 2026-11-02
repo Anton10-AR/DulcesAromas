@@ -258,8 +258,8 @@ class _RolesState extends State<_Roles> {
                           dense: true,
                           title: Text('${p.modulo}: ${p.accion}'),
                           value: (_editados[rol.codigo] ?? rol.permisos).contains(p.codigo),
-                          // RN04: el administrador siempre conserva el acceso a Seguridad.
-                          onChanged: rol.codigo == 'ADMINISTRADOR' && p.codigo == 'SEGURIDAD'
+                          // Seguridad es solo del administrador y nunca se le quita (RN04, sección 10.1).
+                          onChanged: p.codigo == 'SEGURIDAD'
                               ? null
                               : (marcado) => setState(() {
                                   final actuales = _editados.putIfAbsent(rol.codigo, () => {...rol.permisos});
