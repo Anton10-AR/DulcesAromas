@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.1 · 02/11/2026
+Versión 1.2 · 02/11/2026
 
 ## 1. Introducción y actores
 
@@ -66,8 +66,8 @@ El pedido y el pago tienen cada uno su propio estado. El pedido pasa a Confirmad
 | RN08 | No se confirma un pedido con productos no disponibles | CU05 |
 | RN09 | Una salida de inventario no puede superar el stock; al llegar al mínimo se alerta | CU03 |
 | RN10 | Un producto con pedidos asociados solo se desactiva, no se elimina | CU02 |
-| RN11 | Total del pedido = suma de (precio × cantidad) + recargos de personalización + costo de envío si es delivery | CU05 |
-| RN12 | El delivery exige dirección, teléfono y horario de entrega; el recojo no exige dirección | CU05, CU17 |
+| RN11 | Total del pedido = suma de ((precio + recargos de las opciones elegidas) × cantidad) + costo de envío si es delivery. El recargo se cobra por unidad | CU05 |
+| RN12 | El delivery exige dirección, teléfono y horario de entrega; el recojo exige teléfono y horario, pero no dirección | CU05, CU17 |
 | RN13 | Una entrega fallida devuelve el pedido a Listo con observación | CU08 |
 | RN14 | Un pedido solo se cancela antes de En preparación; el reembolso se hace fuera del sistema | CU16 |
 | RN15 | El catálogo se consulta sin iniciar sesión; hacer un pedido exige cuenta | CU04, CU05 |
@@ -294,13 +294,13 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Descripción | El cliente agrega productos, elige sus opciones de personalización, revisa el total y confirma el pedido con recojo o delivery. El pedido nace en estado Pendiente y continúa en CU06 |
 | Precondición | El cliente tiene sesión iniciada |
 | Postcondición | Existe un pedido Pendiente con su pago Pendiente de pago |
-| Secuencia normal | 1. El cliente agrega un producto al carrito, eligiendo las opciones si las tiene. 2. Cambia cantidades o quita productos. 3. El sistema calcula el total (RN11). 4. El cliente elige recojo o delivery; si es delivery, ingresa dirección, teléfono y horario de entrega. 5. El sistema valida la disponibilidad (RN08). 6. El cliente confirma. 7. El sistema crea el pedido y pasa a CU06 |
-| Secuencia opcional | Alt. 1: un producto dejó de estar disponible. El sistema avisa y no permite confirmar hasta quitarlo (RN08). Alt. 2: el cliente sin sesión intenta confirmar. El sistema le pide iniciar sesión o registrarse y conserva el carrito (RN15). Alt. 3: delivery sin dirección, teléfono u horario de entrega. El sistema pide completarlos; el recojo no exige dirección (RN12). Alt. 3b: el mensaje para la torta supera los 24 caracteres. El sistema no lo acepta (RN17). Alt. 4: el cliente abandona. El carrito se conserva en su sesión |
+| Secuencia normal | 1. El cliente agrega un producto al carrito, eligiendo las opciones si las tiene. 2. Cambia cantidades o quita productos. 3. El sistema calcula el total (RN11). 4. El cliente elige recojo o delivery e ingresa teléfono y horario; si es delivery, también la dirección. 5. El sistema valida la disponibilidad (RN08). 6. El cliente confirma. 7. El sistema crea el pedido y pasa a CU06 |
+| Secuencia opcional | Alt. 1: un producto dejó de estar disponible. El sistema avisa y no permite confirmar hasta quitarlo (RN08). Alt. 2: el cliente sin sesión intenta confirmar. El sistema le pide iniciar sesión o registrarse y conserva el carrito (RN15). Alt. 3: faltan datos de entrega. El sistema pide completarlos: dirección, teléfono y horario para el delivery; teléfono y horario para el recojo (RN12). Alt. 3b: el mensaje para la torta supera los 24 caracteres. El sistema no lo acepta (RN17). Alt. 4: el cliente abandona. El carrito se conserva en su sesión |
 | Rendimiento | Carrito y total en 1 s o menos (RNF02) |
 | Frecuencia | Alta |
 | Importancia | Alta |
 | Urgencia | Alta |
-| Observaciones | Total = precio por cantidad + recargos de personalización + tarifa fija de envío si es delivery (D4, D9). Confirmar el pedido y actualizar la disponibilidad ocurre en una sola transacción (RNF14) |
+| Observaciones | Total = (precio + recargos) × cantidad, sumado por línea, + tarifa fija de envío si es delivery (D4, D9). De cada tipo de opción (tamaño, sabor) se elige como máximo una, y ninguna es obligatoria. Confirmar el pedido y actualizar la disponibilidad ocurre en una sola transacción (RNF14) |
 
 ### CU17 — Registrar pedido asistido
 
@@ -463,7 +463,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Pedidos: marcar preparación y Listo | Sí | Solo con permiso | No | CU08 |
 | Cobranza: registrar pago de un pedido asistido | Sí | Sí | No | CU06 |
 | Cobranza: aprobar o rechazar pago | Sí | Solo con el permiso «Verificar pagos» | No | CU07 |
-| Distribución: asignar repartidor | Sí | Sí | No | CU08 |
+| Distribución: asignar repartidor, marcar En camino y cerrar un recojo | Sí | Sí | No | CU08 |
 | Distribución: actualizar entregas | Sí | No | Sí, solo las suyas | CU08 |
 | Reportes de pedidos y ventas | Sí | No | No | CU10 |
 | Seguridad: usuarios y permisos | Sí | No | No | CU09 |
@@ -514,8 +514,49 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | CU10 | Reportes solo para el Administrador, con filtros y rendimiento definido |
 | CU11 a CU17 | Casos nuevos: registro de cliente, recuperación de contraseña, perfil, categorías, mis pedidos, cancelación y pedido asistido |
 
-### 9.3 Cambios en la versión 1.1
+### 9.3 Cambios en las versiones 1.1 y 1.2
 
 | Elemento | Cambio |
 | --- | --- |
 | Matriz de permisos | Se agrega el permiso «Configuración: tarifa de envío y métodos de pago». Ningún permiso cubría editar la tarifa fija de envío (D4) ni los métodos de pago (RNF18) |
+| RN11, RN12 | El recargo se cobra por unidad; el recojo exige teléfono y horario. Lo decidió el equipo al implementar la etapa C |
+| Matriz de permisos | El permiso de asignar repartidor también permite marcar En camino (tabla 2.2) y cerrar un recojo, que no tenían permiso propio |
+
+## 10. Decisiones de implementación
+
+Decisiones tomadas al construir el sistema que los documentos no fijaban. Las de la primera tabla las confirmó el equipo; las de la segunda las propuso quien implementó y **el equipo debe revisarlas**. Cambiar cualquiera de ellas es un ajuste pequeño en el código.
+
+### 10.1 Confirmadas
+
+| Tema | Decisión |
+| --- | --- |
+| Recargo (RN11) | Se cobra por unidad: (precio + recargos) × cantidad |
+| Opciones de personalización | Como máximo una de cada tipo; ninguna es obligatoria |
+| Recojo (RN12) | Exige teléfono y horario, no dirección |
+| Métodos de pago (RNF18) | Tabla editable desde el Panel; nacen desactivados hasta que el administrador escribe los datos para pagar |
+
+### 10.2 Por revisar con el equipo
+
+| Tema | Decisión propuesta |
+| --- | --- |
+| Sesión de la Tienda | Se cierra tras 30 días sin uso (el Panel, tras 30 minutos, según RNF06) |
+| Cambio del propio rol | Un administrador no puede cambiar su propio rol |
+| Permiso de Seguridad | Se puede dar a un Vendedor; nunca quitar al administrador (RN04) |
+| Cuenta desactivada | Al ingresar recibe el mismo mensaje que con datos incorrectos |
+| Imágenes y comprobantes | Se guardan en la base de datos, para desplegar en la nube sin disco propio (RNF21) |
+| Imagen de producto | Debe ser cuadrada exacta (mismo ancho y alto) |
+| Producto sin imagen | Se puede crear y luego subir la imagen |
+| Borrar productos | No hay forma de borrar; solo desactivar (RN10) |
+| Categoría desactivada | Sus productos dejan de verse en la Tienda |
+| Mensaje sobre la torta | Solo lo admiten los productos personalizables |
+| Horario de entrega | Solo se valida que no haya pasado; no se revisa el horario de atención |
+| Tarifa inicial de envío | Bs 10.00, por la landing («desde Bs 10»); el administrador la cambia |
+| Permiso Configuración | Nuevo, solo para el administrador: tarifa de envío y métodos de pago |
+| Confirmar un pedido (RNF14) | La disponibilidad es manual (D2), así que no cambia; se bloquean los productos mientras se confirma |
+| Auditoría de pagos (RNF08) | La tabla de verificaciones registra quién aprobó o rechazó cada pago y cuándo |
+| Asignar repartidor | Se puede desde que el pedido está Confirmado, y cambiar hasta que sale En camino; cada asignación queda registrada |
+| Ajuste de inventario | Registra el stock contado, no una diferencia |
+| Cliente de un pedido asistido | Su cuenta nace sin contraseña conocida; la define con «¿Olvidó su contraseña?» (CU17) |
+| Cancelación de un pedido pagado | Su pago sale de la cola de verificación y ya no se puede decidir (CU16) |
+| Reporte de ventas | «Vendido» suma los pedidos pagados y no cancelados; el rango es de hasta 12 meses (RNF02) |
+| Estado del cobro en Mis pedidos | La Tienda combina dos consultas (pedidos y pagos), para que E-commerce no dependa de Cobros |

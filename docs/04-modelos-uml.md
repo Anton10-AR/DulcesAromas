@@ -1,6 +1,6 @@
 # Dulces Aromas — Modelos UML v1
 
-Versión 1.1 · 02/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
+Versión 1.2 · 02/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
 
 ## 1. Introducción
 
@@ -151,6 +151,7 @@ classDiagram
     -activo: Lógico
     -intentosFallidos: Entero
     -bloqueadoHasta: FechaHora
+    -debeCambiarContrasena: Lógico
     +iniciarSesion()
     +cerrarSesion()
     +cambiarContrasena()
@@ -175,14 +176,26 @@ classDiagram
     -detalle: Texto
     -fecha: FechaHora
   }
+  class Sesion {
+    -tokenHash: Texto
+    -creada: FechaHora
+    -ultimoUso: FechaHora
+  }
+  class RecuperacionContrasena {
+    -tokenHash: Texto
+    -expira: FechaHora
+    -usada: Lógico
+  }
   Usuario <|-- Cliente
   Usuario <|-- Personal
   Personal "*" --> "1" Rol
   Rol "*" -- "*" Permiso : otorga
   Usuario "1" -- "*" Auditoria : registra
+  Usuario "1" -- "*" Sesion : abre
+  Usuario "1" -- "*" RecuperacionContrasena : solicita
 ```
 
-Cliente y Personal heredan de Usuario. El personal tiene un solo rol y cada rol reúne permisos; Auditoría guarda quién cambió usuarios, roles y permisos (RF28, RNF08). Un cliente nunca tiene rol de personal (RN16).
+Cliente y Personal heredan de Usuario. El personal tiene un solo rol y cada rol reúne permisos; Auditoría guarda quién cambió usuarios, roles y permisos (RF28, RNF08). Un cliente nunca tiene rol de personal (RN16). Cada sesión guarda solo el hash de su token, para cerrarla por inactividad (RNF06), al salir o al desactivar la cuenta. La recuperación de contraseña es un enlace de un solo uso que vence en 60 minutos (D5); cuando el administrador restablece una contraseña, debeCambiarContrasena obliga a cambiarla al ingresar.
 
 ### 3.2 Catálogo e inventario
 
@@ -219,6 +232,7 @@ classDiagram
   class MovimientoInventario {
     -tipo: Texto
     -cantidad: Decimal
+    -stockResultante: Decimal
     -motivo: Texto
     -fecha: FechaHora
   }
@@ -230,7 +244,7 @@ classDiagram
 ```
 La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos.
 
-Una categoría agrupa productos y un producto ofrece opciones de personalización, cada una con su recargo fijo (D9). El inventario controla insumos y sus movimientos, y cada movimiento lo registra una persona del personal (RN09, CU03).
+Una categoría agrupa productos y un producto ofrece opciones de personalización, cada una con su recargo fijo (D9). El inventario controla insumos y sus movimientos, y cada movimiento lo registra una persona del personal (RN09, CU03). Una entrada suma, una salida resta y un ajuste fija el stock al valor contado.
 
 ### 3.3 Pedidos
 
@@ -325,6 +339,9 @@ classDiagram
     +marcarEntregado()
     +registrarFallo(observacion)
   }
+  class AsignacionEntrega {
+    -fecha: FechaHora
+  }
   class MetodoPago {
     -nombre: Texto
     -instrucciones: Texto
@@ -346,9 +363,11 @@ classDiagram
   Verificacion "*" --> "1" Personal : verificada por
   Pedido "1" -- "0..1" Entrega : se entrega con
   Entrega "*" --> "1" Personal : repartidor
+  Entrega "1" *-- "1..*" AsignacionEntrega : historial
+  AsignacionEntrega "*" --> "1" Personal : asignada por
 ```
 
-Un pedido puede tener varios pagos porque un comprobante rechazado obliga a registrar otro (RN07). MetodoPago es una clase y no una enumeración: el administrador agrega métodos y edita sus datos para pagar desde el Panel, sin cambiar código (RNF18). El pago guarda una copia del nombre del método, por si luego se renombra. Cada decisión queda en Verificacion con quién la tomó (RF39). La entrega existe solo para pedidos con delivery y apunta al repartidor asignado (RF40).
+Un pedido puede tener varios pagos porque un comprobante rechazado obliga a registrar otro (RN07). MetodoPago es una clase y no una enumeración: el administrador agrega métodos y edita sus datos para pagar desde el Panel, sin cambiar código (RNF18). El pago guarda una copia del nombre del método, por si luego se renombra. Cada decisión queda en Verificacion con quién la tomó (RF39). La entrega existe solo para pedidos con delivery y apunta al repartidor asignado (RF40). Cada asignación o cambio de repartidor queda en AsignacionEntrega (CU08, alt. 4).
 
 ### 3.5 Diccionario de clases
 
@@ -359,7 +378,9 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | Personal | Seguridad | Cuenta del Panel con un rol fijo |
 | Rol | Seguridad | Administrador, Vendedor o Repartidor, con sus permisos |
 | Permiso | Seguridad | Acción permitida sobre un módulo |
-| Auditoría | Seguridad | Registro de cambios en usuarios, permisos y pagos |
+| Auditoría | Seguridad | Registro de cambios en usuarios y permisos, bloqueos y accesos denegados |
+| Sesion | Seguridad | Sesión abierta, con el hash de su token y su último uso |
+| RecuperacionContrasena | Seguridad | Enlace de un solo uso para definir una contraseña nueva |
 | Categoría | E-commerce | Agrupa productos para el filtro del catálogo |
 | Producto | E-commerce | Lo que se vende, con precio y disponibilidad |
 | OpcionPersonalizacion | E-commerce | Tamaño, sabor, relleno o decoración con su recargo |
@@ -374,6 +395,7 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | MetodoPago | Cobros | QR, transferencia, depósito u otro, con sus datos para pagar |
 | Verificacion | Cobros | Aprobación o rechazo de un pago |
 | Entrega | Distribución | Asignación, entrega o fallo de un pedido con delivery |
+| AsignacionEntrega | Distribución | Cada asignación o cambio de repartidor de una entrega |
 
 ## 4. Modelo de componentes
 
@@ -416,7 +438,7 @@ flowchart TB
   Seg -.-> Correo
 ```
 
-La flecha discontinua va del componente que requiere hacia la interfaz que usa. Cobros llama a IPedidos para pasar el pedido a Confirmado cuando aprueba un pago, y Distribución la usa para leer pedidos listos y actualizar su estado. Esto corrige el diagrama anterior, donde las flechas entre Pedidos, Cobranza y Distribución iban en sentido contrario.
+La flecha discontinua va del componente que requiere hacia la interfaz que usa. Cobros llama a IPedidos para pasar el pedido a Confirmado cuando aprueba un pago, y Distribución la usa para leer pedidos listos y actualizar su estado. Cuando E-commerce necesita que otro módulo reaccione, publica un evento: al crearse un pedido, el evento PedidoRegistrado hace que Cobros abra su pago Pendiente de pago, en la misma transacción. Así E-commerce no depende de Cobros. Esto corrige el diagrama anterior, donde las flechas entre Pedidos, Cobranza y Distribución iban en sentido contrario.
 
 | Componente | Provee | Requiere |
 | --- | --- | --- |
@@ -485,14 +507,19 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 | Total y envío | CU05 | Pedido.calcularTotal(), Configuracion.tarifaEnvio, OpcionElegida | E-commerce | — | RN11, D4, D9 |
 | Mensaje de la torta | CU05 alt. 3b | LineaPedido.mensaje (hasta 24 caracteres, límite fijo) | E-commerce | — | RN17 |
 | Disponibilidad manual | CU02, CU04 | Producto.disponible (sin relación con ItemInventario) | IProductos, IStock separadas | — | RN08, D2 |
-| Auditoría | CU07, CU09 | Auditoría, Verificacion | Seguridad | — | RF28, RNF08 |
+| Auditoría | CU07, CU09 | Auditoría (usuarios y permisos), Verificacion (pagos) | Seguridad, Cobros | — | RF28, RNF08 |
 
 Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pagos (uno por intento) y la entrega es una clase aparte que solo existe para pedidos con delivery.
 
-## 7. Cambios en la versión 1.1
+## 7. Cambios en las versiones 1.1 y 1.2
 
 | Elemento | Cambio | Motivo |
 | --- | --- | --- |
 | MetodoPago | Pasa de enumeración a clase con nombre, instrucciones, QR e indicador activo | RNF18 pide agregar métodos de pago sin cambiar código, y CU06 muestra los datos para pagar |
 | Pago | Guarda una copia del nombre del método | Que renombrar un método no altere pagos anteriores |
 | Configuracion | Se quita maxMensaje | RN17 fija el límite en 24 caracteres; no es un valor configurable |
+| Usuario | Agrega debeCambiarContrasena | El personal cambia la contraseña que le restableció el administrador (D5) |
+| Sesion, RecuperacionContrasena | Clases nuevas | Cerrar sesiones por inactividad (RNF06) y recuperar la contraseña con un enlace de un solo uso (CU12) |
+| MovimientoInventario | Agrega stockResultante | El historial muestra el stock que dejó cada movimiento (RF31) |
+| AsignacionEntrega | Clase nueva | Registrar cada cambio de repartidor (CU08, alt. 4) |
+| Componentes | Evento PedidoRegistrado | Cobros abre el pago sin que E-commerce dependa de Cobros |

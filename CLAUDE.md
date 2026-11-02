@@ -111,8 +111,8 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 - **RN08:** no se confirma un pedido con productos no disponibles.
 - **RN09:** una salida de inventario no supera el stock, y al llegar al mínimo se genera una alerta.
 - **RN10:** un producto con pedidos se desactiva; no se elimina.
-- **RN11:** total = Σ(precio × cantidad) + recargos de personalización + tarifa de envío si es delivery.
-- **RN12:** el delivery exige dirección, teléfono y horario de entrega; el recojo no exige dirección.
+- **RN11:** total = Σ((precio + recargos de las opciones) × cantidad) + tarifa de envío si es delivery. El recargo se cobra por unidad.
+- **RN12:** el delivery exige dirección, teléfono y horario de entrega; el recojo exige teléfono y horario, pero no dirección.
 - **RN13:** una entrega fallida devuelve el pedido a Listo, con observación.
 - **RN14:** un pedido solo se cancela antes de En preparación. El reembolso se hace fuera del sistema.
 - **RN15:** el catálogo se ve sin sesión; para pedir hace falta cuenta.
@@ -120,6 +120,8 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 - **RN17:** el mensaje sobre la torta tiene hasta 24 caracteres y no tiene recargo.
 
 ### Decisiones ya tomadas (no reabrir sin preguntar)
+
+Las decisiones de implementación (confirmadas y por revisar) están en la sección 10 de `docs/02-casos-de-uso.md`.
 
 - **D1:** el pago se aprueba antes de preparar el pedido.
 - **D2:** la disponibilidad de un producto es un indicador manual; no sale del inventario de insumos.

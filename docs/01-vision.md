@@ -199,7 +199,7 @@ Son 43 requisitos. Cada uno se detalla en un caso de uso del documento de Casos 
 | RF09 | El cliente elige las opciones de personalización de los productos que las permiten | CU05 |
 | RF10 | El cliente agrega productos al carrito | CU05 |
 | RF11 | El cliente cambia cantidades o quita productos del carrito | CU05 |
-| RF12 | El sistema calcula y muestra el total: precio por cantidad, más recargos de personalización, más envío si es delivery | CU05 |
+| RF12 | El sistema calcula y muestra el total: (precio + recargos de personalización) por cantidad, más envío si es delivery | CU05 |
 | RF13 | El cliente confirma el pedido eligiendo recojo o delivery, con los datos de entrega | CU05 |
 | RF14 | El cliente consulta sus pedidos anteriores | CU15 |
 | RF15 | El cliente ve el estado actual de cada pedido y de su pago | CU15 |
