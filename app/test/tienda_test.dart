@@ -367,6 +367,59 @@ void main() {
     expect(agregar().onPressed, isNotNull);
   });
 
+  testWidgets('confirmar muestra los productos y trae el teléfono y la dirección del perfil', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'sesion_tienda': 'abc',
+      'carrito': jsonEncode([
+        {'productoId': 1, 'nombre': 'Torta de chocolate', 'cantidad': 2, 'opciones': [], 'nombresOpciones': []},
+      ]),
+    });
+    final api = apiFalsa(
+      respuestas: {
+        '/api/auth/yo': (_) => json({
+          'id': 6,
+          'nombre': 'Lucía',
+          'correo': 'lucia@example.com',
+          'tipo': 'CLIENTE',
+          'rol': null,
+          'permisos': [],
+        }),
+        '/api/perfil': (_) =>
+            json({'nombre': 'Lucía', 'telefono': '70112233', 'direccionHabitual': 'Calle Bolívar 345'}),
+        '/api/pedidos/cotizacion': (_) => json({
+          'lineas': [
+            {
+              'productoId': 1,
+              'nombre': 'Torta de chocolate',
+              'cantidad': 2,
+              'precioUnitario': 120.0,
+              'opciones': [
+                {'id': 1, 'tipo': 'Tamaño', 'nombre': 'Mediana', 'recargo': 0.0},
+              ],
+              'mensaje': null,
+              'subtotal': 240.0,
+              'disponible': true,
+            },
+          ],
+          'costoEnvio': 0.0,
+          'total': 240.0,
+          'confirmable': true,
+          'noDisponibles': [],
+        }),
+      },
+    );
+
+    await abrirEn(tester, api, '/confirmar');
+
+    expect(find.text('2 × Torta de chocolate'), findsOneWidget);
+    expect(find.text('Mediana'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '70112233'), findsOneWidget);
+
+    await tester.tap(find.text('Delivery'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Calle Bolívar 345'), findsOneWidget);
+  });
+
   testWidgets('al recargar el carrito, muestra los productos guardados', (tester) async {
     SharedPreferences.setMockInitialValues({
       'carrito': jsonEncode([

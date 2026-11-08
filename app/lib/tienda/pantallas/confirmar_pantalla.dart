@@ -31,6 +31,19 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
   void initState() {
     super.initState();
     _cotizar();
+    _traerDatosDelPerfil();
+  }
+
+  /// El teléfono y la dirección habitual del perfil vienen llenados; el cliente puede cambiarlos para este pedido.
+  Future<void> _traerDatosDelPerfil() async {
+    try {
+      final perfil = await context.read<Api>().get('/api/perfil') as Json;
+      if (!mounted) return;
+      if (_telefono.text.isEmpty) _telefono.text = perfil['telefono'] as String? ?? '';
+      if (_direccion.text.isEmpty) _direccion.text = perfil['direccionHabitual'] as String? ?? '';
+    } on Object {
+      // Sin perfil, el cliente escribe los datos a mano.
+    }
   }
 
   @override
@@ -198,7 +211,39 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
                   futuro: _cotizacion!,
                   reintentar: _cotizar,
                   constructor: (context, c) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Lo que se está confirmando, para revisarlo antes de pedir.
+                      Text('Tu pedido', style: textos.titleMedium),
+                      const SizedBox(height: 4),
+                      for (final l in c.lineas)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${l.cantidad} × ${l.nombre}'),
+                                    if (l.opciones.isNotEmpty || l.mensaje != null)
+                                      Text(
+                                        [
+                                          for (final o in l.opciones) o.nombre,
+                                          if (l.mensaje != null) 'Mensaje: «${l.mensaje}»',
+                                        ].join(' · '),
+                                        style: textos.bodySmall,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(bolivianos(l.subtotal)),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 8),
                       if (c.costoEnvio.sign > 0)
                         Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(c.costoEnvio))]),
                       const SizedBox(height: 4),
