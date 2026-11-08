@@ -122,6 +122,8 @@ class _AppTiendaState extends State<AppTienda> {
                 // Sigue la preferencia del dispositivo.
                 themeMode: ThemeMode.system,
                 routerConfig: _rutas,
+                // RNF20: marco visible alrededor del control con foco al usar el teclado.
+                builder: (context, hijo) => IndicadorDeFoco(child: hijo!),
               ),
       ),
     );

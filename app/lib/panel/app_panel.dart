@@ -136,6 +136,8 @@ class _AppPanelState extends State<AppPanel> {
                 darkTheme: temaOscuro(),
                 themeMode: ThemeMode.system,
                 routerConfig: _rutas,
+                // RNF20: marco visible alrededor del control con foco al usar el teclado.
+                builder: (context, hijo) => IndicadorDeFoco(child: hijo!),
               ),
       ),
     );

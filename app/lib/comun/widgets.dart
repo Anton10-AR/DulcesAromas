@@ -1,4 +1,7 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import 'api.dart';
 import 'modelos.dart';
@@ -19,6 +22,106 @@ class Arrancando extends StatelessWidget {
         color: oscuro ? Colores.fondoOscuro : Colores.fondo,
         child: Center(child: CircularProgressIndicator(color: oscuro ? Colores.textoOscuro : Colores.cafe)),
       ),
+    );
+  }
+}
+
+/// Dibuja un marco bien visible alrededor del control que tiene el foco cuando se navega con el teclado (RNF20).
+/// Material 3 solo lo sombrea levemente. Con el mouse o el dedo no se dibuja nada.
+class IndicadorDeFoco extends StatefulWidget {
+  const IndicadorDeFoco({super.key, required this.child});
+
+  final Widget child;
+
+  static const llave = ValueKey('indicador-de-foco');
+
+  @override
+  State<IndicadorDeFoco> createState() => _IndicadorDeFocoState();
+}
+
+class _IndicadorDeFocoState extends State<IndicadorDeFoco> with SingleTickerProviderStateMixin {
+  late final Ticker _cuadros = createTicker((_) => _medir());
+  Rect? _marco;
+
+  /// Si la última acción fue una tecla. Un clic o un toque lo apaga, como :focus-visible en la web.
+  bool _conTeclado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_actualizar);
+    HardwareKeyboard.instance.addHandler(_tecla);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_puntero);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_actualizar);
+    HardwareKeyboard.instance.removeHandler(_tecla);
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_puntero);
+    _cuadros.dispose();
+    super.dispose();
+  }
+
+  bool _tecla(KeyEvent evento) {
+    if (evento is KeyDownEvent && !_conTeclado) {
+      _conTeclado = true;
+      _actualizar();
+    }
+    return false;
+  }
+
+  void _puntero(PointerEvent evento) {
+    if (evento is PointerDownEvent && _conTeclado) {
+      _conTeclado = false;
+      _actualizar();
+    }
+  }
+
+  /// Mientras se usa el teclado, se mide en cada cuadro: el control puede moverse al desplazar la pantalla.
+  void _actualizar() {
+    if (_conTeclado && !_cuadros.isActive) _cuadros.start();
+    if (!_conTeclado && _cuadros.isActive) _cuadros.stop();
+    _medir();
+  }
+
+  void _medir() {
+    if (!mounted) return;
+    Rect? marco;
+    final nodo = FocusManager.instance.primaryFocus;
+    final pantalla = MediaQuery.sizeOf(context);
+    if (_conTeclado && nodo != null && nodo is! FocusScopeNode && nodo.context != null) {
+      final caja = nodo.context!.findRenderObject();
+      if (caja is RenderBox && caja.attached && caja.hasSize) {
+        final rect = caja.localToGlobal(Offset.zero) & caja.size;
+        // Un nodo que ocupa casi toda la pantalla (una página entera) no es un control: no se marca.
+        if (rect.width * rect.height < pantalla.width * pantalla.height * 0.6) marco = rect;
+      }
+    }
+    if (marco != _marco) setState(() => _marco = marco);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    return Stack(
+      children: [
+        widget.child,
+        if (_marco != null)
+          Positioned.fromRect(
+            rect: _marco!.inflate(3),
+            child: IgnorePointer(
+              child: DecoratedBox(
+                key: IndicadorDeFoco.llave,
+                decoration: BoxDecoration(
+                  // El café o el texto claro contrastan más de 3:1 con el fondo, como pide RNF20 para el foco.
+                  border: Border.all(color: oscuro ? Colores.textoOscuro : Colores.cafe, width: 3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
