@@ -208,6 +208,37 @@ python demo/cargar_demo.py --api https://dulces-aromas-api.onrender.com
 
 Las variables del entorno tienen prioridad sobre `backend/.env` y desaparecen al cerrar la terminal. Usen para la nube una `DEMO_CONTRASENA` distinta de la local, porque el sitio es público.
 
+### Respaldo diario (RNF14)
+
+El workflow **Respaldo diario** (`.github/workflows/respaldo.yml`) corre cada noche a las 03:00 de La Paz:
+
+1. Copia la base de Neon con `pg_dump`.
+2. Restaura la copia en un PostgreSQL vacío y comprueba que cada tabla tenga las mismas filas que en Neon. Así cada copia queda con una restauración probada.
+3. Cifra la copia con AES-256 y la guarda 90 días como artefacto de la ejecución (Actions → Respaldo diario → una ejecución → Artifacts). El repositorio es público: sin la clave, la copia no se puede leer.
+
+Si algo falla, la ejecución sale en rojo y GitHub avisa por correo al dueño del repositorio. Necesita dos secrets (Settings → Secrets and variables → Actions → **Secrets**):
+
+| Secret | Valor |
+| --- | --- |
+| `RESPALDO_DB_URL` | La cadena de conexión directa de Neon, tal cual la muestra **Connect** (`postgresql://…`, sin `-pooler`) |
+| `RESPALDO_CLAVE` | Una frase larga para cifrar. Guárdenla también fuera de GitHub: sin ella no se puede restaurar ninguna copia |
+
+**Restaurar una copia** (con Git Bash, que trae `gpg`, y las herramientas de PostgreSQL 18):
+
+```bash
+unzip respaldo-AAAA-MM-DD.zip                     # el artefacto descargado de GitHub
+gpg --output respaldo.dump --decrypt dulces-aromas-AAAA-MM-DD.dump.gpg   # pide RESPALDO_CLAVE
+pg_restore --clean --if-exists --no-owner --no-acl -d "postgresql://USUARIO@HOST/BASE" respaldo.dump
+```
+
+`--clean` borra y vuelve a crear las tablas de la base de destino. Detengan antes la API que usa esa base. Para revisar una copia sin tocar nada, restáurenla en una base local nueva (`createdb prueba_respaldo`).
+
+### API despierta en horario de atención (RNF02, RNF13)
+
+En el plan gratuito, Render duerme la API tras 15 minutos sin uso, y el primer cliente espera cerca de un minuto. El workflow **Despertar la API** (`.github/workflows/despertar.yml`) consulta el catálogo cada 5 minutos en el horario de atención: lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00, hora de La Paz. Empieza 10 minutos antes de abrir y usa la variable `API_URL`. Fuera de ese horario, la API se duerme y se despierta sola con la siguiente visita.
+
+GitHub puede retrasar unos minutos las tareas programadas, y las desactiva en un repositorio público tras 60 días sin commits. Si eso pasa, se reactivan desde Actions.
+
 ### Enlace de recuperación y App Links
 
 El correo de recuperación lleva un enlace `https://dulces-aromas.onrender.com/recuperar?token=…`:

@@ -485,6 +485,8 @@ flowchart LR
   Contenedor -->|HTTPS| Brevo
   Main --> Actions -->|pruebas y compilación| Web --> Sitio
   Main -->|render.yaml, Dockerfile| Servicio
+  Actions -.->|respaldo nocturno cifrado| PG
+  Actions -.->|consulta cada 5 min en horario de atención| Contenedor
 ```
 
 | Nodo | Tecnología | Qué corre ahí | Configuración |
@@ -493,7 +495,7 @@ flowchart LR
 | Sitio estático | Render | La Tienda web en `/` y el Panel en `/panel/`, ya compilados | `render.yaml`; las rutas de Flutter responden con su `index.html` |
 | Base de datos | Neon, PostgreSQL administrado, AWS us-east-2 | Las tablas que crea Flyway, con imágenes y comprobantes | `DB_URL`, `DB_USER`, `DB_PASSWORD`; conexión directa, sin pooler |
 | Correo | Brevo, API HTTPS | El envío del enlace de recuperación (CU12) | `BREVO_CLAVE`, `MAIL_REMITENTE` |
-| Integración continua | GitHub Actions | Pruebas de Flutter y compilación del sitio en cada cambio de `app/` | `.github/workflows/web.yml` y la variable `API_URL` |
+| Integración continua | GitHub Actions | Pruebas de Flutter y compilación del sitio en cada cambio de `app/`; respaldo nocturno de la base; consultas que mantienen despierta la API | `.github/workflows/` (`web.yml`, `respaldo.yml`, `despertar.yml`), la variable `API_URL` y los secrets `RESPALDO_DB_URL` y `RESPALDO_CLAVE` |
 | Dispositivo | Android o navegador | La Tienda (APK firmada) o la Tienda web y el Panel | `--dart-define=API_URL=…` al compilar |
 
 Decisiones de despliegue:
@@ -503,6 +505,8 @@ Decisiones de despliegue:
 - **Imágenes y comprobantes en la base:** el plan gratuito de Render no tiene disco persistente.
 - **El sitio se compila en GitHub Actions:** Render no trae Flutter; solo publica la rama `web`.
 - **App Links:** `assetlinks.json` declara el paquete y la huella de la clave que firma la APK, para que el enlace de recuperación abra la Tienda instalada (CU12).
+- **Respaldo diario (RNF14):** GitHub Actions copia la base de Neon cada noche, prueba restaurarla en un PostgreSQL vacío comparando las filas de cada tabla y guarda la copia cifrada con AES-256 durante 90 días.
+- **API despierta en horario de atención (RNF02, RNF13):** GitHub Actions consulta la API cada 5 minutos en el horario del negocio, para que Render no la duerma y el primer cliente no espere un minuto.
 - **Seguridad:** todo el tráfico va por HTTPS (RNF06), la API solo acepta llamadas de navegador desde el sitio publicado (`CORS_ORIGENES`) y ninguna credencial está en el repositorio.
 
 ## 5. Modelo de estados
