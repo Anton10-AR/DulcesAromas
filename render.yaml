@@ -5,6 +5,8 @@ services:
     name: dulces-aromas-api
     runtime: docker
     plan: free
+    # La misma región que la base en Neon (AWS us-east-2), para que cada consulta no cruce el país.
+    region: ohio
     rootDir: backend
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/catalogo/categorias
