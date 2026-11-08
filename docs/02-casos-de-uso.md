@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.2 · 02/11/2026
+Versión 1.3 · 08/11/2026
 
 ## 1. Introducción y actores
 
@@ -300,7 +300,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Frecuencia | Alta |
 | Importancia | Alta |
 | Urgencia | Alta |
-| Observaciones | Total = (precio + recargos) × cantidad, sumado por línea, + tarifa fija de envío si es delivery (D4, D9). De cada tipo de opción (tamaño, sabor) se elige como máximo una, y ninguna es obligatoria. Confirmar el pedido y actualizar la disponibilidad ocurre en una sola transacción (RNF14) |
+| Observaciones | Total = (precio + recargos) × cantidad, sumado por línea, + tarifa fija de envío si es delivery (D4, D9). De cada tipo de opción (tamaño, sabor) se elige como máximo una. Si el producto ofrece tamaños, elegir uno es obligatorio; las demás opciones son optativas. Confirmar el pedido y actualizar la disponibilidad ocurre en una sola transacción (RNF14) |
 
 ### CU17 — Registrar pedido asistido
 
@@ -524,6 +524,7 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | CU02, CU05, CU09 | El equipo confirmó el horario de atención con 24 horas de anticipación, el borrado de productos sin pedidos y que Seguridad es solo del administrador (sección 10.1) |
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 | RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
+| CU05, CU17 (v1.3) | Si el producto ofrece tamaños, elegir uno es obligatorio; sin él, el pedido de una torta queda incompleto |
 
 ## 10. Decisiones de implementación
 
@@ -534,7 +535,7 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. El equ
 | Tema | Decisión |
 | --- | --- |
 | Recargo (RN11) | Se cobra por unidad: (precio + recargos) × cantidad |
-| Opciones de personalización | Como máximo una de cada tipo; ninguna es obligatoria |
+| Opciones de personalización | Como máximo una de cada tipo. Si el producto ofrece tamaños, hay que elegir uno (el equipo lo decidió el 08/11/2026); las demás son optativas |
 | Recojo (RN12) | Exige teléfono y horario, no dirección |
 | Imagen de producto (RNF10) | Se aceptan fotos de hasta 10 MB. Una JPG o PNG se recorta al centro, respetando la orientación de las fotos de celular, y se reduce a 1200 px por lado. Una WebP debe venir cuadrada y pesar hasta 2 MB, porque no se puede reducir |
 | Métodos de pago (RNF18) | Tabla editable desde el Panel; nacen desactivados hasta que el administrador escribe los datos para pagar |

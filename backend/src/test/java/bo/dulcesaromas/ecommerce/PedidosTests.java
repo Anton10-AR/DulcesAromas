@@ -173,18 +173,18 @@ class PedidosTests extends PruebaPedidos {
 	void rn17ElMensajeTieneHasta24CaracteresYNoTieneRecargo() throws Exception {
 		String veinticuatro = "Feliz cumpleaños, Lucía!";
 		assertThat(veinticuatro).hasSize(24);
-		String linea = "{\"lineas\":[{\"productoId\":%d,\"cantidad\":1,\"mensaje\":\"%s\"}]}";
+		String linea = "{\"lineas\":[{\"productoId\":%d,\"cantidad\":1,\"opciones\":[%s],\"mensaje\":\"%s\"}]}";
 
 		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
-			.content(linea.formatted(torta, veinticuatro)))
+			.content(linea.formatted(torta, pequena, veinticuatro)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.total").value(120.00));
 		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
-			.content(linea.formatted(torta, veinticuatro + "!")))
+			.content(linea.formatted(torta, pequena, veinticuatro + "!")))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.campos['lineas[0].mensaje']").isNotEmpty());
 		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
-			.content(linea.formatted(galletas, "Hola")))
+			.content(linea.formatted(galletas, "", "Hola")))
 			.andExpect(status().isUnprocessableContent())
 			.andExpect(jsonPath("$.codigo").value("MENSAJE_NO_PERMITIDO"));
 	}
@@ -202,9 +202,32 @@ class PedidosTests extends PruebaPedidos {
 			.andExpect(status().isUnprocessableContent())
 			.andExpect(jsonPath("$.codigo").value("OPCION_INVALIDA"));
 		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
-			.content(linea.formatted(torta, "")))
+			.content(linea.formatted(torta, String.valueOf(pequena))))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.total").value(120.00));
+	}
+
+	@Test
+	void siElProductoTieneTamanosHayQueElegirUno() throws Exception {
+		String linea = "{\"lineas\":[{\"productoId\":%d,\"cantidad\":1,\"opciones\":[%s]}]}";
+
+		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
+			.content(linea.formatted(torta, "")))
+			.andExpect(status().isUnprocessableContent())
+			.andExpect(jsonPath("$.codigo").value("TAMANO_REQUERIDO"));
+		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
+			.content(linea.formatted(torta, String.valueOf(fresa))))
+			.andExpect(status().isUnprocessableContent())
+			.andExpect(jsonPath("$.codigo").value("TAMANO_REQUERIDO"));
+		pedir(cliente, """
+				{"lineas":[{"productoId":%d,"cantidad":1,"opciones":[%d]}],"tipoEntrega":"RECOJO",
+				 "telefono":"70012345","horarioEntrega":"%s"}""".formatted(torta, fresa, MANANA))
+			.andExpect(status().isUnprocessableContent())
+			.andExpect(jsonPath("$.codigo").value("TAMANO_REQUERIDO"));
+		// Un producto sin tamaños no pide ninguno.
+		mvc.perform(post("/api/pedidos/cotizacion").contentType(MediaType.APPLICATION_JSON)
+			.content(linea.formatted(galletas, "")))
+			.andExpect(status().isOk());
 	}
 
 	@Test

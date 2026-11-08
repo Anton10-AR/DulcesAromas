@@ -326,6 +326,47 @@ void main() {
     expect(preferencias.getString('sesion_tienda'), 'abc');
   });
 
+  testWidgets('si el producto tiene tamaños, hay que elegir uno para agregarlo al carrito', (tester) async {
+    final api = apiFalsa(
+      respuestas: {
+        '/api/catalogo/productos/3': (_) => json({
+          'id': 3,
+          'nombre': 'Torta tres leches',
+          'descripcion': 'Hecha en casa',
+          'precio': 110.0,
+          'categoria': {'id': 1, 'nombre': 'Tortas'},
+          'activo': true,
+          'disponible': true,
+          'personalizable': true,
+          'imagen': null,
+          'opciones': [
+            {'id': 1, 'tipo': 'Tamaño', 'nombre': 'Mediana', 'recargo': 0.0},
+            {'id': 2, 'tipo': 'Relleno', 'nombre': 'Frutilla', 'recargo': 10.0},
+          ],
+        }),
+      },
+    );
+    await abrirEn(tester, api, '/producto/3');
+    ButtonStyleButton agregar() => tester.widget<ButtonStyleButton>(
+      find.ancestor(
+        of: find.text('Agregar al carrito'),
+        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+      ),
+    );
+
+    expect(find.text('Tamaño (elige uno)'), findsOneWidget);
+    expect(find.text('Relleno (opcional)'), findsOneWidget);
+    expect(agregar().onPressed, isNull);
+
+    await tester.tap(find.text('Frutilla (+Bs 10.00)'));
+    await tester.pumpAndSettle();
+    expect(agregar().onPressed, isNull);
+
+    await tester.tap(find.text('Mediana'));
+    await tester.pumpAndSettle();
+    expect(agregar().onPressed, isNotNull);
+  });
+
   testWidgets('al recargar el carrito, muestra los productos guardados', (tester) async {
     SharedPreferences.setMockInitialValues({
       'carrito': jsonEncode([

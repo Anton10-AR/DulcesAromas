@@ -22,7 +22,7 @@ class ProductoPantalla extends StatefulWidget {
 class _ProductoPantallaState extends State<ProductoPantalla> {
   late Future<Producto> _producto;
 
-  /// Opción elegida de cada tipo; como máximo una por tipo y ninguna es obligatoria.
+  /// Opción elegida de cada tipo; como máximo una por tipo. Solo el tamaño es obligatorio.
   final Map<String, Opcion> _elegidas = {};
   final _mensaje = TextEditingController();
   int _cantidad = 1;
@@ -129,10 +129,15 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
                   const SizedBox(height: 24),
                   // HU07: un producto no disponible no se puede agregar al carrito.
                   if (!p.disponible) const AvisoError('Este producto no está disponible por ahora.'),
+                  if (p.disponible && p.faltaTamano(_elegidas))
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text('Elige un tamaño para agregarlo al carrito.', style: textos.bodyMedium),
+                    ),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: p.disponible ? () => _agregar(p) : null,
+                      onPressed: p.disponible && !p.faltaTamano(_elegidas) ? () => _agregar(p) : null,
                       icon: const Icon(Icons.add_shopping_cart),
                       label: const Text('Agregar al carrito'),
                     ),
@@ -153,7 +158,7 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tipo, style: textos.titleMedium),
+          Text(esTamano(tipo) ? '$tipo (elige uno)' : '$tipo (opcional)', style: textos.titleMedium),
           Wrap(
             spacing: 8,
             runSpacing: 8,

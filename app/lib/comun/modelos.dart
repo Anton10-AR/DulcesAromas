@@ -77,6 +77,12 @@ class Producto {
     }
     return grupos;
   }
+
+  /// El tipo de opción «Tamaño», si el producto lo tiene: es obligatorio elegir uno, como valida la API.
+  String? get tipoTamano => opcionesPorTipo.keys.where(esTamano).firstOrNull;
+
+  /// Si falta elegir el tamaño entre las opciones [elegidas] (por tipo).
+  bool faltaTamano(Map<String, Opcion> elegidas) => tipoTamano != null && !elegidas.containsKey(tipoTamano);
 }
 
 class LineaVista {
@@ -401,3 +407,6 @@ class MetodoPago {
   final bool activo;
   final String? qr;
 }
+
+/// El mismo criterio que la API: «Tamaño», sin importar mayúsculas ni la eñe.
+bool esTamano(String tipo) => tipo.trim().toLowerCase().replaceAll('ñ', 'n') == 'tamano';

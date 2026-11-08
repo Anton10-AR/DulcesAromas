@@ -371,7 +371,7 @@ class _DialogoLineaState extends State<_DialogoLinea> {
               if (p != null)
                 for (final grupo in p.opcionesPorTipo.entries) ...[
                   const SizedBox(height: 12),
-                  Text(grupo.key),
+                  Text(esTamano(grupo.key) ? '${grupo.key} (elige uno)' : '${grupo.key} (opcional)'),
                   Wrap(
                     spacing: 8,
                     children: [
@@ -414,7 +414,8 @@ class _DialogoLineaState extends State<_DialogoLinea> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         FilledButton(
-          onPressed: p == null
+          // El tamaño es obligatorio, como en la Tienda.
+          onPressed: p == null || p.faltaTamano(_elegidas)
               ? null
               : () {
                   final opciones = p.opciones.where((o) => _elegidas[o.tipo] == o).toList();

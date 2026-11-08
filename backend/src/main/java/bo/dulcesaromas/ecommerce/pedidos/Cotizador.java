@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -81,7 +82,20 @@ class Cotizador {
 			}
 			resultado.add(new OpcionElegida(opcion.getTipo(), opcion.getNombre(), opcion.getRecargo()));
 		}
+		boolean tieneTamanos = delProducto.stream().anyMatch(o -> esTamano(o.getTipo()));
+		if (tieneTamanos && tipos.stream().noneMatch(Cotizador::esTamano)) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "TAMANO_REQUERIDO",
+					"Elige el tamaño de «" + producto.getNombre() + "».");
+		}
 		return resultado;
+	}
+
+	/**
+	 * Si el producto ofrece tamaños, hay que elegir uno: sin él, el pedido de una torta queda incompleto (decisión del
+	 * equipo del 08/11/2026, sección 10 de los casos de uso). Las demás opciones siguen siendo optativas.
+	 */
+	static boolean esTamano(String tipo) {
+		return tipo != null && tipo.strip().toLowerCase(Locale.ROOT).replace('ñ', 'n').equals("tamano");
 	}
 
 	/**

@@ -13,7 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Base de las pruebas de pedidos y cobros. Deja un catálogo con:
  * <ul>
- * <li>una torta personalizable de Bs 120.00 con Tamaño Grande (+40), Tamaño Mediana (+20) y Relleno Fresa (+10),</li>
+ * <li>una torta personalizable de Bs 120.00 con Tamaño Grande (+40), Tamaño Mediana (+20), Relleno Fresa (+10) y
+ * Tamaño Pequeña (sin recargo); el tamaño es obligatorio,</li>
  * <li>galletas de Bs 15.00 sin personalización,</li>
  * </ul>
  * un administrador, un cliente con sesión y la tarifa de envío inicial de Bs 10.00.
@@ -39,6 +40,8 @@ public abstract class PruebaPedidos extends PruebaIntegracion {
 
 	protected long fresa;
 
+	protected long pequena;
+
 	@BeforeEach
 	void catalogoYCuentas() throws Exception {
 		crearPersonal("admin@dulces.bo", "ADMINISTRADOR");
@@ -52,24 +55,28 @@ public abstract class PruebaPedidos extends PruebaIntegracion {
 				 "disponible":true,"personalizable":true,"opciones":[
 				   {"tipo":"Tamaño","nombre":"Grande","recargo":40},
 				   {"tipo":"Tamaño","nombre":"Mediana","recargo":20},
-				   {"tipo":"Relleno","nombre":"Fresa","recargo":10}]}""".formatted(tortas)))
+				   {"tipo":"Relleno","nombre":"Fresa","recargo":10},
+				   {"tipo":"Tamaño","nombre":"Pequeña","recargo":0}]}""".formatted(tortas)))
 			.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
 		torta = numero(cuerpo, "$.id");
 		grande = numero(cuerpo, "$.opciones[0].id");
 		mediana = numero(cuerpo, "$.opciones[1].id");
 		fresa = numero(cuerpo, "$.opciones[2].id");
+		pequena = numero(cuerpo, "$.opciones[3].id");
 		galletas = id(mvc.perform(con(admin, post("/api/productos")).content("""
 				{"nombre":"Galletas de avena","descripcion":"Docena","precio":15.00,"categoriaId":%d,
 				 "disponible":true,"personalizable":false}""".formatted(tortas))));
 	}
 
 	/**
-	 * Un pedido con recojo de una torta sin opciones, con todos los datos de entrega.
+	 * Un pedido con recojo de un producto, con todos los datos de entrega. La torta va en tamaño Pequeña, sin recargo,
+	 * porque el tamaño es obligatorio.
 	 */
-	protected static String pedidoSimple(long productoId) {
+	protected String pedidoSimple(long productoId) {
+		String opciones = productoId == torta ? String.valueOf(pequena) : "";
 		return """
-				{"lineas":[{"productoId":%d,"cantidad":1}],"tipoEntrega":"RECOJO",
-				 "telefono":"70012345","horarioEntrega":"%s"}""".formatted(productoId, MANANA);
+				{"lineas":[{"productoId":%d,"cantidad":1,"opciones":[%s]}],"tipoEntrega":"RECOJO",
+				 "telefono":"70012345","horarioEntrega":"%s"}""".formatted(productoId, opciones, MANANA);
 	}
 
 	/**
