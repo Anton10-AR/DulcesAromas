@@ -38,7 +38,6 @@ class _PedidosPanelState extends State<PedidosPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
     final asistido = context.watch<Sesion>().usuario!.puede('PEDIDOS_CONSULTAR');
     return Column(
       children: [
@@ -92,10 +91,7 @@ class _PedidosPanelState extends State<PedidosPanel> {
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(nombresEstadoPedido[p.estado]!, style: textos.titleSmall),
-                          Text(bolivianos(p.total)),
-                        ],
+                        children: [EtiquetaEstado(p.estado), const SizedBox(height: 4), Text(bolivianos(p.total))],
                       ),
                     );
                   },

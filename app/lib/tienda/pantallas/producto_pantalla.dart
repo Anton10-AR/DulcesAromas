@@ -77,74 +77,91 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
         reintentar: _cargar,
         constructor: (context, p) {
           final textos = Theme.of(context).textTheme;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Contenido(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          final imagen = ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
+            ),
+          );
+          // En pantallas anchas, la imagen a la izquierda y las opciones a la derecha: se elige sin bajar (RNF12).
+          final ancha = MediaQuery.sizeOf(context).width >= 720;
+          final detalles = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(p.nombre, style: textos.headlineMedium),
+              const SizedBox(height: 4),
+              Text(bolivianos(p.precio), style: textos.titleLarge),
+              const SizedBox(height: 12),
+              Text(p.descripcion, style: textos.bodyLarge),
+              const SizedBox(height: 16),
+              for (final grupo in p.opcionesPorTipo.entries) _grupoOpciones(grupo.key, grupo.value),
+              if (p.personalizable)
+                Campo(
+                  controlador: _mensaje,
+                  etiqueta: 'Mensaje sobre la torta (opcional)',
+                  nombre: 'mensaje',
+                  ayuda: 'Hasta 24 caracteres, sin costo adicional.',
+                  maximo: 24,
+                ),
+              Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
-                    ),
+                  Text('Cantidad', style: textos.titleMedium),
+                  const SizedBox(width: 12),
+                  IconButton.outlined(
+                    tooltip: 'Quitar uno',
+                    onPressed: _cantidad > 1 ? () => setState(() => _cantidad--) : null,
+                    icon: const Icon(Icons.remove),
                   ),
-                  const SizedBox(height: 16),
-                  Text(p.nombre, style: textos.headlineMedium),
-                  const SizedBox(height: 4),
-                  Text(bolivianos(p.precio), style: textos.titleLarge),
-                  const SizedBox(height: 12),
-                  Text(p.descripcion, style: textos.bodyLarge),
-                  const SizedBox(height: 16),
-                  for (final grupo in p.opcionesPorTipo.entries) _grupoOpciones(grupo.key, grupo.value),
-                  if (p.personalizable)
-                    Campo(
-                      controlador: _mensaje,
-                      etiqueta: 'Mensaje sobre la torta (opcional)',
-                      nombre: 'mensaje',
-                      ayuda: 'Hasta 24 caracteres, sin costo adicional.',
-                      maximo: 24,
-                    ),
-                  Row(
-                    children: [
-                      Text('Cantidad', style: textos.titleMedium),
-                      const SizedBox(width: 12),
-                      IconButton.outlined(
-                        tooltip: 'Quitar uno',
-                        onPressed: _cantidad > 1 ? () => setState(() => _cantidad--) : null,
-                        icon: const Icon(Icons.remove),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('$_cantidad', style: textos.titleMedium),
-                      ),
-                      IconButton.outlined(
-                        tooltip: 'Agregar uno',
-                        onPressed: _cantidad < Carrito.cantidadMaxima ? () => setState(() => _cantidad++) : null,
-                        icon: const Icon(Icons.add),
-                      ),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('$_cantidad', style: textos.titleMedium),
                   ),
-                  const SizedBox(height: 24),
-                  // HU07: un producto no disponible no se puede agregar al carrito.
-                  if (!p.disponible) const AvisoError('Este producto no está disponible por ahora.'),
-                  if (p.disponible && p.faltaTamano(_elegidas))
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text('Elige un tamaño para agregarlo al carrito.', style: textos.bodyMedium),
-                    ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: p.disponible && !p.faltaTamano(_elegidas) ? () => _agregar(p) : null,
-                      icon: const Icon(Icons.add_shopping_cart),
-                      label: const Text('Agregar al carrito'),
-                    ),
+                  IconButton.outlined(
+                    tooltip: 'Agregar uno',
+                    onPressed: _cantidad < Carrito.cantidadMaxima ? () => setState(() => _cantidad++) : null,
+                    icon: const Icon(Icons.add),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+              // HU07: un producto no disponible no se puede agregar al carrito.
+              if (!p.disponible) const AvisoError('Este producto no está disponible por ahora.'),
+              if (p.disponible && p.faltaTamano(_elegidas))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text('Elige un tamaño para agregarlo al carrito.', style: textos.bodyMedium),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: p.disponible && !p.faltaTamano(_elegidas) ? () => _agregar(p) : null,
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text('Agregar al carrito'),
+                ),
+              ),
+            ],
+          );
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ancha
+                ? Contenido(
+                    ancho: 1100,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 5, child: imagen),
+                        const SizedBox(width: 32),
+                        Expanded(flex: 6, child: detalles),
+                      ],
+                    ),
+                  )
+                : Contenido(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [imagen, const SizedBox(height: 16), detalles],
+                    ),
+                  ),
           );
         },
       ),

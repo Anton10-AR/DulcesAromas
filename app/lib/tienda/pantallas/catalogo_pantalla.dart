@@ -114,17 +114,24 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
                     builder: (context, limites) {
                       // Al arrancar en Android, el primer cuadro puede llegar con ancho 0 y la cuadrícula falla.
                       if (limites.maxWidth <= 32) return const SizedBox.shrink();
+                      // Columnas de hasta 260 px. Cada tarjeta mide su imagen cuadrada más el espacio del texto, así
+                      // todas las imágenes tienen la misma altura y ninguna se recorta (RNF12).
+                      const espacio = 16.0;
+                      final util = limites.maxWidth - 2 * espacio;
+                      final columnas = ((util + espacio) / (260 + espacio)).ceil().clamp(1, 12);
+                      final anchoTarjeta = (util - espacio * (columnas - 1)) / columnas;
+                      final alto = anchoTarjeta + MediaQuery.textScalerOf(context).scale(_TarjetaProducto.altoTexto);
                       // Deslizar hacia abajo vuelve a pedir el catálogo: precios, disponibilidad e imágenes nuevas.
                       return RefreshIndicator(
                         onRefresh: _actualizar,
                         child: GridView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 260,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 0.7,
+                          padding: const EdgeInsets.all(espacio),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columnas,
+                            mainAxisSpacing: espacio,
+                            crossAxisSpacing: espacio,
+                            mainAxisExtent: alto,
                           ),
                           itemCount: productos.length,
                           itemBuilder: (_, i) => _TarjetaProducto(productos[i], alVolver: _buscar),
@@ -168,6 +175,9 @@ class _TarjetaProducto extends StatelessWidget {
 
   final Producto producto;
 
+  /// Alto del texto bajo la imagen: el nombre en hasta dos líneas y el precio, con su margen.
+  static const altoTexto = 112.0;
+
   /// Al volver del detalle, el catálogo se actualiza: pudo cambiar la imagen o la disponibilidad.
   final VoidCallback alVolver;
 
@@ -184,28 +194,62 @@ class _TarjetaProducto extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // La imagen cede espacio al texto, para que la tarjeta no se desborde en pantallas angostas (RNF12).
-            Expanded(
-              child: ImagenProducto(ruta: producto.imagen, descripcion: producto.nombre),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            AspectRatio(
+              aspectRatio: 1,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(producto.nombre, style: textos.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Text(bolivianos(producto.precio), style: textos.bodyLarge),
-                  if (!producto.disponible) ...[
-                    const SizedBox(height: 4),
-                    Text('No disponible', style: textos.bodySmall),
-                  ],
+                  Opacity(
+                    opacity: producto.disponible ? 1 : 0.45,
+                    child: ImagenProducto(ruta: producto.imagen, descripcion: producto.nombre),
+                  ),
+                  // HU07: se nota de lejos que no se puede pedir.
+                  if (!producto.disponible) const Positioned(left: 8, top: 8, child: _NoDisponible()),
                 ],
+              ),
+            ),
+            // Si el texto no cabe (letra grande en el dispositivo), el nombre se acorta con «…» en vez de desbordar.
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        producto.nombre,
+                        style: textos.titleMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(bolivianos(producto.precio), style: textos.bodyLarge, maxLines: 1),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NoDisponible extends StatelessWidget {
+  const _NoDisponible();
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colores.surface,
+        border: Border.all(color: colores.error),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text('No disponible', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colores.error)),
     );
   }
 }

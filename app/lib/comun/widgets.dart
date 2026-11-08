@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'modelos.dart';
 import 'tema.dart';
 
 /// Lo que se ve mientras la app recupera la sesión guardada, antes de mostrar cualquier pantalla. No usa
@@ -230,6 +231,20 @@ class Etiqueta extends StatelessWidget {
       child: Text(texto, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colores.onSurface)),
     );
   }
+}
+
+/// El estado de un pedido como etiqueta. Se resaltan los que el personal tiene que mover: Confirmado, En
+/// preparación, Listo y En camino.
+class EtiquetaEstado extends StatelessWidget {
+  const EtiquetaEstado(this.estado, {super.key});
+
+  final String estado;
+
+  static const _enMarcha = {'CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'EN_CAMINO'};
+
+  @override
+  Widget build(BuildContext context) =>
+      Etiqueta(nombresEstadoPedido[estado] ?? estado, resaltada: _enMarcha.contains(estado));
 }
 
 void avisar(BuildContext context, String mensaje) {

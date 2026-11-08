@@ -61,7 +61,7 @@ class _EntregasPanelState extends State<EntregasPanel> {
                   ].join('\n'),
                 ),
                 isThreeLine: e.observacionFallo != null,
-                trailing: Text(nombresEstadoPedido[e.estado]!),
+                trailing: EtiquetaEstado(e.estado),
               );
             },
           );

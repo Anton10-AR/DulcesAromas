@@ -114,10 +114,13 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text('${l.cantidad} × ${l.nombre}'),
-            subtitle: Text(
-              [...l.opciones.map((o) => o.nombre), if (l.mensaje != null) 'Mensaje: «${l.mensaje}»'].join(' · '),
-            ),
-            trailing: Text(bolivianos(l.subtotal)),
+            subtitle: l.opciones.isEmpty && l.mensaje == null
+                ? null
+                : Text(
+                    [...l.opciones.map((o) => o.nombre), if (l.mensaje != null) 'Mensaje: «${l.mensaje}»'].join(' · '),
+                  ),
+            // El precio de la línea, del mismo tamaño que el envío y el total.
+            trailing: Text(bolivianos(l.subtotal), style: textos.bodyLarge),
           ),
         if (pedido.esDelivery)
           Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
