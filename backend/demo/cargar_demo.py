@@ -112,7 +112,7 @@ def imagen_producto(nombre, indice):
     d.ellipse((110, 90, 690, 670), fill=rosa)
     d.ellipse((190, 170, 610, 590), fill=CREMA, outline=CAFE, width=6)
     letra = fuente(170)
-    inicial = nombre.split()[-1][0].upper() if len(nombre.split()) > 1 else nombre[0].upper()
+    inicial = nombre[0].upper()  # La inicial del nombre: «Alfajores de maicena» lleva una A.
     d.text((400, 380), inicial, font=letra, fill=CAFE, anchor='mm')
     texto = fuente(46)
     lineas, actual = [], ''
