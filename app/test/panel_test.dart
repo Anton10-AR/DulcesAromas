@@ -275,5 +275,10 @@ void main() {
     expect(find.textContaining('Recojo en tienda: no lleva repartidor.'), findsOneWidget);
     expect(find.text('El cliente lo retiró'), findsOneWidget);
     expect(find.text('Elegir repartidor'), findsNothing);
+
+    // La flecha vuelve a la lista de pedidos.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/pedidos');
   });
 }

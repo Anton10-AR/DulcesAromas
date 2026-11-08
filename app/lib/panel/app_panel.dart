@@ -157,6 +157,14 @@ class MarcoPanel extends StatelessWidget {
     final actual = visibles.lastIndexWhere((s) => s.ruta == '/' ? ruta == '/' : ruta.startsWith(s.ruta));
     final titulo = actual >= 0 ? visibles[actual].titulo : 'Panel';
     final ancho = MediaQuery.sizeOf(context).width >= 900;
+    // En una página interna (un pedido, el pedido asistido, un producto) la flecha vuelve a la lista de su sección.
+    final padre = actual >= 0 && visibles[actual].ruta != '/' && ruta != visibles[actual].ruta
+        ? visibles[actual].ruta
+        : null;
+    final barra = AppBar(
+      title: Text(titulo),
+      leading: padre == null ? null : BackButton(onPressed: () => context.go(padre)),
+    );
 
     void ir(int i) => context.go(visibles[i].ruta);
 
@@ -179,17 +187,14 @@ class MarcoPanel extends StatelessWidget {
             ),
             const VerticalDivider(width: 1),
             Expanded(
-              child: Scaffold(
-                appBar: AppBar(title: Text(titulo)),
-                body: child,
-              ),
+              child: Scaffold(appBar: barra, body: child),
             ),
           ],
         ),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(titulo)),
+      appBar: barra,
       drawer: NavigationDrawer(
         selectedIndex: actual < 0 ? null : actual,
         onDestinationSelected: (i) {
