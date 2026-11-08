@@ -22,6 +22,51 @@ class Arrancando extends StatelessWidget {
   }
 }
 
+/// Fila de una lista con acciones a la derecha. En pantallas angostas las acciones bajan debajo del texto, para que
+/// el nombre no quede partido letra por letra (RNF12).
+class FilaConAcciones extends StatelessWidget {
+  const FilaConAcciones({super.key, this.inicio, required this.titulo, this.subtitulo, required this.acciones});
+
+  final Widget? inicio;
+  final Widget titulo;
+  final Widget? subtitulo;
+  final List<Widget> acciones;
+
+  /// Desde este ancho las acciones caben a la derecha del texto.
+  static const anchoEnUnaFila = 560.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, limites) {
+        if (acciones.isEmpty || limites.maxWidth >= anchoEnUnaFila) {
+          return ListTile(
+            leading: inicio,
+            title: titulo,
+            subtitle: subtitulo,
+            trailing: acciones.isEmpty ? null : Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: acciones),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ListTile(leading: inicio, title: titulo, subtitle: subtitulo),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                children: acciones,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// Ancho máximo del contenido, para que en pantallas anchas no se estire (RNF12).
 const double anchoMaximo = 720;
 

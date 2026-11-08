@@ -112,7 +112,8 @@ ThemeData _tema(ColorScheme esquema, TextTheme textos) {
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
-    inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
+    // Las ayudas y los errores largos pasan a otra línea en vez de cortarse con «…» en pantallas angostas (RNF12).
+    inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(), helperMaxLines: 3, errorMaxLines: 3),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(minimumSize: const Size(48, 48), textStyle: textos.labelLarge),
     ),

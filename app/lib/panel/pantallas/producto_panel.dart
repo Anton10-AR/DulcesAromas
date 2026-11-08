@@ -294,23 +294,49 @@ class _ProductoPanelState extends State<ProductoPanel> {
       for (var i = 0; i < _opciones.length; i++)
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _campoOpcion(_opciones[i].tipo, 'Tipo', 'opciones[$i].tipo', errores)),
-              const SizedBox(width: 8),
-              Expanded(child: _campoOpcion(_opciones[i].nombre, 'Opción', 'opciones[$i].nombre', errores)),
-              const SizedBox(width: 8),
-              SizedBox(
+          child: LayoutBuilder(
+            builder: (context, limites) {
+              final tipo = _campoOpcion(_opciones[i].tipo, 'Tipo', 'opciones[$i].tipo', errores);
+              final nombre = _campoOpcion(_opciones[i].nombre, 'Opción', 'opciones[$i].nombre', errores);
+              final recargo = SizedBox(
                 width: 110,
                 child: _campoOpcion(_opciones[i].recargo, 'Recargo', 'opciones[$i].recargo', errores),
-              ),
-              IconButton(
+              );
+              final quitar = IconButton(
                 tooltip: 'Quitar opción',
                 onPressed: () => setState(() => _opciones.removeAt(i).dispose()),
                 icon: const Icon(Icons.close),
-              ),
-            ],
+              );
+              // En pantallas angostas, tipo y recargo van en una fila y la opción debajo, con todo el ancho (RNF12).
+              if (limites.maxWidth < 520) {
+                return Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: tipo),
+                        const SizedBox(width: 8),
+                        recargo,
+                        quitar,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    nombre,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: tipo),
+                  const SizedBox(width: 8),
+                  Expanded(child: nombre),
+                  const SizedBox(width: 8),
+                  recargo,
+                  quitar,
+                ],
+              );
+            },
           ),
         ),
       Align(

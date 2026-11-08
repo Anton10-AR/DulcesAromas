@@ -226,8 +226,8 @@ class _AsistidoPanelState extends State<AsistidoPanel> {
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'RECOJO', label: Text('Recojo en tienda')),
-                ButtonSegment(value: 'DELIVERY', label: Text('Delivery')),
+                ButtonSegment(value: 'RECOJO', label: Text('Recojo'), icon: Icon(Icons.storefront_outlined)),
+                ButtonSegment(value: 'DELIVERY', label: Text('Delivery'), icon: Icon(Icons.delivery_dining_outlined)),
               ],
               selected: {_tipo},
               onSelectionChanged: (s) {

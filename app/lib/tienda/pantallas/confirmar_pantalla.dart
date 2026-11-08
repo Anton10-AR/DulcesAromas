@@ -114,11 +114,7 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
               const SizedBox(height: 8),
               SegmentedButton<String>(
                 segments: const [
-                  ButtonSegment(
-                    value: 'RECOJO',
-                    label: Text('Recojo en tienda'),
-                    icon: Icon(Icons.storefront_outlined),
-                  ),
+                  ButtonSegment(value: 'RECOJO', label: Text('Recojo'), icon: Icon(Icons.storefront_outlined)),
                   ButtonSegment(value: 'DELIVERY', label: Text('Delivery'), icon: Icon(Icons.delivery_dining_outlined)),
                 ],
                 emptySelectionAllowed: true,

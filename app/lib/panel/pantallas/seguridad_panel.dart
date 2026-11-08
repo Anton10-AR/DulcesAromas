@@ -16,18 +16,22 @@ class SeguridadPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const DefaultTabController(
+    // En pantallas angostas las pestañas se desplazan, para que «Roles y permisos» no se corte (RNF12).
+    final angosta = MediaQuery.sizeOf(context).width < 480;
+    return DefaultTabController(
       length: 3,
       child: Column(
         children: [
           TabBar(
-            tabs: [
+            isScrollable: angosta,
+            tabAlignment: angosta ? TabAlignment.start : null,
+            tabs: const [
               Tab(text: 'Personal'),
               Tab(text: 'Roles y permisos'),
               Tab(text: 'Auditoría'),
             ],
           ),
-          Expanded(child: TabBarView(children: [_Personal(), _Roles(), _Auditoria()])),
+          const Expanded(child: TabBarView(children: [_Personal(), _Roles(), _Auditoria()])),
         ],
       ),
     );
@@ -157,30 +161,28 @@ class _PersonalState extends State<_Personal> {
           separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (_, i) {
             final c = cuentas[i];
-            return ListTile(
-              title: Text('${c.nombre}${c.activo ? '' : ' (desactivada)'}'),
-              subtitle: Text(
+            return FilaConAcciones(
+              titulo: Text('${c.nombre}${c.activo ? '' : ' (desactivada)'}'),
+              subtitulo: Text(
                 '${nombresRol[c.rol]} · ${c.correo}'
                 '${c.bloqueadoHasta != null && c.bloqueadoHasta!.isAfter(DateTime.now()) ? ' · Bloqueada hasta ${fechaHora(c.bloqueadoHasta!)}' : ''}',
               ),
-              trailing: Wrap(
-                children: [
-                  IconButton(
-                    tooltip: 'Editar',
-                    onPressed: () => _cuenta(cuenta: c),
-                    icon: const Icon(Icons.edit_outlined),
-                  ),
-                  IconButton(
-                    tooltip: 'Restablecer contraseña',
-                    onPressed: () => _restablecer(c),
-                    icon: const Icon(Icons.key_outlined),
-                  ),
-                  if (c.id != propia)
-                    c.activo
-                        ? TextButton(onPressed: () => _activa(c, false), child: const Text('Desactivar'))
-                        : TextButton(onPressed: () => _activa(c, true), child: const Text('Activar')),
-                ],
-              ),
+              acciones: [
+                IconButton(
+                  tooltip: 'Editar',
+                  onPressed: () => _cuenta(cuenta: c),
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+                IconButton(
+                  tooltip: 'Restablecer contraseña',
+                  onPressed: () => _restablecer(c),
+                  icon: const Icon(Icons.key_outlined),
+                ),
+                if (c.id != propia)
+                  c.activo
+                      ? TextButton(onPressed: () => _activa(c, false), child: const Text('Desactivar'))
+                      : TextButton(onPressed: () => _activa(c, true), child: const Text('Activar')),
+              ],
             );
           },
         ),

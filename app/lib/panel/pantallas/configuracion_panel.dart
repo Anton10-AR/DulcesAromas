@@ -121,16 +121,23 @@ class _ConfiguracionPanelState extends State<ConfiguracionPanel> {
                     trailing: OutlinedButton(onPressed: () => _tarifa(tarifa), child: const Text('Cambiar')),
                   ),
                   const Divider(height: 32),
-                  Row(
-                    children: [
-                      Text('Métodos de pago', style: textos.titleLarge),
-                      const Spacer(),
-                      FilledButton.icon(
-                        onPressed: () => _metodo(),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Nuevo método'),
-                      ),
-                    ],
+                  // En pantallas angostas el botón baja debajo del título en vez de chocar con él (RNF12).
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Text('Métodos de pago', style: textos.titleLarge),
+                        FilledButton.icon(
+                          onPressed: () => _metodo(),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Nuevo método'),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(

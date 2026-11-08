@@ -197,32 +197,30 @@ class _InventarioPanelState extends State<InventarioPanel> {
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final item = items[i];
-                    return ListTile(
-                      leading: item.alerta
+                    return FilaConAcciones(
+                      inicio: item.alerta
                           ? Icon(Icons.warning_amber, color: error, semanticLabel: 'En el mínimo')
                           : null,
-                      title: Text(item.nombre),
-                      subtitle: Text(
+                      titulo: Text(item.nombre),
+                      subtitulo: Text(
                         'Stock: ${item.stock} ${item.unidad} · Mínimo: ${item.minimo}'
                         '${item.alerta ? ' · En el mínimo' : ''}',
                       ),
-                      trailing: registra
-                          ? Wrap(
-                              children: [
-                                IconButton(
-                                  tooltip: 'Historial',
-                                  onPressed: () => _historial(item),
-                                  icon: const Icon(Icons.history),
-                                ),
-                                IconButton(
-                                  tooltip: 'Editar',
-                                  onPressed: () => _item(item: item),
-                                  icon: const Icon(Icons.edit_outlined),
-                                ),
-                                FilledButton.tonal(onPressed: () => _movimiento(item), child: const Text('Movimiento')),
-                              ],
-                            )
-                          : null,
+                      acciones: [
+                        if (registra) ...[
+                          IconButton(
+                            tooltip: 'Historial',
+                            onPressed: () => _historial(item),
+                            icon: const Icon(Icons.history),
+                          ),
+                          IconButton(
+                            tooltip: 'Editar',
+                            onPressed: () => _item(item: item),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
+                          FilledButton.tonal(onPressed: () => _movimiento(item), child: const Text('Movimiento')),
+                        ],
+                      ],
                     );
                   },
                 );
