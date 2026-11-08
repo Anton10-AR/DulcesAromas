@@ -289,6 +289,7 @@ La landing es una pieza de presentación y no forma parte del alcance de los doc
 - **Académicas:** el proyecto se desarrolla en la asignatura a cargo del Ing. Ramiro Duran, con un equipo de tres estudiantes y en los plazos del curso.
 - **Metodología:** el desarrollo sigue Scrum; el Sprint 1 corresponde al módulo de Seguridad.
 - **Plataforma:** la Tienda es una aplicación móvil en Flutter y Dart, como exige la materia, y el Panel es web. Ambas consumen una API REST.
+- **Despliegue:** el sistema se publica con planes gratuitos: la API en Render (contenedor Docker) con la base en Neon (PostgreSQL), el correo por Brevo y el sitio web compilado por GitHub Actions. Los planes gratuitos imponen límites: 512 MB de memoria para la API, que se apaga tras 15 minutos sin uso; 0.5 GB de base de datos y 300 correos al día. El detalle está en la sección 4.1 de los Modelos UML.
 - **Pagos:** el sistema registra y verifica comprobantes de forma manual. No se conecta a bancos ni a pasarelas de pago, y los reembolsos se hacen fuera del sistema.
 - **Entrega:** el costo de envío es una tarifa fija; no hay cálculo por distancia ni rastreo en mapa.
 - **Roles:** los cuatro roles son fijos; el administrador edita sus permisos pero no crea roles nuevos.

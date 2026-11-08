@@ -1,6 +1,6 @@
 # Dulces Aromas — Modelos UML v1
 
-Versión 1.2 · 02/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
+Versión 1.3 · 07/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
 
 ## 1. Introducción
 
@@ -10,7 +10,7 @@ Este documento reúne los cuatro modelos UML de Dulces Aromas: casos de uso, cla
 | --- | --- | --- |
 | Casos de uso | ¿Qué hace el sistema y para quién? | CU01 a CU17, actores |
 | Clases | ¿Con qué objetos trabaja? | RF, RN, datos de los CU |
-| Componentes | ¿De qué piezas se arma y cómo se comunican? | Módulos de la Visión, RNF17 |
+| Componentes | ¿De qué piezas se arma, cómo se comunican y dónde corre cada una? | Módulos de la Visión, RNF17, RNF21 |
 | Estados | ¿Cómo reacciona a los eventos un pedido o un pago? | Sección 2 de los CU |
 
 La notación es UML 2.5. Los nombres de clases, atributos y estados están en español, igual que el resto del proyecto.
@@ -449,6 +449,62 @@ La flecha discontinua va del componente que requiere hacia la interfaz que usa. 
 | Cobros | IPagos | IAutenticacion, IPedidos, Base de datos, Comprobantes |
 | Distribución | IEntregas | IAutenticacion, IPedidos, Base de datos |
 
+### 4.1 Despliegue en la nube
+
+El modelo de componentes dice de qué piezas se arma el sistema; el de despliegue dice dónde corre cada una. Todo se publica desde el repositorio con planes gratuitos y sin cambiar código: la configuración entra por variables de entorno (RNF21).
+
+```mermaid
+flowchart LR
+  subgraph Cliente["«device» Celular o computadora"]
+    APK["«artifact» Tienda (APK firmada)"]
+    Nav["«execution environment» Navegador"]
+  end
+  subgraph Render["«node» Render"]
+    subgraph Sitio["«static site» dulces-aromas.onrender.com"]
+      TiendaWeb["«artifact» Tienda web ( / )"]
+      PanelWeb["«artifact» Panel ( /panel/ )"]
+      Enlaces["«artifact» .well-known/assetlinks.json"]
+    end
+    subgraph Servicio["«web service» dulces-aromas-api.onrender.com (Ohio)"]
+      Contenedor["«container» Docker: Java 25 + api.jar"]
+    end
+  end
+  subgraph Neon["«node» Neon (AWS us-east-2, Ohio)"]
+    PG[("«database» PostgreSQL")]
+  end
+  Brevo["«external system» Brevo (correo)"]
+  subgraph GitHub["«node» GitHub"]
+    Main["rama main"]
+    Actions["«process» GitHub Actions"]
+    Web["rama web"]
+  end
+  Nav -->|HTTPS| Sitio
+  APK -->|HTTPS / REST| Contenedor
+  Nav -->|HTTPS / REST, CORS| Contenedor
+  Contenedor -->|JDBC + SSL| PG
+  Contenedor -->|HTTPS| Brevo
+  Main --> Actions -->|pruebas y compilación| Web --> Sitio
+  Main -->|render.yaml, Dockerfile| Servicio
+```
+
+| Nodo | Tecnología | Qué corre ahí | Configuración |
+| --- | --- | --- | --- |
+| Servicio web | Render, plan gratuito (512 MB), región Ohio | La API dentro de un contenedor Docker | `render.yaml`, `backend/Dockerfile` y variables de entorno |
+| Sitio estático | Render | La Tienda web en `/` y el Panel en `/panel/`, ya compilados | `render.yaml`; las rutas de Flutter responden con su `index.html` |
+| Base de datos | Neon, PostgreSQL administrado, AWS us-east-2 | Las tablas que crea Flyway, con imágenes y comprobantes | `DB_URL`, `DB_USER`, `DB_PASSWORD`; conexión directa, sin pooler |
+| Correo | Brevo, API HTTPS | El envío del enlace de recuperación (CU12) | `BREVO_CLAVE`, `MAIL_REMITENTE` |
+| Integración continua | GitHub Actions | Pruebas de Flutter y compilación del sitio en cada cambio de `app/` | `.github/workflows/web.yml` y la variable `API_URL` |
+| Dispositivo | Android o navegador | La Tienda (APK firmada) o la Tienda web y el Panel | `--dart-define=API_URL=…` al compilar |
+
+Decisiones de despliegue:
+
+- **API y base en la misma región (Ohio):** cada consulta viaja entre dos centros de datos cercanos, no entre costas.
+- **Correo por API HTTPS y no por SMTP:** el plan gratuito de Render bloquea los puertos SMTP. `ConfiguracionCorreo` elige Brevo cuando existe `BREVO_CLAVE`.
+- **Imágenes y comprobantes en la base:** el plan gratuito de Render no tiene disco persistente.
+- **El sitio se compila en GitHub Actions:** Render no trae Flutter; solo publica la rama `web`.
+- **App Links:** `assetlinks.json` declara el paquete y la huella de la clave que firma la APK, para que el enlace de recuperación abra la Tienda instalada (CU12).
+- **Seguridad:** todo el tráfico va por HTTPS (RNF06), la API solo acepta llamadas de navegador desde el sitio publicado (`CORS_ORIGENES`) y ninguna credencial está en el repositorio.
+
 ## 5. Modelo de estados
 
 El pedido y el pago tienen máquinas de estado separadas. Se conectan en un solo punto: aprobar el pago pasa el pedido de Pendiente a Confirmado (RN05, D1). Cada transición se escribe como evento \[guarda\] / acción.
@@ -511,7 +567,7 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 
 Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pagos (uno por intento) y la entrega es una clase aparte que solo existe para pedidos con delivery.
 
-## 7. Cambios en las versiones 1.1 y 1.2
+## 7. Cambios en las versiones 1.1, 1.2 y 1.3
 
 | Elemento | Cambio | Motivo |
 | --- | --- | --- |
@@ -523,3 +579,4 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | MovimientoInventario | Agrega stockResultante | El historial muestra el stock que dejó cada movimiento (RF31) |
 | AsignacionEntrega | Clase nueva | Registrar cada cambio de repartidor (CU08, alt. 4) |
 | Componentes | Evento PedidoRegistrado | Cobros abre el pago sin que E-commerce dependa de Cobros |
+| Despliegue (v1.3) | Sección 4.1 nueva: nodos de Render, Neon, Brevo y GitHub Actions | Documentar dónde corre cada componente al publicar el sistema en la nube (RNF21) |

@@ -18,7 +18,7 @@ Los requisitos son la fuente de verdad del proyecto.
 | [docs/01-vision.md](docs/01-vision.md) | Alcance, roles, requisitos funcionales (RF) y no funcionales (RNF) |
 | [docs/02-casos-de-uso.md](docs/02-casos-de-uso.md) | Casos de uso, estados, reglas de negocio (RN), matriz de permisos y decisiones de implementación |
 | [docs/03-historias-y-backlog.md](docs/03-historias-y-backlog.md) | Historias de usuario con criterios de aceptación y backlog por etapas |
-| [docs/04-modelos-uml.md](docs/04-modelos-uml.md) | Diagramas de casos de uso, clases, componentes y estados |
+| [docs/04-modelos-uml.md](docs/04-modelos-uml.md) | Diagramas de casos de uso, clases, componentes, despliegue y estados |
 
 ## Estructura
 
@@ -143,14 +143,70 @@ Los roles son fijos; el administrador edita los permisos del Vendedor y del Repa
 
 ## Despliegue en la nube (RNF21)
 
-El sistema se despliega desde este repositorio sin cambiar código, y puede hacerse con planes gratuitos:
+El sistema está publicado:
 
-1. **Base de datos:** PostgreSQL administrado, por ejemplo Neon. `DB_URL` lleva el formato `jdbc:postgresql://<host>/<base>?sslmode=require`.
-2. **API:** la imagen de `backend/Dockerfile`. `render.yaml` la describe para Render (New → Blueprint), que pide las variables secretas al crear el servicio. Las imágenes y comprobantes se guardan en la base, así que no hace falta disco propio. En el plan gratuito, la API se apaga tras 15 minutos sin uso y tarda cerca de un minuto en despertar.
-3. **Correo:** una cuenta de Brevo con el remitente verificado; su clave va en `BREVO_CLAVE`.
-4. **Sitio web:** la Tienda web en `/` y el Panel en `/panel/`, en el sitio estático `dulces-aromas` de `render.yaml`. Render no trae Flutter, así que lo compila GitHub Actions (`.github/workflows/web.yml`) y lo deja en la rama `web`, que Render publica. Para activarlo, creen la variable del repositorio `API_URL` (Settings → Secrets and variables → Actions → Variables) con la dirección de la API; desde ahí, cada cambio en `app/` vuelve a publicar el sitio.
-5. **Variables de la API** que dependen del sitio: `CORS_ORIGENES=https://dulces-aromas.onrender.com` y `RECUPERACION_URL=https://dulces-aromas.onrender.com/recuperar`.
-6. Todo el tráfico por HTTPS (RNF06); Render lo incluye.
+| Qué | Dirección |
+| --- | --- |
+| Tienda web | https://dulces-aromas.onrender.com |
+| Panel | https://dulces-aromas.onrender.com/panel/ |
+| API | https://dulces-aromas-api.onrender.com |
+
+En el plan gratuito, la API se apaga tras 15 minutos sin uso y tarda cerca de un minuto en despertar. Antes de una presentación, abran la Tienda unos minutos antes.
+
+### Tecnologías de la nube
+
+| Tecnología | Para qué | Plan gratuito |
+| --- | --- | --- |
+| **Render** (plataforma de hospedaje) | Ejecuta la API y publica la Tienda web y el Panel, con dominio y HTTPS | 512 MB de RAM; la API se apaga sin uso |
+| **Neon** (PostgreSQL administrado) | Base de datos, en AWS us-east-2 (Ohio), la misma región que la API | 0.5 GB |
+| **Brevo** (correo transaccional) | Envía el correo de recuperación por su API HTTPS; Render bloquea SMTP | 300 correos al día |
+| **GitHub Actions** (CI/CD) | En cada cambio en `app/`, ejecuta las pruebas de Flutter, compila el sitio y lo deja en la rama `web` | Incluido |
+| **Docker** (`backend/Dockerfile`) | Empaqueta la API con Java 25: una etapa compila con Maven y otra solo ejecuta el `.jar`, con un usuario sin privilegios y la memoria de la JVM limitada | — |
+| **Render Blueprint** (`render.yaml`) | Describe como código los dos servicios, la región, la verificación de salud y las variables | — |
+| **Android App Links** (`assetlinks.json`) | El enlace de recuperación abre la Tienda instalada, o la Tienda web si no lo está | — |
+
+```
+ Celular (APK) ──┐
+                 ├──HTTPS──▶  API en Render (Docker, Ohio) ──▶ PostgreSQL en Neon (Ohio)
+ Navegador ──────┘                      │
+   ▲                                    └──HTTPS──▶ Brevo ──▶ correo de recuperación
+   │
+ Tienda (/) y Panel (/panel/) en Render  ◀── rama web ◀── GitHub Actions (pruebas y compilación)
+```
+
+El diagrama de despliegue UML está en la sección 4.1 de [docs/04-modelos-uml.md](docs/04-modelos-uml.md).
+
+### Cómo desplegar desde cero
+
+El sistema se despliega desde este repositorio sin cambiar código. El orden importa, porque cada paso usa datos del anterior:
+
+1. **Neon:** creen un proyecto en la región AWS US East 2 (Ohio). En **Connect**, desactiven *Connection pooling* (Flyway necesita la conexión directa) y separen la cadena en tres datos: `DB_URL` = `jdbc:postgresql://<host>/<base>?sslmode=require` (sin usuario, sin contraseña y sin `&channel_binding=require`, que el controlador de Java no reconoce), `DB_USER` y `DB_PASSWORD`. Si eligen otra región, cambien `region` en `render.yaml`.
+2. **Brevo:** verifiquen el correo remitente (*Senders*) y creen una API key (`xkeysib-…`, no la SMTP key). Van en `BREVO_CLAVE` y `MAIL_REMITENTE`. Si Brevo bloquea las IP desconocidas, desactiven ese bloqueo: Render cambia de IP.
+3. **GitHub:** creen la variable del repositorio `API_URL` (Settings → Secrets and variables → Actions → Variables) con la dirección de la API, `https://dulces-aromas-api.onrender.com`, y ejecuten el workflow **Sitio web** (Actions → Run workflow). Crea la rama `web`, que Render necesita. Desde ahí, cada cambio en `app/` vuelve a publicar el sitio.
+4. **Render:** New → Blueprint → este repositorio. Render lee `render.yaml`, crea la API y el sitio estático y pide las variables secretas:
+
+   | Variable | Valor |
+   | --- | --- |
+   | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Los de Neon |
+   | `BREVO_CLAVE`, `MAIL_REMITENTE` | Los de Brevo |
+   | `ADMIN_CORREO`, `ADMIN_CONTRASENA` | El primer administrador; se crea en el primer arranque |
+   | `CORS_ORIGENES` | `https://dulces-aromas.onrender.com` |
+   | `RECUPERACION_URL` | `https://dulces-aromas.onrender.com/recuperar` |
+
+   La API tarda entre 5 y 10 minutos en construirse. En el primer arranque, Flyway crea las tablas en Neon.
+
+Las credenciales solo van en los formularios de Render; nunca en el repositorio. Las imágenes y comprobantes se guardan en la base, así que no hace falta disco propio. Todo el tráfico va por HTTPS (RNF06), que Render incluye.
+
+**Datos de demostración en la nube (opcional):** con la base recién creada, desde `backend/`, en una terminal propia:
+
+```powershell
+$env:ADMIN_CORREO = Read-Host "Correo del administrador de Render"
+$env:ADMIN_CONTRASENA = Read-Host "Contraseña del administrador de Render"
+$env:DEMO_CONTRASENA = Read-Host "Contraseña para las cuentas de demostración"
+python demo/cargar_demo.py --api https://dulces-aromas-api.onrender.com
+```
+
+Las variables del entorno tienen prioridad sobre `backend/.env` y desaparecen al cerrar la terminal. Usen para la nube una `DEMO_CONTRASENA` distinta de la local, porque el sitio es público.
 
 ### Enlace de recuperación y App Links
 
