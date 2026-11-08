@@ -138,7 +138,9 @@ class PagosTests extends PruebaPedidos {
 	void rn05AlAprobarElPagoQuedaPagadoYElPedidoConfirmado() throws Exception {
 		registrarPago(cliente, pedido, "OP-1", PDF).andExpect(status().isOk());
 		long pago = pagoVigente();
+		// Quien verifica ve de quién es el pedido, sin que Cobros lea las tablas de Seguridad.
 		mvc.perform(con(admin, get("/api/pagos/en-verificacion"))).andExpect(jsonPath("$[0].id").value(pago))
+			.andExpect(jsonPath("$[0].cliente").value("ana@correo.bo"))
 			.andExpect(jsonPath("$[0].comprobante").value("/api/pagos/" + pago + "/comprobante"));
 
 		aprobar(admin, pago).andExpect(status().isOk())

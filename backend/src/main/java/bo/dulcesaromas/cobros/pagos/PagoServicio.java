@@ -2,6 +2,7 @@ package bo.dulcesaromas.cobros.pagos;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,7 +93,7 @@ class PagoServicio {
 					"Este pedido ya tiene un pago en verificación."));
 		pago.registrar(metodo, referencia, reloj.instant());
 		comprobantes.save(new Comprobante(pago.getId(), archivo));
-		return PagoVista.de(pago, null);
+		return vistas(List.of(pago)).getFirst();
 	}
 
 	/**
@@ -206,13 +207,18 @@ class PagoServicio {
 	private List<PagoVista> vistas(List<Pago> lista) {
 		Map<Long, Verificacion> porPago = verificaciones.findByPagoIdIn(lista.stream().map(Pago::getId).toList()).stream()
 			.collect(Collectors.toMap(Verificacion::getPagoId, Function.identity()));
-		Map<Long, String> nombres = autenticacion
-			.nombres(porPago.values().stream().map(Verificacion::getVerificadorId).collect(Collectors.toSet()));
+		// El titular de cada pedido lo da E-commerce, y los nombres, Seguridad: Cobros no lee sus tablas.
+		Map<Long, Long> clientePorPedido = pedidos.resumenes(lista.stream().map(Pago::getPedidoId).collect(Collectors.toSet()))
+			.stream()
+			.collect(Collectors.toMap(IPedidos.PedidoResumen::id, IPedidos.PedidoResumen::clienteId));
+		Set<Long> personas = new HashSet<>(clientePorPedido.values());
+		porPago.values().forEach(v -> personas.add(v.getVerificadorId()));
+		Map<Long, String> nombres = autenticacion.nombres(personas);
 		return lista.stream().map(p -> {
 			Verificacion v = porPago.get(p.getId());
 			var verificacion = v == null ? null : new PagoVista.VerificacionVista(v.getDecision(), v.getObservacion(),
 					nombres.get(v.getVerificadorId()), v.getFecha());
-			return PagoVista.de(p, verificacion);
+			return PagoVista.de(p, nombres.get(clientePorPedido.get(p.getPedidoId())), verificacion);
 		}).toList();
 	}
 

@@ -208,6 +208,16 @@ class PedidosTests extends PruebaPedidos {
 	}
 
 	@Test
+	void elPersonalVeElNombreDelClienteEnLaListaYEnElDetalle() throws Exception {
+		long pedido = crearPedido(cliente, pedidoSimple(torta));
+
+		mvc.perform(con(admin, get("/api/pedidos"))).andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].cliente").value("ana@correo.bo"));
+		mvc.perform(con(admin, get("/api/pedidos/" + pedido))).andExpect(status().isOk())
+			.andExpect(jsonPath("$.cliente").value("ana@correo.bo"));
+	}
+
+	@Test
 	void siElProductoTieneTamanosHayQueElegirUno() throws Exception {
 		String linea = "{\"lineas\":[{\"productoId\":%d,\"cantidad\":1,\"opciones\":[%s]}]}";
 

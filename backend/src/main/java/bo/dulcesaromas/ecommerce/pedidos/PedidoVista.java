@@ -8,15 +8,18 @@ import java.util.Map;
 import bo.dulcesaromas.ecommerce.EstadoPedido;
 import bo.dulcesaromas.ecommerce.TipoEntrega;
 
-record PedidoVista(Long id, EstadoPedido estado, TipoEntrega tipoEntrega, String direccion, String telefono,
+/**
+ * @param cliente nombre del titular, para que el personal sepa de quién es el pedido
+ */
+record PedidoVista(Long id, String cliente, EstadoPedido estado, TipoEntrega tipoEntrega, String direccion, String telefono,
 		Instant horarioEntrega, List<LineaVista> lineas, BigDecimal costoEnvio, BigDecimal total,
 		Instant fechaCreacion, boolean asistido, String motivoCancelacion, List<CambioVista> historial) {
 
 	/**
-	 * @param nombres nombre de cada usuario que aparece en el historial, por id
+	 * @param nombres nombre del cliente y de cada usuario que aparece en el historial, por id
 	 */
 	static PedidoVista de(Pedido p, Map<Long, String> nombres) {
-		return new PedidoVista(p.getId(), p.getEstado(), p.getTipoEntrega(), p.getDireccion(), p.getTelefono(),
+		return new PedidoVista(p.getId(), nombres.get(p.getClienteId()), p.getEstado(), p.getTipoEntrega(), p.getDireccion(), p.getTelefono(),
 				p.getHorarioEntrega(), p.getLineas().stream().map(l -> LineaVista.de(l, true)).toList(),
 				p.getCostoEnvio(), p.getTotal(), p.getFechaCreacion(), p.getRegistradoPor() != null,
 				p.getMotivoCancelacion(),
@@ -49,11 +52,14 @@ record PedidoVista(Long id, EstadoPedido estado, TipoEntrega tipoEntrega, String
 	/**
 	 * Un pedido en una lista: Mis pedidos o el Panel.
 	 */
-	record Resumen(Long id, EstadoPedido estado, TipoEntrega tipoEntrega, Instant fechaCreacion,
+	record Resumen(Long id, String cliente, EstadoPedido estado, TipoEntrega tipoEntrega, Instant fechaCreacion,
 			Instant horarioEntrega, int productos, BigDecimal total, boolean asistido) {
 
-		static Resumen de(Pedido p) {
-			return new Resumen(p.getId(), p.getEstado(), p.getTipoEntrega(), p.getFechaCreacion(), p.getHorarioEntrega(),
+		/**
+		 * @param nombres nombre de cada cliente, por id
+		 */
+		static Resumen de(Pedido p, Map<Long, String> nombres) {
+			return new Resumen(p.getId(), nombres.get(p.getClienteId()), p.getEstado(), p.getTipoEntrega(), p.getFechaCreacion(), p.getHorarioEntrega(),
 					p.getLineas().stream().mapToInt(LineaPedido::getCantidad).sum(), p.getTotal(),
 					p.getRegistradoPor() != null);
 		}

@@ -26,4 +26,9 @@ void main() {
   test('un horario elegido se manda a la API con la zona de La Paz', () {
     expect(instanteLaPaz(DateTime(2026, 11, 3, 10, 0)), '2026-11-03T10:00:00-04:00');
   });
+
+  test('la cantidad de productos va en singular o plural', () {
+    expect(cantidadProductos(1), '1 producto');
+    expect(cantidadProductos(3), '3 productos');
+  });
 }

@@ -35,3 +35,6 @@ DateTime primerDiaDeEntrega() {
   final hoy = aLaPaz(DateTime.now());
   return DateTime(hoy.year, hoy.month, hoy.day).add(const Duration(days: 1));
 }
+
+/// «1 producto», «3 productos».
+String cantidadProductos(int cantidad) => cantidad == 1 ? '1 producto' : '$cantidad productos';

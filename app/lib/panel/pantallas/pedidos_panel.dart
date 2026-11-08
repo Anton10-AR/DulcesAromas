@@ -82,7 +82,13 @@ class _PedidosPanelState extends State<PedidosPanel> {
                         'Pedido #${p.id} · ${p.tipoEntrega == 'DELIVERY' ? 'Delivery' : 'Recojo'}'
                         '${p.asistido ? ' · Asistido' : ''}',
                       ),
-                      subtitle: Text('Entrega: ${fechaHora(p.horarioEntrega)} · ${p.productos} productos'),
+                      subtitle: Text(
+                        [
+                          ?p.cliente,
+                          'Entrega: ${fechaHora(p.horarioEntrega)}',
+                          cantidadProductos(p.productos),
+                        ].join(' · '),
+                      ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,

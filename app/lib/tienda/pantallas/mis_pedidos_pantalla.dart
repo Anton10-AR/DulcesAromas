@@ -96,7 +96,7 @@ class _TarjetaPedido extends StatelessWidget {
                   Text(bolivianos(pedido.total), style: textos.titleMedium),
                 ],
               ),
-              Text('${fecha(pedido.fechaCreacion)} · ${pedido.productos} productos', style: textos.bodySmall),
+              Text('${fecha(pedido.fechaCreacion)} · ${cantidadProductos(pedido.productos)}', style: textos.bodySmall),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,

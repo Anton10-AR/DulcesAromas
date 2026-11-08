@@ -90,7 +90,7 @@ void main() {
     await tester.tap(find.text('Agregar al carrito'));
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Carrito, 1 productos'), findsOneWidget);
+    expect(find.byTooltip('Carrito, 1 producto'), findsOneWidget);
   });
 
   testWidgets('RN15: confirmar el pedido sin sesión pide ingresar y conserva el carrito', (tester) async {

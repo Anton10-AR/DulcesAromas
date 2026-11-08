@@ -157,6 +157,7 @@ class _PedidoPanelState extends State<PedidoPanel> {
           ],
         ),
         const SizedBox(height: 8),
+        if (pedido.cliente != null) Text('Cliente: ${pedido.cliente}', style: textos.titleMedium),
         Text('${pedido.esDelivery ? 'Delivery' : 'Recojo en tienda'} · ${fechaHora(pedido.horarioEntrega)}'),
         if (pedido.direccion != null) Text(pedido.direccion!),
         Text('Teléfono: ${pedido.telefono}'),

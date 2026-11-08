@@ -3,6 +3,7 @@ package bo.dulcesaromas.ecommerce.pedidos;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,9 +150,7 @@ class PedidoServicio {
 	 */
 	@Transactional(readOnly = true)
 	List<PedidoVista.Resumen> deCliente(Long clienteId) {
-		return pedidos.findByClienteIdOrderByFechaCreacionDescIdDesc(clienteId).stream()
-			.map(PedidoVista.Resumen::de)
-			.toList();
+		return resumenes(pedidos.findByClienteIdOrderByFechaCreacionDescIdDesc(clienteId));
 	}
 
 	/**
@@ -165,9 +164,7 @@ class PedidoServicio {
 		Set<EstadoPedido> estados = estado != null ? Set.of(estado) : (desde == null && hasta == null ? EN_CURSO : null);
 		var filtro = FiltrosPedido.de(estados, desde == null ? null : Fechas.inicioDe(desde),
 				hasta == null ? null : Fechas.finDe(hasta));
-		return pedidos.findAll(filtro, Sort.by("horarioEntrega", "id")).stream()
-			.map(PedidoVista.Resumen::de)
-			.toList();
+		return resumenes(pedidos.findAll(filtro, Sort.by("horarioEntrega", "id")));
 	}
 
 	/**
@@ -214,12 +211,19 @@ class PedidoServicio {
 	}
 
 	/**
-	 * El historial lleva el nombre de quien hizo cada cambio (HU13).
+	 * El pedido lleva el nombre del cliente, y el historial el de quien hizo cada cambio (HU13). Los nombres los da
+	 * Seguridad por su interfaz.
 	 */
 	private PedidoVista vista(Pedido pedido) {
 		Set<Long> usuarios = pedido.getHistorial().stream().map(HistorialEstado::getUsuarioId).filter(Objects::nonNull)
-			.collect(Collectors.toSet());
+			.collect(Collectors.toCollection(HashSet::new));
+		usuarios.add(pedido.getClienteId());
 		return PedidoVista.de(pedido, autenticacion.nombres(usuarios));
+	}
+
+	private List<PedidoVista.Resumen> resumenes(List<Pedido> lista) {
+		Map<Long, String> nombres = autenticacion.nombres(lista.stream().map(Pedido::getClienteId).collect(Collectors.toSet()));
+		return lista.stream().map(p -> PedidoVista.Resumen.de(p, nombres)).toList();
 	}
 
 	/**

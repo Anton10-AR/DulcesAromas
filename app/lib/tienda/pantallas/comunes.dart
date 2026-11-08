@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../comun/api.dart';
+import '../../comun/formato.dart';
 import '../../comun/sesion.dart';
 import '../carrito.dart';
 
@@ -12,7 +13,7 @@ List<Widget> accionesTienda(BuildContext context) {
   final sesion = context.watch<Sesion>();
   return [
     IconButton(
-      tooltip: 'Carrito, ${carrito.unidades} productos',
+      tooltip: 'Carrito, ${cantidadProductos(carrito.unidades)}',
       onPressed: () => context.push('/carrito'),
       icon: Badge(
         isLabelVisible: carrito.unidades > 0,

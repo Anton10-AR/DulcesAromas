@@ -236,7 +236,7 @@ void main() {
     expect(find.widgetWithText(TextField, 'Tortas'), findsOneWidget);
   });
 
-  testWidgets('CU08: un pedido con recojo explica que no lleva repartidor', (tester) async {
+  testWidgets('CU08: un pedido con recojo muestra al cliente y explica que no lleva repartidor', (tester) async {
     await ingresar(
       tester,
       apiCon(
@@ -250,6 +250,7 @@ void main() {
           }, 409),
           '/api/pedidos/5': {
             'id': 5,
+            'cliente': 'Lucía Torrez',
             'estado': 'LISTO',
             'tipoEntrega': 'RECOJO',
             'direccion': null,
@@ -270,6 +271,7 @@ void main() {
     (router as GoRouter).go('/pedidos/5');
     await tester.pumpAndSettle();
 
+    expect(find.text('Cliente: Lucía Torrez'), findsOneWidget);
     expect(find.textContaining('Recojo en tienda: no lleva repartidor.'), findsOneWidget);
     expect(find.text('El cliente lo retiró'), findsOneWidget);
     expect(find.text('Elegir repartidor'), findsNothing);

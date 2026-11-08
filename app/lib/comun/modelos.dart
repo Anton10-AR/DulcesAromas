@@ -157,6 +157,7 @@ const nombresEstadoPago = {
 class PedidoResumen {
   PedidoResumen({
     required this.id,
+    this.cliente,
     required this.estado,
     required this.tipoEntrega,
     required this.fechaCreacion,
@@ -168,6 +169,7 @@ class PedidoResumen {
 
   factory PedidoResumen.deJson(Json j) => PedidoResumen(
     id: j['id'] as int,
+    cliente: j['cliente'] as String?,
     estado: j['estado'] as String,
     tipoEntrega: j['tipoEntrega'] as String,
     fechaCreacion: instante(j['fechaCreacion'])!,
@@ -178,6 +180,9 @@ class PedidoResumen {
   );
 
   final int id;
+
+  /// Nombre del titular, para el personal.
+  final String? cliente;
   final String estado;
   final String tipoEntrega;
   final DateTime fechaCreacion;
@@ -208,6 +213,7 @@ class Cambio {
 class Pedido {
   Pedido({
     required this.id,
+    this.cliente,
     required this.estado,
     required this.tipoEntrega,
     this.direccion,
@@ -224,6 +230,7 @@ class Pedido {
 
   factory Pedido.deJson(Json j) => Pedido(
     id: j['id'] as int,
+    cliente: j['cliente'] as String?,
     estado: j['estado'] as String,
     tipoEntrega: j['tipoEntrega'] as String,
     direccion: j['direccion'] as String?,
@@ -239,6 +246,9 @@ class Pedido {
   );
 
   final int id;
+
+  /// Nombre del titular, para el personal.
+  final String? cliente;
   final String estado;
   final String tipoEntrega;
   final String? direccion;
@@ -278,6 +288,7 @@ class Pago {
   Pago({
     required this.id,
     required this.pedidoId,
+    this.cliente,
     required this.monto,
     required this.estado,
     this.metodo,
@@ -290,6 +301,7 @@ class Pago {
   factory Pago.deJson(Json j) => Pago(
     id: j['id'] as int,
     pedidoId: j['pedidoId'] as int,
+    cliente: j['cliente'] as String?,
     monto: decimalDe(j['monto']),
     estado: j['estado'] as String,
     metodo: j['metodo'] as String?,
@@ -301,6 +313,9 @@ class Pago {
 
   final int id;
   final int pedidoId;
+
+  /// Nombre del titular del pedido, para quien verifica.
+  final String? cliente;
   final Decimal monto;
   final String estado;
   final String? metodo;

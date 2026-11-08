@@ -130,6 +130,7 @@ class _PagosPanelState extends State<PagosPanel> {
                             Text(bolivianos(p.monto), style: textos.titleLarge),
                           ],
                         ),
+                        if (p.cliente != null) Text('Cliente: ${p.cliente}', style: textos.titleMedium),
                         Text('${p.metodo} · Referencia: ${p.referencia}'),
                         if (p.registrado != null)
                           Text('Registrado: ${fechaHora(p.registrado!)}', style: textos.bodySmall),
