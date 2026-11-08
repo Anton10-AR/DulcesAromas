@@ -54,6 +54,24 @@ void main() {
     expect(perdida, isTrue);
   });
 
+  test('el 401 de una solicitud que salió sin sesión no cierra la sesión que se abrió después', () async {
+    late Api api;
+    api = Api(
+      cliente: MockClient((_) async {
+        // Mientras la solicitud viaja, la app termina de recuperar la sesión guardada.
+        api.token = 'abc';
+        return http.Response('{"codigo":"SIN_SESION","mensaje":"Inicia sesión."}', 401);
+      }),
+      base: 'http://api',
+    );
+    var perdida = false;
+    api.alPerderSesion = () => perdida = true;
+
+    await expectLater(api.get('/api/pedidos/mios'), throwsA(isA<ErrorApi>()));
+
+    expect(perdida, isFalse);
+  });
+
   test('sin conexión da un mensaje entendible', () async {
     final api = Api(cliente: MockClient((_) => throw http.ClientException('caído')), base: 'http://api');
 

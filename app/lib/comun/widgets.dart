@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'tema.dart';
+
+/// Lo que se ve mientras la app recupera la sesión guardada, antes de mostrar cualquier pantalla. No usa
+/// MaterialApp: su navegador reemplazaría la dirección del navegador (/pedidos, /carrito…) antes de que el router
+/// la lea.
+class Arrancando extends StatelessWidget {
+  const Arrancando({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final oscuro = View.of(context).platformDispatcher.platformBrightness == Brightness.dark;
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: ColoredBox(
+        color: oscuro ? Colores.fondoOscuro : Colores.fondo,
+        child: Center(child: CircularProgressIndicator(color: oscuro ? Colores.textoOscuro : Colores.cafe)),
+      ),
+    );
+  }
+}
 
 /// Ancho máximo del contenido, para que en pantallas anchas no se estire (RNF12).
 const double anchoMaximo = 720;

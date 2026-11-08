@@ -17,23 +17,17 @@ class CarritoPantalla extends StatefulWidget {
 }
 
 class _CarritoPantallaState extends State<CarritoPantalla> {
+  /// Se pide al dibujar con productos en el carrito, y se vuelve a pedir cuando el carrito cambia.
   Future<Cotizacion>? _cotizacion;
 
-  @override
-  void initState() {
-    super.initState();
-    _cotizar();
-  }
+  Future<Cotizacion> _cotizacionDe(Carrito carrito) => _cotizacion ??= context
+      .read<Api>()
+      .post('/api/pedidos/cotizacion', {'lineas': carrito.aSolicitud()})
+      .then((j) => Cotizacion.deJson(j as Json));
 
   void _cotizar() {
-    final carrito = context.read<Carrito>();
     setState(() {
-      _cotizacion = carrito.vacio
-          ? null
-          : context
-                .read<Api>()
-                .post('/api/pedidos/cotizacion', {'lineas': carrito.aSolicitud()})
-                .then((j) => Cotizacion.deJson(j as Json));
+      _cotizacion = null;
     });
   }
 
@@ -72,7 +66,7 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
               ),
             )
           : Cargador(
-              futuro: _cotizacion!,
+              futuro: _cotizacionDe(carrito),
               reintentar: _cotizar,
               constructor: (context, cotizacion) => _contenido(carrito, cotizacion),
             ),
@@ -96,8 +90,7 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
               const Divider(height: 32),
               Row(
                 children: [
-                  Text('Total sin envío', style: textos.titleMedium),
-                  const Spacer(),
+                  Expanded(child: Text('Total sin envío', style: textos.titleMedium)),
                   Text(bolivianos(cotizacion.total), style: textos.titleLarge),
                 ],
               ),

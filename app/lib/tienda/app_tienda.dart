@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../comun/api.dart';
 import '../comun/sesion.dart';
 import '../comun/tema.dart';
+import '../comun/widgets.dart';
 import 'carrito.dart';
 import 'pantallas/carrito_pantalla.dart';
 import 'pantallas/catalogo_pantalla.dart';
@@ -97,12 +98,9 @@ class _AppTiendaState extends State<AppTienda> {
   late final Carrito _carrito = Carrito();
   late final GoRouter _rutas = rutasTienda(_sesion);
 
-  @override
-  void initState() {
-    super.initState();
-    _sesion.restaurar();
-    _carrito.cargar();
-  }
+  /// Las pantallas esperan a la sesión y al carrito guardados. Si no, al abrir o recargar una ruta como /pedidos o
+  /// /carrito en la web, la pantalla pediría datos sin token o mostraría el carrito vacío.
+  late final Future<void> _listo = Future.wait([_sesion.restaurar(), _carrito.cargar()]);
 
   @override
   Widget build(BuildContext context) {
@@ -112,14 +110,19 @@ class _AppTiendaState extends State<AppTienda> {
         ChangeNotifierProvider.value(value: _sesion),
         ChangeNotifierProvider.value(value: _carrito),
       ],
-      child: MaterialApp.router(
-        title: 'Dulces Aromas',
-        debugShowCheckedModeBanner: false,
-        theme: temaClaro(),
-        darkTheme: temaOscuro(),
-        // Sigue la preferencia del dispositivo.
-        themeMode: ThemeMode.system,
-        routerConfig: _rutas,
+      child: FutureBuilder(
+        future: _listo,
+        builder: (context, estado) => estado.connectionState != ConnectionState.done
+            ? const Arrancando()
+            : MaterialApp.router(
+                title: 'Dulces Aromas',
+                debugShowCheckedModeBanner: false,
+                theme: temaClaro(),
+                darkTheme: temaOscuro(),
+                // Sigue la preferencia del dispositivo.
+                themeMode: ThemeMode.system,
+                routerConfig: _rutas,
+              ),
       ),
     );
   }

@@ -287,4 +287,77 @@ void main() {
     await tester.pumpAndSettle();
     expect(consultas, 3);
   });
+
+  /// Abre la Tienda directo en [ruta], como al recargar esa página en el navegador.
+  Future<void> abrirEn(WidgetTester tester, Api api, String ruta) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue = ruta;
+    addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+    await abrir(tester, api);
+  }
+
+  http.Response json(Object cuerpo, [int estado = 200]) =>
+      http.Response(jsonEncode(cuerpo), estado, headers: {'content-type': 'application/json; charset=utf-8'});
+
+  testWidgets('al recargar Mis pedidos, la sesión guardada se conserva', (tester) async {
+    SharedPreferences.setMockInitialValues({'sesion_tienda': 'abc'});
+    // Como la API real: sin el token de la sesión, responde 401.
+    http.Response conSesion(http.Request s, Object cuerpo) => s.headers['Authorization'] == 'Bearer abc'
+        ? json(cuerpo)
+        : json({'codigo': 'SIN_SESION', 'mensaje': 'Inicia sesión para continuar.'}, 401);
+    final api = apiFalsa(
+      respuestas: {
+        '/api/auth/yo': (s) => conSesion(s, {
+          'id': 6,
+          'nombre': 'Lucía',
+          'correo': 'lucia@example.com',
+          'tipo': 'CLIENTE',
+          'rol': null,
+          'permisos': [],
+        }),
+        '/api/pedidos/mios': (s) => conSesion(s, []),
+        '/api/pagos/mios': (s) => conSesion(s, []),
+      },
+    );
+
+    await abrirEn(tester, api, '/pedidos');
+
+    expect(find.text('Todavía no hiciste pedidos.'), findsOneWidget);
+    final preferencias = await SharedPreferences.getInstance();
+    expect(preferencias.getString('sesion_tienda'), 'abc');
+  });
+
+  testWidgets('al recargar el carrito, muestra los productos guardados', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'carrito': jsonEncode([
+        {'productoId': 1, 'nombre': 'Torta de chocolate', 'cantidad': 2, 'opciones': [], 'nombresOpciones': []},
+      ]),
+    });
+    final api = apiFalsa(
+      respuestas: {
+        '/api/pedidos/cotizacion': (_) => json({
+          'lineas': [
+            {
+              'productoId': 1,
+              'nombre': 'Torta de chocolate',
+              'cantidad': 2,
+              'precioUnitario': 120.0,
+              'opciones': [],
+              'mensaje': null,
+              'subtotal': 240.0,
+              'disponible': true,
+            },
+          ],
+          'costoEnvio': 0.0,
+          'total': 240.0,
+          'confirmable': true,
+          'noDisponibles': [],
+        }),
+      },
+    );
+
+    await abrirEn(tester, api, '/carrito');
+
+    expect(find.text('Torta de chocolate'), findsOneWidget);
+    expect(find.text('Bs 240.00'), findsNWidgets(2));
+  });
 }

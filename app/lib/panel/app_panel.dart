@@ -6,6 +6,7 @@ import '../comun/api.dart';
 import '../comun/perfil.dart';
 import '../comun/sesion.dart';
 import '../comun/tema.dart';
+import '../comun/widgets.dart';
 import 'pantallas/asistido_panel.dart';
 import 'pantallas/catalogo_panel.dart';
 import 'pantallas/configuracion_panel.dart';
@@ -114,11 +115,8 @@ class _AppPanelState extends State<AppPanel> {
   late final Sesion _sesion = Sesion(widget.api, claveGuardado: 'sesion_panel');
   late final GoRouter _rutas = rutasPanel(_sesion);
 
-  @override
-  void initState() {
-    super.initState();
-    _sesion.restaurar();
-  }
+  /// Las pantallas esperan a la sesión guardada, para no pedir datos sin token al recargar una ruta.
+  late final Future<void> _listo = _sesion.restaurar();
 
   @override
   Widget build(BuildContext context) {
@@ -127,13 +125,18 @@ class _AppPanelState extends State<AppPanel> {
         Provider.value(value: widget.api),
         ChangeNotifierProvider.value(value: _sesion),
       ],
-      child: MaterialApp.router(
-        title: 'Dulces Aromas · Panel',
-        debugShowCheckedModeBanner: false,
-        theme: temaClaro(),
-        darkTheme: temaOscuro(),
-        themeMode: ThemeMode.system,
-        routerConfig: _rutas,
+      child: FutureBuilder(
+        future: _listo,
+        builder: (context, estado) => estado.connectionState != ConnectionState.done
+            ? const Arrancando()
+            : MaterialApp.router(
+                title: 'Dulces Aromas · Panel',
+                debugShowCheckedModeBanner: false,
+                theme: temaClaro(),
+                darkTheme: temaOscuro(),
+                themeMode: ThemeMode.system,
+                routerConfig: _rutas,
+              ),
       ),
     );
   }

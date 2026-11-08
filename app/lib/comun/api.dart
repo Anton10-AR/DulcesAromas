@@ -97,6 +97,8 @@ class Api {
   }
 
   Future<dynamic> _enviar(Future<http.Response> Function() llamada) async {
+    // El token con el que sale la solicitud: si al volver el 401 ya hay otra sesión, no es esa la que venció.
+    final tokenEnviado = token;
     final http.Response respuesta;
     try {
       respuesta = await llamada();
@@ -111,7 +113,7 @@ class Api {
     if (respuesta.statusCode >= 200 && respuesta.statusCode < 300) {
       return texto.isEmpty ? null : jsonDecode(texto);
     }
-    if (respuesta.statusCode == 401 && token != null) {
+    if (respuesta.statusCode == 401 && tokenEnviado != null && tokenEnviado == token) {
       alPerderSesion?.call();
     }
     throw _error(respuesta.statusCode, texto);

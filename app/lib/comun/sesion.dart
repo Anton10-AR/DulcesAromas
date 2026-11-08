@@ -56,15 +56,20 @@ class Sesion extends ChangeNotifier {
 
   bool get iniciada => usuario != null;
 
-  /// Recupera la sesión guardada, si sigue vigente.
+  /// Recupera la sesión guardada, si sigue vigente. Solo la olvida si la API dice que venció (401): sin conexión, o
+  /// mientras la API despierta en la nube, la conserva para la próxima vez que se abra la app.
   Future<void> restaurar() async {
     final preferencias = await SharedPreferences.getInstance();
     api.token = preferencias.getString(claveGuardado);
     if (api.token != null) {
       try {
         usuario = Usuario.deJson(await api.get('/api/auth/yo') as Map<String, dynamic>);
-      } on ErrorApi {
-        await _olvidar();
+      } on ErrorApi catch (e) {
+        if (e.estado == 401) {
+          await _olvidar();
+        } else {
+          api.token = null;
+        }
       }
     }
     cargando = false;
