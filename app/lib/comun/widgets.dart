@@ -188,14 +188,13 @@ class _SaltoAlContenidoState extends State<SaltoAlContenido> {
     super.dispose();
   }
 
-  /// Si el foco está en una pantalla sin controles (por ejemplo, el inicio recién abierto), Tab no tendría adónde ir:
-  /// lleva al enlace, y desde ahí sigue el recorrido normal.
+  /// En una página recién abierta todavía no hay ningún control con foco, solo la página. El primer Tab lleva al
+  /// enlace, y desde ahí sigue el recorrido normal. Sin esto, Tab saltaría al contenido o no iría a ningún lado.
   KeyEventResult _alTeclear(FocusNode _, KeyEvent evento) {
     final actual = FocusManager.instance.primaryFocus;
     if (evento is KeyDownEvent &&
         evento.logicalKey == LogicalKeyboardKey.tab &&
-        actual is FocusScopeNode &&
-        actual.traversalDescendants.isEmpty) {
+        actual is FocusScopeNode) {
       _enlace.requestFocus();
       return KeyEventResult.handled;
     }

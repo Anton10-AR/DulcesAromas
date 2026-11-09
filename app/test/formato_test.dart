@@ -31,4 +31,11 @@ void main() {
     expect(cantidadProductos(1), '1 producto');
     expect(cantidadProductos(3), '3 productos');
   });
+
+  test('RNF19: la fecha escrita usa el día de La Paz', () {
+    expect(fechaLarga(DateTime.utc(2026, 11, 9, 15)), 'Lunes 9 de noviembre de 2026');
+    // Las 02:00 UTC del martes 10 son las 22:00 del lunes 9 en La Paz.
+    expect(fechaLarga(DateTime.utc(2026, 11, 10, 2)), 'Lunes 9 de noviembre de 2026');
+    expect(fechaLarga(DateTime.utc(2026, 3, 1, 12)), 'Domingo 1 de marzo de 2026');
+  });
 }

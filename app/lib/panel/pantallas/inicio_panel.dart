@@ -1,12 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../comun/api.dart';
+import '../../comun/formato.dart';
+import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
+import '../../comun/tema.dart';
 import '../../comun/widgets.dart';
+import '../app_panel.dart';
+import '../modelos_panel.dart';
 
-/// Inicio del Panel con lo pendiente que el rol puede atender (CU10).
+/// Algo que espera al personal: cuántos hay y adónde ir para atenderlos.
+class Pendiente {
+  const Pendiente(this.titulo, this.cantidad, this.destino, this.icono, this.tono);
+
+  final String titulo;
+  final int cantidad;
+  final String destino;
+  final IconData icono;
+
+  /// Color cuando hay algo que atender; sin pendientes, la tarjeta queda neutra.
+  final Tono tono;
+}
+
+/// Un acceso rápido del inicio: a dónde lleva y para qué sirve.
+class Acceso {
+  const Acceso(this.ruta, this.titulo, this.descripcion, this.icono);
+
+  final String ruta;
+  final String titulo;
+  final String descripcion;
+  final IconData icono;
+}
+
+/// Qué se hace en cada sección, para los accesos rápidos.
+const _descripciones = {
+  '/pedidos': 'Ver, preparar y entregar pedidos.',
+  '/pagos': 'Aprobar o rechazar comprobantes.',
+  '/entregas': 'Asignar repartidores a los delivery.',
+  '/mis-entregas': 'Tus entregas, con dirección y teléfono.',
+  '/catalogo': 'Productos, precios y disponibilidad.',
+  '/inventario': 'Insumos, movimientos y alertas.',
+  '/reportes': 'Pedidos y ventas por fecha.',
+  '/seguridad': 'Cuentas del personal y permisos.',
+  '/configuracion': 'Tarifa de envío y métodos de pago.',
+};
+
+/// Los accesos rápidos que el rol puede usar: el pedido asistido y las secciones del menú, salvo Inicio y Mi perfil.
+List<Acceso> accesosPara(Usuario usuario) => [
+  if (usuario.puede('PEDIDOS_CONSULTAR'))
+    const Acceso(
+      '/pedidos/asistido',
+      'Nuevo pedido asistido',
+      'Por teléfono o en mostrador.',
+      Icons.add_shopping_cart_outlined,
+    ),
+  for (final s in secciones)
+    if (_descripciones.containsKey(s.ruta) && s.visiblePara(usuario))
+      Acceso(s.ruta, s.titulo, _descripciones[s.ruta]!, s.icono),
+];
+
+/// Inicio del Panel: saludo con la fecha, lo de hoy, lo pendiente que el rol puede atender y accesos rápidos (CU10).
 class InicioPanel extends StatefulWidget {
   const InicioPanel({super.key});
 
@@ -15,7 +71,10 @@ class InicioPanel extends StatefulWidget {
 }
 
 class _InicioPanelState extends State<InicioPanel> {
-  late Future<List<(String, int, String)>> _pendientes;
+  late Future<List<Pendiente>> _pendientes;
+
+  /// Pedidos y ventas de hoy; solo con el permiso de reportes, porque muestra montos (HU14).
+  Future<Reporte>? _hoy;
 
   @override
   void initState() {
@@ -26,18 +85,39 @@ class _InicioPanelState extends State<InicioPanel> {
   void _cargar() {
     final api = context.read<Api>();
     final usuario = context.read<Sesion>().usuario!;
-    Future<(String, int, String)> contar(String titulo, String ruta, String destino, [Map<String, String>? p]) =>
-        api.get(ruta, p).then((j) => (titulo, (j as List).length, destino));
+    Future<Pendiente> contar(
+      String titulo,
+      String ruta,
+      String destino,
+      IconData icono,
+      Tono tono, [
+      Map<String, String>? p,
+    ]) => api.get(ruta, p).then((j) => Pendiente(titulo, (j as List).length, destino, icono, tono));
+    final hoy = DateFormat('yyyy-MM-dd').format(aLaPaz(DateTime.now()));
     setState(() {
       _pendientes = [
+        if (usuario.puede('COBRANZA_VERIFICAR'))
+          contar('Pagos por verificar', '/api/pagos/en-verificacion', '/pagos', Icons.fact_check_outlined, Tono.ambar),
         if (usuario.puede('PEDIDOS_PREPARAR'))
-          contar('Pedidos confirmados por preparar', '/api/pedidos', '/pedidos', {'estado': 'CONFIRMADO'}),
-        if (usuario.puede('COBRANZA_VERIFICAR')) contar('Pagos por verificar', '/api/pagos/en-verificacion', '/pagos'),
+          contar('Pedidos por preparar', '/api/pedidos', '/pedidos', Icons.cake_outlined, Tono.azul, {
+            'estado': 'CONFIRMADO',
+          }),
         if (usuario.puede('DISTRIBUCION_ASIGNAR'))
-          contar('Pedidos listos para entregar', '/api/pedidos', '/pedidos', {'estado': 'LISTO'}),
+          contar('Pedidos listos para entregar', '/api/pedidos', '/pedidos', Icons.inventory_outlined, Tono.verde, {
+            'estado': 'LISTO',
+          }),
         if (usuario.puede('DISTRIBUCION_ENTREGAS'))
-          contar('Mis entregas abiertas', '/api/entregas/mias', '/mis-entregas'),
+          contar(
+            'Mis entregas abiertas',
+            '/api/entregas/mias',
+            '/mis-entregas',
+            Icons.delivery_dining_outlined,
+            Tono.azul,
+          ),
       ].wait;
+      _hoy = usuario.puede('REPORTES')
+          ? api.get('/api/reportes/ventas', {'desde': hoy, 'hasta': hoy}).then((j) => Reporte.deJson(j as Json))
+          : null;
     });
   }
 
@@ -45,42 +125,230 @@ class _InicioPanelState extends State<InicioPanel> {
   Widget build(BuildContext context) {
     final usuario = context.watch<Sesion>().usuario!;
     final textos = Theme.of(context).textTheme;
+    final colores = Theme.of(context).colorScheme;
+    final primerNombre = usuario.nombre.trim().split(RegExp(r'\s+')).first;
+    final accesos = accesosPara(usuario);
+
+    Widget titulo(String texto) => Padding(
+      padding: const EdgeInsets.only(top: 28, bottom: 12),
+      child: Text(
+        texto.toUpperCase(),
+        style: textos.labelLarge?.copyWith(color: colores.onSurfaceVariant, letterSpacing: 1.2),
+      ),
+    );
+
     return RefreshIndicator(
       onRefresh: () async => _cargar(),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
         children: [
-          Text('Hola, ${usuario.nombre}', style: textos.headlineSmall),
-          const SizedBox(height: 16),
-          Cargador(
-            futuro: _pendientes,
-            reintentar: _cargar,
-            constructor: (context, pendientes) => Wrap(
-              spacing: 16,
-              runSpacing: 16,
+          Contenido(
+            ancho: 1100,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final (titulo, cantidad, destino) in pendientes)
-                  SizedBox(
-                    width: 260,
-                    child: Card(
-                      child: InkWell(
-                        onTap: () => context.go(destino),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('$cantidad', style: textos.displaySmall),
-                              Text(titulo, style: textos.titleMedium),
-                            ],
-                          ),
+                Text('Hola, $primerNombre', style: textos.headlineMedium),
+                const SizedBox(height: 4),
+                Text(
+                  '${fechaLarga(DateTime.now())} · Sucre',
+                  style: textos.bodyLarge?.copyWith(color: colores.onSurfaceVariant),
+                ),
+                if (_hoy != null) ...[titulo('Hoy'), _Hoy(futuro: _hoy!, reintentar: _cargar)],
+                FutureBuilder(
+                  future: _pendientes,
+                  builder: (context, estado) {
+                    if (estado.hasData && estado.data!.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        titulo('Pendientes'),
+                        Cargador(
+                          futuro: _pendientes,
+                          reintentar: _cargar,
+                          constructor: (context, pendientes) =>
+                              _Rejilla(anchoMinimo: 230, hijos: [for (final p in pendientes) _TarjetaPendiente(p)]),
                         ),
-                      ),
-                    ),
-                  ),
+                      ],
+                    );
+                  },
+                ),
+                if (accesos.isNotEmpty) ...[
+                  titulo('Accesos rápidos'),
+                  _Rejilla(anchoMinimo: 260, hijos: [for (final a in accesos) _TarjetaAcceso(a)]),
+                ],
+                const SizedBox(height: 32),
+                const Divider(),
+                const SizedBox(height: 8),
+                Text('Dulces Aromas · Momentos para compartir', style: textos.bodySmall),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tarjetas del mismo ancho, en tantas columnas como quepan; en el teléfono, una debajo de otra (RNF12).
+class _Rejilla extends StatelessWidget {
+  const _Rejilla({required this.anchoMinimo, required this.hijos});
+
+  final double anchoMinimo;
+  final List<Widget> hijos;
+
+  @override
+  Widget build(BuildContext context) {
+    const espacio = 16.0;
+    return LayoutBuilder(
+      builder: (context, limites) {
+        final columnas = ((limites.maxWidth + espacio) / (anchoMinimo + espacio)).floor().clamp(1, 4);
+        final ancho = (limites.maxWidth - espacio * (columnas - 1)) / columnas;
+        return Wrap(
+          spacing: espacio,
+          runSpacing: espacio,
+          children: [for (final h in hijos) SizedBox(width: ancho, child: h)],
+        );
+      },
+    );
+  }
+}
+
+/// Un ícono sobre un cuadro de color suave, como en las etiquetas de estado.
+class _Icono extends StatelessWidget {
+  const _Icono(this.icono, this.tono);
+
+  final IconData icono;
+  final Tono tono;
+
+  @override
+  Widget build(BuildContext context) {
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    final colores = Theme.of(context).colorScheme;
+    final relleno = (oscuro ? tono.rellenoOscuro : tono.relleno) ?? colores.secondaryContainer;
+    final color = (oscuro ? tono.textoOscuro : tono.texto) ?? colores.onSecondaryContainer;
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(color: relleno, borderRadius: BorderRadius.circular(10)),
+      child: Icon(icono, color: color),
+    );
+  }
+}
+
+class _TarjetaPendiente extends StatelessWidget {
+  const _TarjetaPendiente(this.pendiente);
+
+  final Pendiente pendiente;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final hay = pendiente.cantidad > 0;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.go(pendiente.destino),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _Icono(pendiente.icono, hay ? pendiente.tono : Tono.neutro),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${pendiente.cantidad}', style: textos.headlineSmall),
+                    Text(pendiente.titulo, style: textos.bodyMedium),
+                    if (!hay) Text('Nada pendiente', style: textos.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TarjetaAcceso extends StatelessWidget {
+  const _TarjetaAcceso(this.acceso);
+
+  final Acceso acceso;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.go(acceso.ruta),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _Icono(acceso.icono, Tono.neutro),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(acceso.titulo, style: textos.titleMedium),
+                    Text(acceso.descripcion, style: textos.bodySmall),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pedidos registrados hoy y lo vendido: pagado y no cancelado. Los montos los calcula el servidor.
+class _Hoy extends StatelessWidget {
+  const _Hoy({required this.futuro, required this.reintentar});
+
+  final Future<Reporte> futuro;
+  final VoidCallback reintentar;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    Widget cifra(String valor, String etiqueta, IconData icono, Tono tono) => Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _Icono(icono, tono),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(valor, style: textos.headlineSmall),
+                  Text(etiqueta, style: textos.bodyMedium),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return Cargador(
+      futuro: futuro,
+      reintentar: reintentar,
+      constructor: (context, r) => _Rejilla(
+        anchoMinimo: 230,
+        hijos: [
+          cifra('${r.cantidadPedidos}', 'Pedidos registrados hoy', Icons.receipt_long_outlined, Tono.azul),
+          cifra(bolivianos(r.montoVendido), 'Cobrado de los pedidos de hoy', Icons.payments_outlined, Tono.verde),
         ],
       ),
     );

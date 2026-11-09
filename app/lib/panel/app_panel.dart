@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../comun/api.dart';
+import '../comun/logo.dart';
 import '../comun/preferencia_tema.dart';
 import '../comun/perfil.dart';
 import '../comun/sesion.dart';
@@ -201,9 +202,9 @@ class MarcoPanel extends StatelessWidget {
             minExtendedWidth: 220,
             selectedIndex: actual < 0 ? null : actual,
             onDestinationSelected: ir,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text('Dulces Aromas', style: Theme.of(context).textTheme.titleLarge),
+            leading: const Padding(
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 16),
+              child: SizedBox(width: 180, child: _Marca()),
             ),
             destinations: [
               for (final s in visibles) NavigationRailDestination(icon: Icon(s.icono), label: Text(s.titulo)),
@@ -235,14 +236,25 @@ class MarcoPanel extends StatelessWidget {
           ir(i);
         },
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('Dulces Aromas', style: Theme.of(context).textTheme.titleLarge),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: SizedBox(width: 200, child: _Marca()),
           ),
           for (final s in visibles) NavigationDrawerDestination(icon: Icon(s.icono), label: Text(s.titulo)),
         ],
       ),
       body: contenido,
     );
+  }
+}
+
+/// El logo en el menú del Panel, con los colores del tema.
+class _Marca extends StatelessWidget {
+  const _Marca();
+
+  @override
+  Widget build(BuildContext context) {
+    final colores = Theme.of(context).colorScheme;
+    return LogoDulcesAromas(color: colores.onSurface, acento: colores.tertiary, conLema: false);
   }
 }

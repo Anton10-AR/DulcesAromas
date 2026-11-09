@@ -38,3 +38,26 @@ DateTime primerDiaDeEntrega() {
 
 /// «1 producto», «3 productos».
 String cantidadProductos(int cantidad) => cantidad == 1 ? '1 producto' : '$cantidad productos';
+
+const _dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const _meses = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+/// La fecha escrita, en hora de La Paz: «Lunes 9 de noviembre de 2026».
+String fechaLarga(DateTime instante) {
+  final d = aLaPaz(instante);
+  final dia = _dias[d.weekday - 1];
+  return '${dia[0].toUpperCase()}${dia.substring(1)} ${d.day} de ${_meses[d.month - 1]} de ${d.year}';
+}

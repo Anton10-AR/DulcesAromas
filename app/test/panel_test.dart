@@ -54,6 +54,9 @@ Api apiCon({
   );
 }
 
+/// Una sección en el menú lateral; el inicio repite los nombres en sus accesos rápidos.
+Finder enMenu(String seccion) => find.descendant(of: find.byType(NavigationRail), matching: find.text(seccion));
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -87,7 +90,7 @@ void main() {
 
     expect(find.text('Hola, Luz'), findsOneWidget);
     for (final visible in ['Pedidos', 'Entregas', 'Catálogo', 'Mi perfil']) {
-      expect(find.text(visible), findsWidgets, reason: visible);
+      expect(enMenu(visible), findsOneWidget, reason: visible);
     }
     expect(find.text('Verificar pagos'), findsNothing);
     expect(find.text('Mis entregas'), findsNothing);
@@ -136,6 +139,32 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Ingresar'), findsOneWidget);
   });
 
+  testWidgets('el inicio saluda con la fecha, muestra lo de hoy y los accesos rápidos del rol', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'ADMINISTRADOR',
+        permisos: ['PEDIDOS_CONSULTAR', 'REPORTES', 'COBRANZA_VERIFICAR'],
+        respuestas: {
+          '/api/reportes/ventas': {'cantidadPedidos': 4, 'montoPedidos': 480.0, 'montoVendido': 350.0, 'pedidos': []},
+          '/api/pagos/en-verificacion': [],
+        },
+      ),
+    );
+
+    expect(find.textContaining(' · Sucre'), findsOneWidget);
+    expect(find.text('Bs 350.00'), findsOneWidget);
+    expect(find.text('Pagos por verificar'), findsOneWidget);
+    expect(find.text('Nada pendiente'), findsOneWidget);
+    expect(find.text('Nuevo pedido asistido'), findsOneWidget);
+
+    await tester.tap(find.text('Nuevo pedido asistido'));
+    await tester.pumpAndSettle();
+    expect(enMenu('Pedidos'), findsOneWidget);
+    expect(find.text('Hola, Luz'), findsNothing);
+  });
+
   test('las iniciales salen de las dos primeras palabras del nombre', () {
     expect(iniciales('Luz Yumara Morejon'), 'LY');
     expect(iniciales(' carla  mendoza '), 'CM');
@@ -145,7 +174,7 @@ void main() {
   testWidgets('HU06: el Repartidor solo ve sus entregas', (tester) async {
     await ingresar(tester, apiCon(tipo: 'PERSONAL', rol: 'REPARTIDOR', permisos: ['DISTRIBUCION_ENTREGAS']));
 
-    expect(find.text('Mis entregas'), findsOneWidget);
+    expect(enMenu('Mis entregas'), findsOneWidget);
     for (final oculto in ['Pedidos', 'Verificar pagos', 'Entregas', 'Catálogo']) {
       expect(find.text(oculto), findsNothing, reason: oculto);
     }
@@ -190,7 +219,7 @@ void main() {
     await ingresar(tester, apiCon(tipo: 'PERSONAL', rol: 'ADMINISTRADOR', permisos: todosLosPermisos));
 
     for (final seccion in ['Inventario', 'Reportes', 'Seguridad', 'Configuración', 'Verificar pagos']) {
-      expect(find.text(seccion), findsOneWidget, reason: seccion);
+      expect(enMenu(seccion), findsOneWidget, reason: seccion);
     }
   });
 
@@ -223,7 +252,7 @@ void main() {
         },
       ),
     );
-    await tester.tap(find.text('Seguridad'));
+    await tester.tap(enMenu('Seguridad'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Roles y permisos'));
     await tester.pumpAndSettle();
@@ -254,7 +283,7 @@ void main() {
         },
       ),
     );
-    await tester.tap(find.text('Inventario'));
+    await tester.tap(enMenu('Inventario'));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.warning_amber), findsOneWidget);
@@ -277,7 +306,7 @@ void main() {
         },
       ),
     );
-    await tester.tap(find.text('Catálogo'));
+    await tester.tap(enMenu('Catálogo'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Categorías'));
     await tester.pumpAndSettle();
