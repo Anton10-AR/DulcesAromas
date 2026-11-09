@@ -76,6 +76,12 @@ class _InicioPanelState extends State<InicioPanel> {
   /// Pedidos y ventas de hoy; solo con el permiso de reportes, porque muestra montos (HU14).
   Future<Reporte>? _hoy;
 
+  /// Los pedidos más recientes, para quien puede ver la lista de pedidos.
+  Future<List<PedidoResumen>>? _ultimos;
+
+  /// Cuántos pedidos recientes se muestran.
+  static const cantidadUltimos = 5;
+
   @override
   void initState() {
     super.initState();
@@ -93,7 +99,10 @@ class _InicioPanelState extends State<InicioPanel> {
       Tono tono, [
       Map<String, String>? p,
     ]) => api.get(ruta, p).then((j) => Pendiente(titulo, (j as List).length, destino, icono, tono));
-    final hoy = DateFormat('yyyy-MM-dd').format(aLaPaz(DateTime.now()));
+    final ahora = aLaPaz(DateTime.now());
+    final hoy = DateFormat('yyyy-MM-dd').format(ahora);
+    final haceUnMes = DateFormat('yyyy-MM-dd').format(ahora.subtract(const Duration(days: 30)));
+    final vePedidos = ['PEDIDOS_CONSULTAR', 'PEDIDOS_PREPARAR', 'DISTRIBUCION_ASIGNAR'].any(usuario.puede);
     setState(() {
       _pendientes = [
         if (usuario.puede('COBRANZA_VERIFICAR'))
@@ -115,6 +124,14 @@ class _InicioPanelState extends State<InicioPanel> {
             Tono.azul,
           ),
       ].wait;
+      // La lista del Panel viene ordenada por horario de entrega; aquí importan los recién registrados.
+      _ultimos = vePedidos
+          ? api.get('/api/pedidos', {'desde': haceUnMes, 'hasta': hoy}).then((j) {
+              final pedidos = lista(j, PedidoResumen.deJson)
+                ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+              return pedidos.take(cantidadUltimos).toList();
+            })
+          : null;
       _hoy = usuario.puede('REPORTES')
           ? api.get('/api/reportes/ventas', {'desde': hoy, 'hasta': hoy}).then((j) => Reporte.deJson(j as Json))
           : null;
@@ -172,6 +189,19 @@ class _InicioPanelState extends State<InicioPanel> {
                     );
                   },
                 ),
+                if (_ultimos != null) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: titulo('Últimos pedidos')),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: TextButton(onPressed: () => context.go('/pedidos'), child: const Text('Ver todos')),
+                      ),
+                    ],
+                  ),
+                  _Ultimos(futuro: _ultimos!, reintentar: _cargar),
+                ],
                 if (accesos.isNotEmpty) ...[
                   titulo('Accesos rápidos'),
                   _Rejilla(anchoMinimo: 260, hijos: [for (final a in accesos) _TarjetaAcceso(a)]),
@@ -350,6 +380,54 @@ class _Hoy extends StatelessWidget {
           cifra('${r.cantidadPedidos}', 'Pedidos registrados hoy', Icons.receipt_long_outlined, Tono.azul),
           cifra(bolivianos(r.montoVendido), 'Cobrado de los pedidos de hoy', Icons.payments_outlined, Tono.verde),
         ],
+      ),
+    );
+  }
+}
+
+/// Los pedidos registrados más recientemente, como en la lista de Pedidos.
+class _Ultimos extends StatelessWidget {
+  const _Ultimos({required this.futuro, required this.reintentar});
+
+  final Future<List<PedidoResumen>> futuro;
+  final VoidCallback reintentar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Cargador(
+        futuro: futuro,
+        reintentar: reintentar,
+        constructor: (context, pedidos) {
+          if (pedidos.isEmpty) {
+            return const Padding(padding: EdgeInsets.all(20), child: Text('No hay pedidos en los últimos 30 días.'));
+          }
+          return Column(
+            children: [
+              for (final (i, p) in pedidos.indexed) ...[
+                if (i > 0) const Divider(height: 1),
+                ListTile(
+                  onTap: () => context.go('/pedidos/${p.id}'),
+                  title: Text(['Pedido #${p.id}', ?p.cliente].join(' · ')),
+                  subtitle: Text(
+                    [
+                      'Registrado: ${fechaHora(p.fechaCreacion)}',
+                      p.tipoEntrega == 'DELIVERY' ? 'Delivery' : 'Recojo',
+                      cantidadProductos(p.productos),
+                    ].join(' · '),
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [EtiquetaEstado(p.estado), const SizedBox(height: 4), Text(bolivianos(p.total))],
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }

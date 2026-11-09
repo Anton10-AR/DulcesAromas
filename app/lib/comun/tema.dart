@@ -104,6 +104,8 @@ ThemeData temaClaro() {
     onSurface: Colores.texto,
     onSurfaceVariant: Colores.cafeSuave,
     outline: Colores.cafeSuave,
+    // Las líneas divisorias, suaves como el borde de las tarjetas.
+    outlineVariant: Colores.borde,
   );
   return _tema(esquema, _textos(Colores.texto, Colores.cafeSuave), tarjeta: Colores.tarjeta, borde: Colores.borde);
 }
@@ -125,6 +127,7 @@ ThemeData temaOscuro() {
     onSurface: Colores.textoOscuro,
     onSurfaceVariant: Colores.textoSuaveOscuro,
     outline: Colores.textoSuaveOscuro,
+    outlineVariant: Colores.bordeOscuro,
   );
   return _tema(
     esquema,

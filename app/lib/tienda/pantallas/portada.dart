@@ -3,21 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../comun/logo.dart';
+import '../../comun/marca.dart';
 import '../../comun/tema.dart';
-
-/// Fotos de la portada, en `assets/postres/`.
-const fotosPortada = [
-  ('pie-limon', 'Pie de limón'),
-  ('rollos-canela', 'Rollos de canela'),
-  ('tarta-maracuya', 'Tarta de maracuyá'),
-  ('galletas-chispas', 'Galletas con chispas de chocolate'),
-  ('flan', 'Flan casero'),
-  ('alfajores', 'Alfajores de maicena'),
-  ('budin-naranja', 'Budín de naranja'),
-  ('tiramisu-vaso', 'Tiramisú en vaso'),
-];
-
-String rutaFoto(String id) => 'assets/postres/$id.jpg';
 
 /// Lo primero que ve el cliente en la Tienda: el logo sobre fotos de postres y un botón que baja al catálogo. En el
 /// teléfono, una foto a la vez que se cambia deslizando (no avanza sola, para quien prefiere menos movimiento); en
@@ -49,17 +36,7 @@ class _PortadaState extends State<Portada> {
           // Las fotos son decoración: el lector de pantalla no las anuncia.
           ExcludeSemantics(child: ancha ? _mosaico() : _carrusel()),
           // Oscurece la foto para que el logo blanco se lea sobre cualquiera.
-          const IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x8C1E1714), Color(0xC71E1714)],
-                ),
-              ),
-            ),
-          ),
+          const IgnorePointer(child: veloSobreFotos),
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),

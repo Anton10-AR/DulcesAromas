@@ -375,6 +375,27 @@ void main() {
     expect(preferencias.getString('sesion_tienda'), 'abc');
   });
 
+  testWidgets('con sesión, la barra muestra las iniciales del cliente', (tester) async {
+    SharedPreferences.setMockInitialValues({'sesion_tienda': 'abc'});
+    final api = apiFalsa(
+      respuestas: {
+        '/api/auth/yo': (s) => json({
+          'id': 6,
+          'nombre': 'Lucía Torrez Arancibia',
+          'correo': 'lucia@example.com',
+          'tipo': 'CLIENTE',
+          'rol': null,
+          'permisos': [],
+        }),
+      },
+    );
+
+    await abrir(tester, api);
+
+    expect(find.descendant(of: find.byTooltip('Mi cuenta'), matching: find.text('LT')), findsOneWidget);
+    expect(find.text('Ingresar'), findsNothing);
+  });
+
   testWidgets('si el producto tiene tamaños, hay que elegir uno para agregarlo al carrito', (tester) async {
     final api = apiFalsa(
       respuestas: {

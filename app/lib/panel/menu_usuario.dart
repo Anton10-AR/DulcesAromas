@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../comun/marca.dart';
 import '../comun/sesion.dart';
 import '../comun/widgets.dart';
 import 'modelos_panel.dart';
-
-/// Iniciales para el círculo de la cuenta: «Luz Morejon» lleva LM.
-String iniciales(String nombre) {
-  final palabras = nombre.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-  return palabras.take(2).map((p) => p[0].toUpperCase()).join();
-}
 
 /// La cuenta con la que se ingresó, arriba a la derecha: iniciales, nombre y rol. Al tocarla se abre un menú con
 /// el perfil y el cierre de sesión (HU02, HU17).
@@ -24,18 +19,12 @@ class MenuUsuario extends StatelessWidget {
   Widget build(BuildContext context) {
     final usuario = context.watch<Sesion>().usuario;
     if (usuario == null) return const SizedBox.shrink();
-    final colores = Theme.of(context).colorScheme;
     final textos = Theme.of(context).textTheme;
     final rol = nombresRol[usuario.rol] ?? '';
     final primerNombre = usuario.nombre.trim().split(RegExp(r'\s+')).first;
     final conNombre = MediaQuery.sizeOf(context).width >= anchoConNombre;
 
-    final circulo = CircleAvatar(
-      radius: 16,
-      backgroundColor: colores.secondaryContainer,
-      foregroundColor: colores.onSecondaryContainer,
-      child: Text(iniciales(usuario.nombre), style: textos.labelLarge?.copyWith(color: colores.onSecondaryContainer)),
-    );
+    final circulo = CirculoIniciales(usuario.nombre);
 
     return PopupMenuButton<String>(
       tooltip: 'Cuenta de ${usuario.nombre}',

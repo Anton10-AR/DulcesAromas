@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../comun/api.dart';
+import '../../comun/marca.dart';
 import '../../comun/preferencia_tema.dart';
 import '../../comun/formato.dart';
 import '../../comun/sesion.dart';
@@ -26,7 +27,7 @@ List<Widget> accionesTienda(BuildContext context) {
     if (sesion.iniciada)
       PopupMenuButton<String>(
         tooltip: 'Mi cuenta',
-        icon: const Icon(Icons.person_outline),
+        icon: CirculoIniciales(sesion.usuario!.nombre),
         onSelected: (ruta) => context.push(ruta),
         itemBuilder: (_) => const [
           PopupMenuItem(value: '/pedidos', child: Text('Mis pedidos')),

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dulces_aromas/comun/api.dart';
 import 'package:dulces_aromas/comun/widgets.dart';
 import 'package:dulces_aromas/panel/app_panel.dart';
-import 'package:dulces_aromas/panel/menu_usuario.dart';
+import 'package:dulces_aromas/comun/marca.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -149,16 +149,36 @@ void main() {
         respuestas: {
           '/api/reportes/ventas': {'cantidadPedidos': 4, 'montoPedidos': 480.0, 'montoVendido': 350.0, 'pedidos': []},
           '/api/pagos/en-verificacion': [],
+          '/api/pedidos': [
+            for (final (id, dia) in [(7, 2), (8, 5), (9, 3)])
+              {
+                'id': id,
+                'cliente': 'Cliente $id',
+                'estado': 'CONFIRMADO',
+                'tipoEntrega': 'RECOJO',
+                'fechaCreacion': '2026-11-0${dia}T14:00:00Z',
+                'horarioEntrega': '2026-11-1${dia}T14:00:00Z',
+                'productos': 1,
+                'total': 120.0,
+                'asistido': false,
+              },
+          ],
         },
       ),
     );
 
     expect(find.textContaining(' · Sucre'), findsOneWidget);
+    // Los últimos pedidos, del más reciente al más antiguo según la fecha en que se registraron.
+    final ultimos = ['Pedido #8 · Cliente 8', 'Pedido #9 · Cliente 9', 'Pedido #7 · Cliente 7'];
+    final alturas = [for (final t in ultimos) tester.getTopLeft(find.text(t)).dy];
+    expect(alturas, orderedEquals([...alturas]..sort()));
     expect(find.text('Bs 350.00'), findsOneWidget);
     expect(find.text('Pagos por verificar'), findsOneWidget);
     expect(find.text('Nada pendiente'), findsOneWidget);
     expect(find.text('Nuevo pedido asistido'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Nuevo pedido asistido'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Nuevo pedido asistido'));
     await tester.pumpAndSettle();
     expect(enMenu('Pedidos'), findsOneWidget);

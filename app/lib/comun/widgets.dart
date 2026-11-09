@@ -192,9 +192,7 @@ class _SaltoAlContenidoState extends State<SaltoAlContenido> {
   /// enlace, y desde ahí sigue el recorrido normal. Sin esto, Tab saltaría al contenido o no iría a ningún lado.
   KeyEventResult _alTeclear(FocusNode _, KeyEvent evento) {
     final actual = FocusManager.instance.primaryFocus;
-    if (evento is KeyDownEvent &&
-        evento.logicalKey == LogicalKeyboardKey.tab &&
-        actual is FocusScopeNode) {
+    if (evento is KeyDownEvent && evento.logicalKey == LogicalKeyboardKey.tab && actual is FocusScopeNode) {
       _enlace.requestFocus();
       return KeyEventResult.handled;
     }
