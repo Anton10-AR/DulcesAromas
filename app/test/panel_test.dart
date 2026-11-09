@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dulces_aromas/comun/api.dart';
 import 'package:dulces_aromas/comun/widgets.dart';
 import 'package:dulces_aromas/panel/app_panel.dart';
+import 'package:dulces_aromas/panel/menu_usuario.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -118,6 +119,27 @@ void main() {
     final posicion = caja.localToGlobal(Offset.zero);
     expect(posicion.dx, greaterThan(220));
     expect(posicion.dy, greaterThanOrEqualTo(56));
+  });
+
+  testWidgets('HU02: la barra muestra la cuenta y su menú cierra la sesión', (tester) async {
+    await ingresar(tester, apiCon(tipo: 'PERSONAL', rol: 'VENDEDOR', permisos: ['INICIO_PENDIENTES']));
+    final cuenta = find.byTooltip('Cuenta de Luz');
+    expect(find.descendant(of: cuenta, matching: find.text('L')), findsOneWidget);
+    expect(find.descendant(of: cuenta, matching: find.text('Vendedor')), findsOneWidget);
+
+    await tester.tap(cuenta);
+    await tester.pumpAndSettle();
+    expect(find.text('luz@dulces.bo'), findsOneWidget);
+    await tester.tap(find.text('Cerrar sesión'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FilledButton, 'Ingresar'), findsOneWidget);
+  });
+
+  test('las iniciales salen de las dos primeras palabras del nombre', () {
+    expect(iniciales('Luz Yumara Morejon'), 'LY');
+    expect(iniciales(' carla  mendoza '), 'CM');
+    expect(iniciales('Luz'), 'L');
   });
 
   testWidgets('HU06: el Repartidor solo ve sus entregas', (tester) async {

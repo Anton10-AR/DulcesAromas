@@ -8,6 +8,7 @@ import '../comun/perfil.dart';
 import '../comun/sesion.dart';
 import '../comun/tema.dart';
 import '../comun/widgets.dart';
+import 'menu_usuario.dart';
 import 'pantallas/asistido_panel.dart';
 import 'pantallas/catalogo_panel.dart';
 import 'pantallas/configuracion_panel.dart';
@@ -170,7 +171,7 @@ class MarcoPanel extends StatelessWidget {
     final barra = AppBar(
       title: Text(titulo),
       leading: padre == null ? null : BackButton(onPressed: () => context.go(padre)),
-      actions: const [BotonTema()],
+      actions: const [BotonTema(), MenuUsuario(), SizedBox(width: 8)],
     );
 
     void ir(int i) => context.go(visibles[i].ruta);
