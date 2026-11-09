@@ -219,8 +219,14 @@ CATALOGO = {
     ],
 }
 
-# Fotos de app/assets/postres/, las mismas de la portada de la Tienda.
+# Fotos de app/assets/postres/. Las de las tortas y las masitas son de Wikimedia Commons; sus autores y licencias
+# están en app/assets/postres/CREDITOS.md.
 FOTOS = {
+    'Torta de chocolate': 'torta-chocolate.jpg',
+    'Torta tres leches': 'torta-tres-leches.jpg',
+    'Torta selva negra': 'torta-selva-negra.jpg',
+    'Torta de frutilla y crema': 'torta-frutilla.jpg',
+    'Masitas de nata': 'masitas-nata.jpg',
     'Cheesecake de maracuyá': 'tarta-maracuya.jpg',
     'Tiramisú en vaso': 'tiramisu-vaso.jpg',
     'Pie de limón': 'pie-limon.jpg',
