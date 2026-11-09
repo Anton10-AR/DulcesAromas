@@ -120,6 +120,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Carrito, 1 producto'), findsOneWidget);
+    expect(find.text('Torta de chocolate se agregó al carrito.'), findsOneWidget);
+
+    // El aviso se va solo, aunque tenga el botón «Ver carrito».
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(find.text('Torta de chocolate se agregó al carrito.'), findsNothing);
   });
 
   testWidgets('RN15: confirmar el pedido sin sesión pide ingresar y conserva el carrito', (tester) async {

@@ -63,6 +63,9 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${p.nombre} se agregó al carrito.'),
+        // Con un botón, Flutter deja el aviso fijo hasta tocarlo; aquí se va solo, como los demás.
+        persist: false,
+        duration: const Duration(seconds: 5),
         action: SnackBarAction(label: 'Ver carrito', onPressed: () => context.push('/carrito')),
       ),
     );
