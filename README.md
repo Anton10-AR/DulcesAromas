@@ -208,6 +208,12 @@ python demo/cargar_demo.py --api https://dulces-aromas-api.onrender.com
 
 Las variables del entorno tienen prioridad sobre `backend/.env` y desaparecen al cerrar la terminal. Usen para la nube una `DEMO_CONTRASENA` distinta de la local, porque el sitio es público.
 
+Los productos que tienen foto en `app/assets/postres/` la usan; los demás llevan una ilustración con su inicial. Si la base ya tiene el catálogo, `--fotos` solo les pone las fotos y no toca nada más:
+
+```powershell
+python demo/cargar_demo.py --fotos --api https://dulces-aromas-api.onrender.com
+```
+
 ### Respaldo diario (RNF14)
 
 El workflow **Respaldo diario** (`.github/workflows/respaldo.yml`) corre cada noche a las 03:00 de La Paz:

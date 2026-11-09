@@ -4,12 +4,16 @@ Usa la API (no SQL) para que las contraseñas queden con BCrypt y se cumplan las
 
 Requisitos:
 - La API corriendo, con la base vacía (solo el administrador inicial).
-- Python 3 con Pillow (pip install pillow), para dibujar las imágenes de los productos.
+- Python 3 con Pillow (pip install pillow), para preparar las imágenes de los productos.
 - Variables (del entorno o de backend/.env): ADMIN_CORREO, ADMIN_CONTRASENA y DEMO_CONTRASENA, la contraseña de
   todas las cuentas de demostración (mínimo 8 caracteres, con letra y número).
 
 Uso, desde backend/:
     python demo/cargar_demo.py [--api http://localhost:8080]
+
+Los productos que tienen foto en app/assets/postres/ la usan; los demás llevan una ilustración con su inicial. Para
+poner las fotos en una base que ya tiene el catálogo (por ejemplo, la de la nube), sin tocar nada más:
+    python demo/cargar_demo.py --fotos --api https://...
 """
 import argparse
 import io
@@ -25,6 +29,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 LA_PAZ = timezone(timedelta(hours=-4))
 CARPETA = os.path.dirname(os.path.abspath(__file__))
+POSTRES = os.path.join(CARPETA, '..', '..', 'app', 'assets', 'postres')
 
 # Paleta de la marca (CLAUDE.md, «Interfaz»).
 CREMA, CAFE, ROSAS = '#FBF4EC', '#4A342C', ['#EFC3CE', '#E19DB0', '#B96C86']
@@ -133,6 +138,29 @@ def imagen_producto(nombre, indice):
     return salida.getvalue()
 
 
+def foto_producto(nombre):
+    """La foto del producto, cuadrada y de 1000 px (RNF10 pide 800 o más), o None si no tiene."""
+    archivo = FOTOS.get(nombre)
+    if not archivo:
+        return None
+    img = Image.open(os.path.join(POSTRES, archivo)).convert('RGB')
+    lado = min(img.size)
+    x, y = (img.width - lado) // 2, (img.height - lado) // 2
+    img = img.crop((x, y, x + lado, y + lado)).resize((1000, 1000), Image.LANCZOS)
+    salida = io.BytesIO()
+    img.save(salida, 'JPEG', quality=88, optimize=True)
+    return salida.getvalue()
+
+
+def subir_imagen(api, admin, producto, indice):
+    foto = foto_producto(producto['nombre'])
+    if foto:
+        archivo = (f'producto-{producto["id"]}.jpg', foto, 'image/jpeg')
+    else:
+        archivo = (f'producto-{producto["id"]}.png', imagen_producto(producto['nombre'], indice), 'image/png')
+    api.llamar('PUT', f"/api/productos/{producto['id']}/imagen", admin, archivos={'archivo': archivo})
+
+
 def comprobante(referencia, monto):
     img = Image.new('RGB', (600, 800), 'white')
     d = ImageDraw.Draw(img)
@@ -191,6 +219,18 @@ CATALOGO = {
     ],
 }
 
+# Fotos de app/assets/postres/, las mismas de la portada de la Tienda.
+FOTOS = {
+    'Cheesecake de maracuyá': 'tarta-maracuya.jpg',
+    'Tiramisú en vaso': 'tiramisu-vaso.jpg',
+    'Pie de limón': 'pie-limon.jpg',
+    'Flan casero': 'flan.jpg',
+    'Alfajores de maicena': 'alfajores.jpg',
+    'Galletas de avena y chispas': 'galletas-chispas.jpg',
+    'Rollos de canela': 'rollos-canela.jpg',
+    'Budín de naranja': 'budin-naranja.jpg',
+}
+
 INSUMOS = [  # nombre, unidad, mínimo, compra inicial, consumo
     ('Harina de trigo', 'kg', '10', '25', '6'),
     ('Azúcar', 'kg', '8', '18', '4'),
@@ -221,12 +261,21 @@ CLIENTES = [
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--api', default='http://localhost:8080')
+    parser.add_argument('--fotos', action='store_true',
+                        help='solo pone las fotos a los productos que ya existen; no carga nada más')
     args = parser.parse_args()
     var = leer_variables()
     clave = var['DEMO_CONTRASENA']
     api = Api(args.api)
 
     admin = api.login(var['ADMIN_CORREO'], var['ADMIN_CONTRASENA'])
+    if args.fotos:
+        con_foto = [p for p in api.get('/api/productos', admin) if p['nombre'] in FOTOS]
+        for p in con_foto:
+            subir_imagen(api, admin, p, 0)
+            print('  ' + p['nombre'])
+        print(f'Listo: {len(con_foto)} productos con foto.')
+        return
     if api.get('/api/productos', admin) or api.get('/api/categorias', admin):
         sys.exit('La base ya tiene catálogo. Este script es para una base recién creada; no se cargó nada.')
 
@@ -254,8 +303,7 @@ def main():
                 'disponible': True, 'personalizable': personalizable,
                 'opciones': [{'tipo': t, 'nombre': n, 'recargo': r} for t, n, r in OPCIONES_TORTA] if personalizable else [],
             })
-            api.llamar('PUT', f"/api/productos/{p['id']}/imagen", admin,
-                       archivos={'archivo': (f'producto-{p["id"]}.png', imagen_producto(nombre, indice), 'image/png')})
+            subir_imagen(api, admin, p, indice)
             indice += 1
             productos[nombre] = p
     # RN08: un producto agotado hoy; D2: la disponibilidad es manual.
