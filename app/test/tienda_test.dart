@@ -95,6 +95,20 @@ void main() {
     expect((await SharedPreferences.getInstance()).getString('tema_tienda'), 'dark');
   });
 
+  testWidgets('con «menos movimiento» en el dispositivo, las pantallas cambian sin deslizarse', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue = FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await abrir(tester, apiFalsa());
+
+    await tester.tap(find.text('Torta de chocolate'));
+    await tester.pump();
+    await tester.pump();
+
+    // Sin transición, en el primer cuadro ya está solo el detalle; con ella, el catálogo seguiría a la vista.
+    expect(find.text('Agregar al carrito'), findsOneWidget);
+    expect(find.text('Ver catálogo'), findsNothing);
+  });
+
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 

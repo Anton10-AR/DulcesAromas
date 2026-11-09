@@ -141,7 +141,7 @@ class _AppPanelState extends State<AppPanel> {
                 themeMode: context.watch<PreferenciaTema>().modo,
                 routerConfig: _rutas,
                 // RNF20: marco visible alrededor del control con foco al usar el teclado.
-                builder: (context, hijo) => IndicadorDeFoco(child: hijo!),
+                builder: (context, hijo) => MenosMovimiento(child: IndicadorDeFoco(child: hijo!)),
               ),
       ),
     );
@@ -175,31 +175,56 @@ class MarcoPanel extends StatelessWidget {
 
     void ir(int i) => context.go(visibles[i].ruta);
 
-    if (ancho) {
-      return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              extended: true,
-              minExtendedWidth: 220,
-              selectedIndex: actual < 0 ? null : actual,
-              onDestinationSelected: ir,
-              leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text('Dulces Aromas', style: Theme.of(context).textTheme.titleLarge),
-              ),
-              destinations: [
-                for (final s in visibles) NavigationRailDestination(icon: Icon(s.icono), label: Text(s.titulo)),
-              ],
+    // «Saltar al contenido principal»: con el teclado, el primer Tab ofrece pasar de largo el menú.
+    return SaltoAlContenido(
+      contenido: child,
+      marco: (contenido) => ancho
+          ? _conBarraLateral(context, visibles, actual, barra, ir, contenido)
+          : _conMenu(context, visibles, actual, barra, ir, contenido),
+    );
+  }
+
+  Widget _conBarraLateral(
+    BuildContext context,
+    List<Seccion> visibles,
+    int actual,
+    PreferredSizeWidget barra,
+    void Function(int) ir,
+    Widget contenido,
+  ) {
+    return Scaffold(
+      body: Row(
+        children: [
+          NavigationRail(
+            extended: true,
+            minExtendedWidth: 220,
+            selectedIndex: actual < 0 ? null : actual,
+            onDestinationSelected: ir,
+            leading: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text('Dulces Aromas', style: Theme.of(context).textTheme.titleLarge),
             ),
-            const VerticalDivider(width: 1),
-            Expanded(
-              child: Scaffold(appBar: barra, body: child),
-            ),
-          ],
-        ),
-      );
-    }
+            destinations: [
+              for (final s in visibles) NavigationRailDestination(icon: Icon(s.icono), label: Text(s.titulo)),
+            ],
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(
+            child: Scaffold(appBar: barra, body: contenido),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _conMenu(
+    BuildContext context,
+    List<Seccion> visibles,
+    int actual,
+    PreferredSizeWidget barra,
+    void Function(int) ir,
+    Widget contenido,
+  ) {
     return Scaffold(
       appBar: barra,
       drawer: NavigationDrawer(
@@ -216,7 +241,7 @@ class MarcoPanel extends StatelessWidget {
           for (final s in visibles) NavigationDrawerDestination(icon: Icon(s.icono), label: Text(s.titulo)),
         ],
       ),
-      body: child,
+      body: contenido,
     );
   }
 }

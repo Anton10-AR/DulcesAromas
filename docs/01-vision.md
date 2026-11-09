@@ -279,9 +279,9 @@ La landing page del Laboratorio 08 (publicada en Render desde el repositorio del
 | Adaptación | Cambios de diseño en 920 px y 560 px; sin scroll horizontal entre 360 y 1920 px (RNF12) | Se adopta |
 | Contraste medido | Texto principal 12.5:1 en tema claro y 13.7:1 en oscuro; texto secundario 5.0:1 y 6.9:1. Cumple 4.5:1 | Cumple |
 | Contraste a corregir | En tema claro, las etiquetas rosa (#B96C86, 13 px) dan 3.5:1, los enlaces café (#8A6C5C) 4.4:1 y el verde de éxito 3.6:1. Hay que oscurecerlos hasta 4.5:1 | No cumple RNF20 |
-| Teclado y foco | Todos los controles usan teclado y muestran foco visible. La landing solo define el foco visible en las opciones del personalizador | Falta ampliarlo |
-| Movimiento | Respetar la preferencia de menos movimiento del dispositivo | Falta |
-| Navegación | Enlace para saltar al contenido principal | Falta |
+| Teclado y foco | Todos los controles usan teclado y muestran foco visible. La landing solo define el foco visible en las opciones del personalizador | Se adopta: en la app, todo control con foco de teclado lleva un marco de 3 px (`IndicadorDeFoco`) |
+| Movimiento | Respetar la preferencia de menos movimiento del dispositivo | Se adopta: con «Quitar animaciones» (Android) o «reducir movimiento» (navegador), las pantallas cambian sin deslizarse y «Ver catálogo» salta sin desplazarse (`MenosMovimiento`). La portada nunca avanza sola |
+| Navegación | Enlace para saltar al contenido principal | Se adopta en el Panel: el primer Tab muestra «Saltar al contenido principal» (`SaltoAlContenido`). En la Tienda no hace falta: no tiene menú lateral que recorrer |
 | Portabilidad | Una sola página estática sin instalación, publicada desde Git. La Tienda y el Panel siguen el mismo esquema (RNF21) | Se adopta |
 
 La landing es una pieza de presentación y no forma parte del alcance de los documentos. Dice «desde Bs 10» para el delivery y que el costo depende de la zona, y promete avisar cuando el pedido esté listo; la tarifa es fija (D4) y los avisos automáticos están fuera del alcance. Esos textos deben ajustarse a la Visión antes de presentarla.

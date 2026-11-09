@@ -126,6 +126,130 @@ class _IndicadorDeFocoState extends State<IndicadorDeFoco> with SingleTickerProv
   }
 }
 
+/// Si el dispositivo pide menos movimiento (en Android, «Quitar animaciones»; en el navegador, «reducir
+/// movimiento»), las pantallas cambian sin deslizarse (Visión 6.1).
+class MenosMovimiento extends StatelessWidget {
+  const MenosMovimiento({super.key, required this.child});
+
+  final Widget child;
+
+  static final _sinTransiciones = PageTransitionsTheme(
+    builders: {for (final plataforma in TargetPlatform.values) plataforma: const _SinTransicion()},
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    if (!MediaQuery.disableAnimationsOf(context)) return child;
+    return Theme(
+      data: Theme.of(context).copyWith(pageTransitionsTheme: _sinTransiciones),
+      child: child,
+    );
+  }
+}
+
+class _SinTransicion extends PageTransitionsBuilder {
+  const _SinTransicion();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => child;
+}
+
+/// Un enlace «Saltar al contenido principal», el primero al recorrer con Tab: lleva el foco directo al contenido, sin
+/// pasar por todo el menú (Visión 6.1, RNF20). Solo se ve mientras tiene el foco.
+class SaltoAlContenido extends StatefulWidget {
+  const SaltoAlContenido({super.key, required this.contenido, required this.marco});
+
+  final Widget contenido;
+
+  /// Arma la página (menú, barra…) alrededor del contenido que recibe.
+  final Widget Function(Widget contenido) marco;
+
+  static const texto = 'Saltar al contenido principal';
+
+  @override
+  State<SaltoAlContenido> createState() => _SaltoAlContenidoState();
+}
+
+class _SaltoAlContenidoState extends State<SaltoAlContenido> {
+  final _destino = FocusNode(debugLabel: 'contenido principal', skipTraversal: true);
+  final _enlace = FocusNode(debugLabel: 'saltar al contenido');
+  bool _visible = false;
+
+  @override
+  void dispose() {
+    _destino.dispose();
+    _enlace.dispose();
+    super.dispose();
+  }
+
+  /// Si el foco está en una pantalla sin controles (por ejemplo, el inicio recién abierto), Tab no tendría adónde ir:
+  /// lleva al enlace, y desde ahí sigue el recorrido normal.
+  KeyEventResult _alTeclear(FocusNode _, KeyEvent evento) {
+    final actual = FocusManager.instance.primaryFocus;
+    if (evento is KeyDownEvent &&
+        evento.logicalKey == LogicalKeyboardKey.tab &&
+        actual is FocusScopeNode &&
+        actual.traversalDescendants.isEmpty) {
+      _enlace.requestFocus();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contenido = Focus(
+      focusNode: _destino,
+      child: Semantics(container: true, label: 'Contenido principal', child: widget.contenido),
+    );
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: _alTeclear,
+      child: FocusTraversalGroup(
+        policy: OrderedTraversalPolicy(),
+        child: Stack(
+          children: [
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(1),
+              child: FocusTraversalGroup(child: widget.marco(contenido)),
+            ),
+            Positioned(
+              left: 8,
+              top: 8,
+              child: FocusTraversalOrder(
+                order: const NumericFocusOrder(0),
+                child: Opacity(
+                  opacity: _visible ? 1 : 0,
+                  child: IgnorePointer(
+                    ignoring: !_visible,
+                    child: Focus(
+                      canRequestFocus: false,
+                      skipTraversal: true,
+                      onFocusChange: (conFoco) => setState(() => _visible = conFoco),
+                      child: FilledButton(
+                        focusNode: _enlace,
+                        onPressed: _destino.requestFocus,
+                        child: const Text(SaltoAlContenido.texto),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Fila de una lista con acciones a la derecha. En pantallas angostas las acciones bajan debajo del texto, para que
 /// el nombre no quede partido letra por letra (RNF12).
 class FilaConAcciones extends StatelessWidget {

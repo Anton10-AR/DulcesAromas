@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:dulces_aromas/comun/api.dart';
+import 'package:dulces_aromas/comun/widgets.dart';
 import 'package:dulces_aromas/panel/app_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -88,6 +90,34 @@ void main() {
     }
     expect(find.text('Verificar pagos'), findsNothing);
     expect(find.text('Mis entregas'), findsNothing);
+  });
+
+  testWidgets('RNF20: el primer Tab ofrece saltar al contenido, sin recorrer el menú', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(tipo: 'PERSONAL', rol: 'VENDEDOR', permisos: ['INICIO_PENDIENTES', 'PEDIDOS_CONSULTAR']),
+    );
+    double opacidad() => tester
+        .widget<Opacity>(find.ancestor(of: find.text(SaltoAlContenido.texto), matching: find.byType(Opacity)))
+        .opacity;
+    expect(opacidad(), 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(opacidad(), 1);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'contenido principal');
+    expect(opacidad(), 0);
+
+    // El siguiente Tab cae dentro del contenido: a la derecha del menú lateral y debajo de la barra.
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    final caja = FocusManager.instance.primaryFocus!.context!.findRenderObject()! as RenderBox;
+    final posicion = caja.localToGlobal(Offset.zero);
+    expect(posicion.dx, greaterThan(220));
+    expect(posicion.dy, greaterThanOrEqualTo(56));
   });
 
   testWidgets('HU06: el Repartidor solo ve sus entregas', (tester) async {
