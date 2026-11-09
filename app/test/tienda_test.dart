@@ -66,6 +66,20 @@ void main() {
     expect(find.text('Ingresar'), findsOneWidget);
   });
 
+  testWidgets('la portada muestra el logo y «Ver catálogo» baja a los productos', (tester) async {
+    await abrir(tester, apiFalsa());
+
+    expect(find.bySemanticsLabel('Dulces Aromas'), findsOneWidget);
+    // Mientras se ve la portada, la barra no repite el nombre.
+    expect(find.descendant(of: find.byType(AppBar), matching: find.text('Dulces Aromas')), findsNothing);
+
+    await tester.tap(find.text('Ver catálogo'));
+    await tester.pumpAndSettle();
+
+    expect(find.descendant(of: find.byType(AppBar), matching: find.text('Dulces Aromas')), findsOneWidget);
+    expect(tester.getRect(find.text('Buscar por nombre')).top, lessThan(200));
+  });
+
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 
@@ -277,7 +291,7 @@ void main() {
     await abrir(tester, api);
     expect(consultas, 1);
 
-    await tester.fling(find.byType(GridView), const Offset(0, 400), 1000);
+    await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1000);
     await tester.pumpAndSettle();
     expect(consultas, 2);
 

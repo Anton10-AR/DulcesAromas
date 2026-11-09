@@ -9,6 +9,7 @@ import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
 import 'comunes.dart';
+import 'portada.dart';
 
 /// Catálogo de la Tienda (CU04, HU07). Se ve sin iniciar sesión (RN15).
 class CatalogoPantalla extends StatefulWidget {
@@ -24,6 +25,8 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
   int? _categoria;
   late Future<List<Categoria>> _categorias;
   late Future<List<Producto>> _productos;
+  final _desplazamiento = ScrollController();
+  bool _portadaPasada = false;
 
   Api get _api => context.read<Api>();
 
@@ -38,6 +41,7 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
   void dispose() {
     _espera?.cancel();
     _busqueda.dispose();
+    _desplazamiento.dispose();
     super.dispose();
   }
 
@@ -61,90 +65,159 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
     _buscar();
   }
 
+  /// Alto de la portada: la mitad de la pantalla, entre 320 y 460 px.
+  double _altoPortada(BuildContext context) => (MediaQuery.sizeOf(context).height * 0.5).clamp(320.0, 460.0);
+
+  /// El nombre vuelve a la barra cuando la portada, que lo muestra, sale de la pantalla.
+  bool _alDesplazar(ScrollNotification aviso) {
+    if (aviso.depth != 0 || aviso.metrics.axis != Axis.vertical) return false;
+    final pasada = aviso.metrics.pixels > _altoPortada(context) - kToolbarHeight;
+    if (pasada != _portadaPasada) setState(() => _portadaPasada = pasada);
+    return false;
+  }
+
+  void _verCatalogo() {
+    final destino = _altoPortada(context);
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _desplazamiento.jumpTo(destino);
+    } else {
+      _desplazamiento.animateTo(destino, duration: const Duration(milliseconds: 450), curve: Curves.easeOutCubic);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dulces Aromas'), actions: accionesTienda(context)),
-      body: Contenido(
-        ancho: 1100,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: TextField(
-                controller: _busqueda,
-                onChanged: _alEscribir,
-                textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(prefixIcon: Icon(Icons.search), labelText: 'Buscar por nombre'),
+      appBar: AppBar(title: _portadaPasada ? const Text('Dulces Aromas') : null, actions: accionesTienda(context)),
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _alDesplazar,
+        // Deslizar hacia abajo vuelve a pedir el catálogo: precios, disponibilidad e imágenes nuevas.
+        child: RefreshIndicator(
+          onRefresh: _actualizar,
+          child: CustomScrollView(
+            controller: _desplazamiento,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Portada(alto: _altoPortada(context), alVerCatalogo: _verCatalogo),
               ),
-            ),
-            FutureBuilder(
-              future: _categorias,
-              builder: (context, estado) => SizedBox(
-                height: 56,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  children: [
-                    _chip('Todo', null),
-                    for (final c in estado.data ?? const <Categoria>[]) _chip(c.nombre, c.id),
-                  ],
+              SliverToBoxAdapter(
+                child: Contenido(
+                  ancho: 1100,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: TextField(
+                          controller: _busqueda,
+                          onChanged: _alEscribir,
+                          textInputAction: TextInputAction.search,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.search),
+                            labelText: 'Buscar por nombre',
+                          ),
+                        ),
+                      ),
+                      FutureBuilder(
+                        future: _categorias,
+                        builder: (context, estado) => SizedBox(
+                          height: 56,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            children: [
+                              _chip('Todo', null),
+                              for (final c in estado.data ?? const <Categoria>[]) _chip(c.nombre, c.id),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Cargador(
-                futuro: _productos,
-                reintentar: _buscar,
-                constructor: (context, productos) {
-                  if (productos.isEmpty) {
-                    // CU04, alt. 1: sin resultados, se sugiere quitar los filtros.
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('No encontramos productos con esa búsqueda.'),
-                          const SizedBox(height: 8),
-                          OutlinedButton(onPressed: _quitarFiltros, child: const Text('Quitar filtros')),
-                        ],
-                      ),
-                    );
+              FutureBuilder<List<Producto>>(
+                future: _productos,
+                builder: (context, estado) {
+                  if (estado.hasError || !estado.hasData || estado.data!.isEmpty) {
+                    return SliverToBoxAdapter(child: _sinProductos(estado));
                   }
-                  return LayoutBuilder(
-                    builder: (context, limites) {
-                      // Al arrancar en Android, el primer cuadro puede llegar con ancho 0 y la cuadrícula falla.
-                      if (limites.maxWidth <= 32) return const SizedBox.shrink();
-                      // Columnas de hasta 260 px. Cada tarjeta mide su imagen cuadrada más el espacio del texto, así
-                      // todas las imágenes tienen la misma altura y ninguna se recorta (RNF12).
-                      const espacio = 16.0;
-                      final util = limites.maxWidth - 2 * espacio;
-                      final columnas = ((util + espacio) / (260 + espacio)).ceil().clamp(1, 12);
-                      final anchoTarjeta = (util - espacio * (columnas - 1)) / columnas;
-                      final alto = anchoTarjeta + MediaQuery.textScalerOf(context).scale(_TarjetaProducto.altoTexto);
-                      // Deslizar hacia abajo vuelve a pedir el catálogo: precios, disponibilidad e imágenes nuevas.
-                      return RefreshIndicator(
-                        onRefresh: _actualizar,
-                        child: GridView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(espacio),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: columnas,
-                            mainAxisSpacing: espacio,
-                            crossAxisSpacing: espacio,
-                            mainAxisExtent: alto,
-                          ),
-                          itemCount: productos.length,
-                          itemBuilder: (_, i) => _TarjetaProducto(productos[i], alVolver: _buscar),
-                        ),
-                      );
-                    },
-                  );
+                  return _rejilla(estado.data!);
                 },
               ),
-            ),
-          ],
+              // Con pocos productos, un espacio al final deja subir la portada del todo con «Ver catálogo».
+              SliverLayoutBuilder(
+                builder: (context, limites) {
+                  final falta = _altoPortada(context) + limites.viewportMainAxisExtent - limites.precedingScrollExtent;
+                  return SliverToBoxAdapter(child: SizedBox(height: falta > 0 ? falta : 0));
+                },
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  /// Cargando, el error con su botón para reintentar, o la búsqueda sin resultados.
+  Widget _sinProductos(AsyncSnapshot<List<Producto>> estado) {
+    final Widget hijo;
+    if (estado.hasError) {
+      final error = estado.error;
+      hijo = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AvisoError(error is ErrorApi ? error.mensaje : 'Ocurrió un error inesperado.'),
+          OutlinedButton(onPressed: _buscar, child: const Text('Reintentar')),
+        ],
+      );
+    } else if (!estado.hasData) {
+      hijo = const CircularProgressIndicator();
+    } else {
+      // CU04, alt. 1: sin resultados, se sugiere quitar los filtros.
+      hijo = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('No encontramos productos con esa búsqueda.'),
+          const SizedBox(height: 8),
+          OutlinedButton(onPressed: _quitarFiltros, child: const Text('Quitar filtros')),
+        ],
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(child: hijo),
+    );
+  }
+
+  Widget _rejilla(List<Producto> productos) {
+    return SliverLayoutBuilder(
+      builder: (context, limites) {
+        // Columnas de hasta 260 px dentro de un ancho máximo de 1100. Cada tarjeta mide su imagen cuadrada más el
+        // espacio del texto, así todas las imágenes tienen la misma altura y ninguna se recorta (RNF12).
+        const espacio = 16.0;
+        final ancho = limites.crossAxisExtent;
+        final lateral = ancho > 1100 ? (ancho - 1100) / 2 + espacio : espacio;
+        final util = ancho - 2 * lateral;
+        // Al arrancar en Android, el primer cuadro puede llegar con ancho 0 y la cuadrícula falla.
+        if (util <= 32) return const SliverToBoxAdapter(child: SizedBox.shrink());
+        final columnas = ((util + espacio) / (260 + espacio)).ceil().clamp(1, 12);
+        final anchoTarjeta = (util - espacio * (columnas - 1)) / columnas;
+        final alto = anchoTarjeta + MediaQuery.textScalerOf(context).scale(_TarjetaProducto.altoTexto);
+        return SliverPadding(
+          padding: EdgeInsets.fromLTRB(lateral, 8, lateral, espacio),
+          sliver: SliverGrid.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columnas,
+              mainAxisSpacing: espacio,
+              crossAxisSpacing: espacio,
+              mainAxisExtent: alto,
+            ),
+            itemCount: productos.length,
+            itemBuilder: (_, i) => _TarjetaProducto(productos[i], alVolver: _buscar),
+          ),
+        );
+      },
     );
   }
 
