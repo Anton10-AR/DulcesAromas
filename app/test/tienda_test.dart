@@ -80,6 +80,21 @@ void main() {
     expect(tester.getRect(find.text('Buscar por nombre')).top, lessThan(200));
   });
 
+  testWidgets('el botón de tema cambia a oscuro y la elección se guarda', (tester) async {
+    await abrir(tester, apiFalsa());
+    Brightness brillo() => Theme.of(tester.element(find.text('Torta de chocolate'))).brightness;
+    expect(brillo(), Brightness.light);
+
+    await tester.tap(find.byTooltip('Tema: como el dispositivo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Oscuro'));
+    await tester.pumpAndSettle();
+
+    expect(brillo(), Brightness.dark);
+    expect(find.byTooltip('Tema: oscuro'), findsOneWidget);
+    expect((await SharedPreferences.getInstance()).getString('tema_tienda'), 'dark');
+  });
+
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 

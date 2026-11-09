@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../comun/api.dart';
+import '../../comun/preferencia_tema.dart';
 import '../../comun/formato.dart';
 import '../../comun/sesion.dart';
 import '../carrito.dart';
@@ -12,6 +13,7 @@ List<Widget> accionesTienda(BuildContext context) {
   final carrito = context.watch<Carrito>();
   final sesion = context.watch<Sesion>();
   return [
+    const BotonTema(),
     IconButton(
       tooltip: 'Carrito, ${cantidadProductos(carrito.unidades)}',
       onPressed: () => context.push('/carrito'),

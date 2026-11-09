@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../comun/api.dart';
+import '../comun/preferencia_tema.dart';
 import '../comun/sesion.dart';
 import '../comun/tema.dart';
 import '../comun/widgets.dart';
@@ -96,11 +97,12 @@ class AppTienda extends StatefulWidget {
 class _AppTiendaState extends State<AppTienda> {
   late final Sesion _sesion = Sesion(widget.api, claveGuardado: 'sesion_tienda');
   late final Carrito _carrito = Carrito();
+  late final PreferenciaTema _tema = PreferenciaTema(claveGuardado: 'tema_tienda');
   late final GoRouter _rutas = rutasTienda(_sesion);
 
   /// Las pantallas esperan a la sesión y al carrito guardados. Si no, al abrir o recargar una ruta como /pedidos o
   /// /carrito en la web, la pantalla pediría datos sin token o mostraría el carrito vacío.
-  late final Future<void> _listo = Future.wait([_sesion.restaurar(), _carrito.cargar()]);
+  late final Future<void> _listo = Future.wait([_sesion.restaurar(), _carrito.cargar(), _tema.cargar()]);
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +111,7 @@ class _AppTiendaState extends State<AppTienda> {
         Provider.value(value: widget.api),
         ChangeNotifierProvider.value(value: _sesion),
         ChangeNotifierProvider.value(value: _carrito),
+        ChangeNotifierProvider.value(value: _tema),
       ],
       child: FutureBuilder(
         future: _listo,
@@ -119,8 +122,8 @@ class _AppTiendaState extends State<AppTienda> {
                 debugShowCheckedModeBanner: false,
                 theme: temaClaro(),
                 darkTheme: temaOscuro(),
-                // Sigue la preferencia del dispositivo.
-                themeMode: ThemeMode.system,
+                // El del dispositivo, salvo que la persona elija otro con el botón de la barra.
+                themeMode: context.watch<PreferenciaTema>().modo,
                 routerConfig: _rutas,
                 // RNF20: marco visible alrededor del control con foco al usar el teclado.
                 builder: (context, hijo) => IndicadorDeFoco(child: hijo!),

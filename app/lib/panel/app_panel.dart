@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../comun/api.dart';
+import '../comun/preferencia_tema.dart';
 import '../comun/perfil.dart';
 import '../comun/sesion.dart';
 import '../comun/tema.dart';
@@ -114,9 +115,10 @@ class AppPanel extends StatefulWidget {
 class _AppPanelState extends State<AppPanel> {
   late final Sesion _sesion = Sesion(widget.api, claveGuardado: 'sesion_panel');
   late final GoRouter _rutas = rutasPanel(_sesion);
+  late final PreferenciaTema _tema = PreferenciaTema(claveGuardado: 'tema_panel');
 
   /// Las pantallas esperan a la sesión guardada, para no pedir datos sin token al recargar una ruta.
-  late final Future<void> _listo = _sesion.restaurar();
+  late final Future<void> _listo = Future.wait([_sesion.restaurar(), _tema.cargar()]);
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +126,7 @@ class _AppPanelState extends State<AppPanel> {
       providers: [
         Provider.value(value: widget.api),
         ChangeNotifierProvider.value(value: _sesion),
+        ChangeNotifierProvider.value(value: _tema),
       ],
       child: FutureBuilder(
         future: _listo,
@@ -134,7 +137,8 @@ class _AppPanelState extends State<AppPanel> {
                 debugShowCheckedModeBanner: false,
                 theme: temaClaro(),
                 darkTheme: temaOscuro(),
-                themeMode: ThemeMode.system,
+                // El del dispositivo, salvo que la persona elija otro con el botón de la barra.
+                themeMode: context.watch<PreferenciaTema>().modo,
                 routerConfig: _rutas,
                 // RNF20: marco visible alrededor del control con foco al usar el teclado.
                 builder: (context, hijo) => IndicadorDeFoco(child: hijo!),
@@ -166,6 +170,7 @@ class MarcoPanel extends StatelessWidget {
     final barra = AppBar(
       title: Text(titulo),
       leading: padre == null ? null : BackButton(onPressed: () => context.go(padre)),
+      actions: const [BotonTema()],
     );
 
     void ir(int i) => context.go(visibles[i].ruta);
