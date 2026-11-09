@@ -314,40 +314,69 @@ class Cargador<T> extends StatelessWidget {
   }
 }
 
-/// Etiqueta de estado de un pedido o un pago.
+/// Etiqueta de estado de un pedido, un pago o una cuenta. El color dice en qué punto está (ver [Tono]).
 class Etiqueta extends StatelessWidget {
-  const Etiqueta(this.texto, {super.key, this.resaltada = false});
+  const Etiqueta(this.texto, {super.key, this.tono = Tono.neutro});
 
   final String texto;
-  final bool resaltada;
+  final Tono tono;
 
   @override
   Widget build(BuildContext context) {
-    final colores = Theme.of(context).colorScheme;
+    final tema = Theme.of(context);
+    final colores = tema.colorScheme;
+    final oscuro = tema.brightness == Brightness.dark;
+    final relleno = oscuro ? tono.rellenoOscuro : tono.relleno;
+    final texto = (oscuro ? tono.textoOscuro : tono.texto) ?? colores.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: resaltada ? colores.secondaryContainer : null,
-        border: Border.all(color: colores.outline),
+        color: relleno,
+        border: Border.all(color: relleno ?? colores.outline),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Text(texto, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: colores.onSurface)),
+      child: Text(this.texto, style: tema.textTheme.labelLarge?.copyWith(color: texto)),
     );
   }
 }
 
-/// El estado de un pedido como etiqueta. Se resaltan los que el personal tiene que mover: Confirmado, En
-/// preparación, Listo y En camino.
+/// El estado de un pedido como etiqueta de color.
 class EtiquetaEstado extends StatelessWidget {
   const EtiquetaEstado(this.estado, {super.key});
 
   final String estado;
 
-  static const _enMarcha = {'CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'EN_CAMINO'};
+  static const tonos = {
+    'PENDIENTE': Tono.rojo,
+    'CONFIRMADO': Tono.azul,
+    'EN_PREPARACION': Tono.ambar,
+    'LISTO': Tono.verde,
+    'EN_CAMINO': Tono.azul,
+    'ENTREGADO': Tono.verde,
+    'CANCELADO': Tono.neutro,
+  };
 
   @override
   Widget build(BuildContext context) =>
-      Etiqueta(nombresEstadoPedido[estado] ?? estado, resaltada: _enMarcha.contains(estado));
+      Etiqueta(nombresEstadoPedido[estado] ?? estado, tono: tonos[estado] ?? Tono.neutro);
+}
+
+/// El estado de un pago como etiqueta de color, con «Pago:» delante.
+class EtiquetaPago extends StatelessWidget {
+  const EtiquetaPago(this.estado, {super.key});
+
+  final String estado;
+
+  static const tonos = {
+    'PENDIENTE_DE_PAGO': Tono.rojo,
+    'EN_VERIFICACION': Tono.ambar,
+    'PAGADO': Tono.verde,
+    'RECHAZADO': Tono.neutro,
+  };
+
+  @override
+  Widget build(BuildContext context) =>
+      Etiqueta('Pago: ${nombresEstadoPago[estado] ?? estado}', tono: tonos[estado] ?? Tono.neutro);
 }
 
 void avisar(BuildContext context, String mensaje) {

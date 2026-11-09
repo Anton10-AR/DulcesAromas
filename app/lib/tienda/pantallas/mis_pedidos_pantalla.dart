@@ -101,10 +101,7 @@ class _TarjetaPedido extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
-                  if (cobro != null) Etiqueta('Pago: ${nombresEstadoPago[cobro!.estado]}'),
-                ],
+                children: [EtiquetaEstado(pedido.estado), if (cobro != null) EtiquetaPago(cobro!.estado)],
               ),
               // HU19: si el pago fue rechazado, se ve la observación y se puede volver a pagar.
               if (cobro?.observacionRechazo != null) ...[

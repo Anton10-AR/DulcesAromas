@@ -24,6 +24,13 @@ void main() {
     'texto suave sobre fondo oscuro': (Colores.textoSuaveOscuro, Colores.fondoOscuro),
     'botón rosa en tema oscuro': (Colores.fondoOscuro, Colores.rosaMedio),
     'error sobre fondo oscuro': (Colores.errorOscuro, Colores.fondoOscuro),
+    'café suave sobre tarjeta blanca': (Colores.cafeSuave, Colores.tarjeta),
+    'texto suave sobre tarjeta oscura': (Colores.textoSuaveOscuro, Colores.superficieOscura),
+    'rosa de texto sobre tarjeta blanca': (Colores.rosaTexto, Colores.tarjeta),
+    for (final tono in Tono.values.where((t) => t.texto != null)) ...{
+      'etiqueta ${tono.name} en tema claro': (tono.texto!, tono.relleno!),
+      'etiqueta ${tono.name} en tema oscuro': (tono.textoOscuro!, tono.rellenoOscuro!),
+    },
   };
 
   for (final par in pares.entries) {

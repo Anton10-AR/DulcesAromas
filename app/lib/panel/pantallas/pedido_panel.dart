@@ -151,10 +151,7 @@ class _PedidoPanelState extends State<PedidoPanel> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: [
-            Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
-            if (pago != null) Etiqueta('Pago: ${nombresEstadoPago[pago.estado]}'),
-          ],
+          children: [EtiquetaEstado(pedido.estado), if (pago != null) EtiquetaPago(pago.estado)],
         ),
         const SizedBox(height: 8),
         if (pedido.cliente != null) Text('Cliente: ${pedido.cliente}', style: textos.titleMedium),

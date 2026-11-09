@@ -99,10 +99,7 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: [
-            Etiqueta(nombresEstadoPedido[pedido.estado]!, resaltada: true),
-            if (vigente != null) Etiqueta('Pago: ${nombresEstadoPago[vigente.estado]}'),
-          ],
+          children: [EtiquetaEstado(pedido.estado), if (vigente != null) EtiquetaPago(vigente.estado)],
         ),
         const SizedBox(height: 16),
         if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),

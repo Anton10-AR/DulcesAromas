@@ -172,6 +172,7 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 - **Tipografías:** títulos en Fraunces y texto en Work Sans.
 - **Tema claro:** fondo #FBF4EC, texto #3A2A23, café #4A342C, rosa #EFC3CE, #E19DB0 y #B96C86.
 - **Tema oscuro:** fondo #1E1714, texto #EDE0D6. Sigue la preferencia del dispositivo.
+- **Tarjetas y estados:** tarjetas blancas con borde #E6D8CA. Los estados usan `Tono` (rojo, azul, ámbar, verde, neutro) por medio de `EtiquetaEstado` y `EtiquetaPago`; el detalle está en la sección 6.1 de la Visión.
 - **Accesibilidad:** el texto tiene contraste de 4.5:1 o más (RNF20). En el tema claro, oscurece el rosa #B96C86 y el café #8A6C5C antes de usarlos en texto pequeño.
 
 ## Orden de trabajo

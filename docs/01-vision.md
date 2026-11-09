@@ -273,6 +273,7 @@ La landing page del Laboratorio 08 (publicada en Render desde el repositorio del
 | Identidad | Nombre «Dulces Aromas» y lema «Momentos para compartir». Títulos en Fraunces y texto en Work Sans | Se adopta |
 | Paleta clara | Fondo #FBF4EC, panel #FFFFFF, texto #3A2A23, café #4A342C, rosa #EFC3CE, #E19DB0 y #B96C86, éxito #5E8A63 | Se adopta, con las correcciones de contraste de abajo |
 | Paleta oscura | Fondo #1E1714, panel #2D231E, texto #EDE0D6, rosa #E4A6BA, éxito #9CC3A0 | Se adopta |
+| Tarjetas y estados | Las tarjetas son blancas con borde #E6D8CA sobre el fondo crema (en oscuro, #2B211D con borde #3D2F29). Cada estado lleva un color, en texto y relleno: rojo #AB4C42 para lo que espera al cliente (Pendiente, Pendiente de pago), azul #516C96 (Confirmado, En camino), ámbar #8D6628 para lo que está en proceso (En preparación, En verificación) y verde #547357 para lo listo (Listo, Entregado, Pagado). Cancelado y Rechazado van solo con contorno. Todos llegan a 4.5:1 en los dos temas | Lo eligió el equipo el 08/11/2026, a partir del prototipo del Panel |
 | Tema | Sigue la preferencia del dispositivo y permite cambiarlo con un botón. El sistema funciona aunque el navegador no guarde la elección | Se adopta |
 | Adaptación | Cambios de diseño en 920 px y 560 px; sin scroll horizontal entre 360 y 1920 px (RNF12) | Se adopta |
 | Contraste medido | Texto principal 12.5:1 en tema claro y 13.7:1 en oscuro; texto secundario 5.0:1 y 6.9:1. Cumple 4.5:1 | Cumple |

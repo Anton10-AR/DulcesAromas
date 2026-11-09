@@ -19,12 +19,42 @@ abstract final class Colores {
 
   static const error = Color(0xFFA3262A);
 
+  /// Tarjetas blancas con un borde suave sobre el fondo crema, como el «panel» de la landing.
+  static const tarjeta = Color(0xFFFFFFFF);
+  static const borde = Color(0xFFE6D8CA);
+
   // Tema oscuro.
   static const fondoOscuro = Color(0xFF1E1714);
   static const textoOscuro = Color(0xFFEDE0D6);
   static const superficieOscura = Color(0xFF2B211D);
   static const textoSuaveOscuro = Color(0xFFC9B8AC);
   static const errorOscuro = Color(0xFFFFB4AB);
+  static const bordeOscuro = Color(0xFF3D2F29);
+}
+
+/// Color de una etiqueta de estado: el texto y el relleno de cada tono, en los dos temas. Todos llegan a 4.5:1.
+enum Tono {
+  /// Espera algo del cliente: Pendiente, Pendiente de pago.
+  rojo(Color(0xFFAB4C42), Color(0xFFFAEAE8), Color(0xFFD2928B), Color(0xFF462E29)),
+
+  /// En manos del negocio, sin preparar todavía o en el camino: Confirmado, En camino.
+  azul(Color(0xFF516C96), Color(0xFFEBEFF6), Color(0xFF93A6C5), Color(0xFF3A3639)),
+
+  /// En proceso: En preparación, En verificación.
+  ambar(Color(0xFF8D6628), Color(0xFFFBF1E1), Color(0xFFCFA156), Color(0xFF483725)),
+
+  /// Listo o terminado: Listo, Entregado, Pagado, Activo.
+  verde(Color(0xFF547357), Color(0xFFEAF2EA), Color(0xFF8FAD92), Color(0xFF39382E)),
+
+  /// Cerrado: Cancelado, Rechazado, Desactivado. Solo contorno.
+  neutro(null, null, null, null);
+
+  const Tono(this.texto, this.relleno, this.textoOscuro, this.rellenoOscuro);
+
+  final Color? texto;
+  final Color? relleno;
+  final Color? textoOscuro;
+  final Color? rellenoOscuro;
 }
 
 const _fuenteTexto = 'WorkSans';
@@ -75,7 +105,7 @@ ThemeData temaClaro() {
     onSurfaceVariant: Colores.cafeSuave,
     outline: Colores.cafeSuave,
   );
-  return _tema(esquema, _textos(Colores.texto, Colores.cafeSuave));
+  return _tema(esquema, _textos(Colores.texto, Colores.cafeSuave), tarjeta: Colores.tarjeta, borde: Colores.borde);
 }
 
 ThemeData temaOscuro() {
@@ -96,10 +126,15 @@ ThemeData temaOscuro() {
     onSurfaceVariant: Colores.textoSuaveOscuro,
     outline: Colores.textoSuaveOscuro,
   );
-  return _tema(esquema, _textos(Colores.textoOscuro, Colores.textoSuaveOscuro));
+  return _tema(
+    esquema,
+    _textos(Colores.textoOscuro, Colores.textoSuaveOscuro),
+    tarjeta: Colores.superficieOscura,
+    borde: Colores.bordeOscuro,
+  );
 }
 
-ThemeData _tema(ColorScheme esquema, TextTheme textos) {
+ThemeData _tema(ColorScheme esquema, TextTheme textos, {required Color tarjeta, required Color borde}) {
   return ThemeData(
     colorScheme: esquema,
     textTheme: textos,
@@ -111,6 +146,15 @@ ThemeData _tema(ColorScheme esquema, TextTheme textos) {
       titleTextStyle: textos.titleLarge,
       elevation: 0,
       scrolledUnderElevation: 1,
+    ),
+    cardTheme: CardThemeData(
+      color: tarjeta,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: borde),
+      ),
     ),
     // Las ayudas y los errores largos pasan a otra línea en vez de cortarse con «…» en pantallas angostas (RNF12).
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(), helperMaxLines: 3, errorMaxLines: 3),

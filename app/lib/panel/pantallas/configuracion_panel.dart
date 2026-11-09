@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
+import '../../comun/tema.dart';
 import '../../comun/widgets.dart';
 import 'formulario.dart';
 
@@ -155,7 +156,10 @@ class _ConfiguracionPanelState extends State<ConfiguracionPanel> {
                               children: [
                                 Text(m.nombre, style: textos.titleMedium),
                                 const SizedBox(width: 8),
-                                Etiqueta(m.activo ? 'Activo' : 'Desactivado', resaltada: m.activo),
+                                Etiqueta(
+                                  m.activo ? 'Activo' : 'Desactivado',
+                                  tono: m.activo ? Tono.verde : Tono.neutro,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 4),

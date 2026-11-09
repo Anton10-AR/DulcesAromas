@@ -84,7 +84,7 @@ class _MisEntregasPanelState extends State<MisEntregasPanel> {
                           children: [
                             Text('Pedido #${e.pedidoId}', style: textos.titleMedium),
                             const Spacer(),
-                            Etiqueta(nombresEstadoPedido[e.estado]!, resaltada: true),
+                            EtiquetaEstado(e.estado),
                           ],
                         ),
                         const SizedBox(height: 8),
