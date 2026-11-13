@@ -1,6 +1,6 @@
 # Dulces Aromas — Modelos UML v1
 
-Versión 1.3 · 07/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
+Versión 1.4 · 13/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
 
 ## 1. Introducción
 
@@ -449,6 +449,19 @@ La flecha discontinua va del componente que requiere hacia la interfaz que usa. 
 | Cobros | IPagos | IAutenticacion, IPedidos, Base de datos, Comprobantes |
 | Distribución | IEntregas | IAutenticacion, IPedidos, Base de datos |
 
+En el código, cada interfaz está en el paquete raíz de su módulo, que es lo único que los demás pueden usar; la clase que la implementa queda en un subpaquete interno. Los controladores REST, que atienden a la Tienda y al Panel, también pasan por la interfaz.
+
+| Interfaz | Paquete | La implementa | La usan |
+| --- | --- | --- | --- |
+| IAutenticacion | `seguridad` | `AdaptadorAutenticacion` | Los cuatro módulos, para saber quién hace cada acción |
+| IProductos | `ecommerce` | `AdaptadorProductos` (catálogo) | Pedidos, para calcular el total con los precios y opciones de hoy |
+| IStock | `ecommerce` | `InventarioServicio` | El controlador de inventario |
+| IPedidos | `ecommerce` | `AdaptadorPedidos` | Cobros y Distribución |
+| IPagos | `cobros` | `PagoServicio` | El controlador de pagos |
+| IEntregas | `distribucion` | `EntregaServicio` | El controlador de entregas |
+
+Catálogo, inventario y pedidos forman un solo módulo, así que Spring Modulith no impide que uno use las clases del otro. Por eso la prueba `InterfacesTests` comprueba que Pedidos no use las clases internas del catálogo ni del inventario, y que los controladores usen la interfaz de su módulo. `ModularidadTests` comprueba el resto.
+
 ### 4.1 Despliegue en la nube
 
 El modelo de componentes dice de qué piezas se arma el sistema; el de despliegue dice dónde corre cada una. Todo se publica desde el repositorio con planes gratuitos y sin cambiar código: la configuración entra por variables de entorno (RNF21).
@@ -571,7 +584,7 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 
 Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pagos (uno por intento) y la entrega es una clase aparte que solo existe para pedidos con delivery.
 
-## 7. Cambios en las versiones 1.1, 1.2 y 1.3
+## 7. Cambios en las versiones 1.1 a 1.4
 
 | Elemento | Cambio | Motivo |
 | --- | --- | --- |
@@ -583,4 +596,5 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | MovimientoInventario | Agrega stockResultante | El historial muestra el stock que dejó cada movimiento (RF31) |
 | AsignacionEntrega | Clase nueva | Registrar cada cambio de repartidor (CU08, alt. 4) |
 | Componentes | Evento PedidoRegistrado | Cobros abre el pago sin que E-commerce dependa de Cobros |
+| Interfaces (v1.4) | Tabla de qué clase implementa cada interfaz del modelo de componentes. En el código se agregan IProductos, IStock, IPagos e IEntregas, que el diagrama ya tenía | El código no tenía cuatro de las seis interfaces y Pedidos leía el catálogo directamente |
 | Despliegue (v1.3) | Sección 4.1 nueva: nodos de Render, Neon, Brevo y GitHub Actions | Documentar dónde corre cada componente al publicar el sistema en la nube (RNF21) |

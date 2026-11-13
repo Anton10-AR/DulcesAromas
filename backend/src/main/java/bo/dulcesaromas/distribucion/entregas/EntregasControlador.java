@@ -2,6 +2,8 @@ package bo.dulcesaromas.distribucion.entregas;
 
 import java.util.List;
 
+import bo.dulcesaromas.distribucion.EntregaVista;
+import bo.dulcesaromas.distribucion.IEntregas;
 import bo.dulcesaromas.seguridad.IAutenticacion;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -23,11 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/entregas")
 class EntregasControlador {
 
-	private final EntregaServicio servicio;
+	private final IEntregas servicio;
 
 	private final IAutenticacion autenticacion;
 
-	EntregasControlador(EntregaServicio servicio, IAutenticacion autenticacion) {
+	EntregasControlador(IEntregas servicio, IAutenticacion autenticacion) {
 		this.servicio = servicio;
 		this.autenticacion = autenticacion;
 	}

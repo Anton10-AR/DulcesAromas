@@ -3,6 +3,8 @@ package bo.dulcesaromas.cobros.pagos;
 import java.io.IOException;
 import java.util.List;
 
+import bo.dulcesaromas.cobros.IPagos;
+import bo.dulcesaromas.cobros.PagoVista;
 import bo.dulcesaromas.seguridad.IAutenticacion;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -29,11 +31,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/pagos")
 class PagosControlador {
 
-	private final PagoServicio servicio;
+	private final IPagos servicio;
 
 	private final IAutenticacion autenticacion;
 
-	PagosControlador(PagoServicio servicio, IAutenticacion autenticacion) {
+	PagosControlador(IPagos servicio, IAutenticacion autenticacion) {
 		this.servicio = servicio;
 		this.autenticacion = autenticacion;
 	}
@@ -51,7 +53,7 @@ class PagosControlador {
 	 */
 	@GetMapping("/mios")
 	@PreAuthorize("hasAuthority('CLIENTE')")
-	List<PagoServicio.CobroDePedido> mios() {
+	List<IPagos.Cobro> mios() {
 		return servicio.deCliente(autenticacion.usuarioActual().id());
 	}
 
@@ -71,7 +73,7 @@ class PagosControlador {
 
 	@GetMapping("/{id}/comprobante")
 	ResponseEntity<byte[]> comprobante(@PathVariable Long id) {
-		Archivo archivo = servicio.comprobante(id, autenticacion.usuarioActual());
+		IPagos.ArchivoComprobante archivo = servicio.comprobante(id, autenticacion.usuarioActual());
 		return ResponseEntity.ok().contentType(MediaType.parseMediaType(archivo.tipoContenido())).body(archivo.datos());
 	}
 

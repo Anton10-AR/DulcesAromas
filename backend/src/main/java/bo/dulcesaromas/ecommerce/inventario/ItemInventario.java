@@ -1,5 +1,6 @@
 package bo.dulcesaromas.ecommerce.inventario;
 
+import bo.dulcesaromas.ecommerce.TipoMovimiento;
 import java.math.BigDecimal;
 import java.time.Instant;
 

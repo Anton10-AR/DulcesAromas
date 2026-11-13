@@ -1,5 +1,6 @@
 package bo.dulcesaromas.cobros.pagos;
 
+import bo.dulcesaromas.cobros.EstadoPago;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;

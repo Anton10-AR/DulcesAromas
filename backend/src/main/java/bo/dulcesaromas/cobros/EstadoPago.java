@@ -1,4 +1,4 @@
-package bo.dulcesaromas.cobros.pagos;
+package bo.dulcesaromas.cobros;
 
 /**
  * Estados del pago (CU, tabla 2.1). Un pago Rechazado se queda así y el sistema abre otro Pendiente de pago.

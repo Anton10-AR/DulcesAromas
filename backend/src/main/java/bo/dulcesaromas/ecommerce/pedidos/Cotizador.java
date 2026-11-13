@@ -11,27 +11,28 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
+import bo.dulcesaromas.ecommerce.IProductos;
+import bo.dulcesaromas.ecommerce.IProductos.Opcion;
+import bo.dulcesaromas.ecommerce.IProductos.ProductoParaPedido;
 import bo.dulcesaromas.ecommerce.TipoEntrega;
-import bo.dulcesaromas.ecommerce.catalogo.OpcionPersonalizacion;
-import bo.dulcesaromas.ecommerce.catalogo.Producto;
-import bo.dulcesaromas.ecommerce.catalogo.ProductoRepositorio;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * Arma las líneas de un carrito con los precios y recargos actuales y calcula el total (RN11).
+ * Arma las líneas de un carrito con los precios y recargos actuales y calcula el total (RN11). Los productos los da
+ * el catálogo por IProductos.
  */
 @Component
 class Cotizador {
 
 	private static final BigDecimal CERO = new BigDecimal("0.00");
 
-	private final ProductoRepositorio productos;
+	private final IProductos productos;
 
 	private final ConfiguracionRepositorio configuracion;
 
-	Cotizador(ProductoRepositorio productos, ConfiguracionRepositorio configuracion) {
+	Cotizador(IProductos productos, ConfiguracionRepositorio configuracion) {
 		this.productos = productos;
 		this.configuracion = configuracion;
 	}
@@ -41,18 +42,18 @@ class Cotizador {
 	 */
 	Cotizacion cotizar(SolicitudPedido solicitud, boolean bloquear) {
 		Set<Long> ids = solicitud.lineas().stream().map(SolicitudPedido.LineaSolicitud::productoId).collect(Collectors.toSet());
-		Map<Long, Producto> porId = (bloquear ? productos.bloquearParaPedido(ids) : productos.findAllById(ids)).stream()
-			.collect(Collectors.toMap(Producto::getId, Function.identity()));
+		Map<Long, ProductoParaPedido> porId = productos.paraPedido(ids, bloquear).stream()
+			.collect(Collectors.toMap(ProductoParaPedido::id, Function.identity()));
 		List<LineaCotizada> lineas = new ArrayList<>();
 		for (var linea : solicitud.lineas()) {
-			Producto producto = porId.get(linea.productoId());
+			ProductoParaPedido producto = porId.get(linea.productoId());
 			if (producto == null) {
 				throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "PRODUCTO_NO_ENCONTRADO",
 						"Uno de los productos del carrito ya no existe. Quítalo para continuar.");
 			}
-			lineas.add(new LineaCotizada(new LineaPedido(producto.getId(), producto.getNombre(), producto.getPrecio(),
+			lineas.add(new LineaCotizada(new LineaPedido(producto.id(), producto.nombre(), producto.precio(),
 					linea.cantidad(), mensaje(producto, linea.mensaje()), opciones(producto, linea.opcionesOVacio())),
-					producto.esVisible() && producto.isDisponible()));
+					producto.disponible()));
 		}
 		TipoEntrega tipo = solicitud.tipoEntrega() == null ? TipoEntrega.RECOJO : solicitud.tipoEntrega();
 		BigDecimal envio = tipo == TipoEntrega.DELIVERY ? configuracion.actual().getTarifaEnvio() : CERO;
@@ -63,29 +64,29 @@ class Cotizador {
 	/**
 	 * Las opciones deben ser del producto, y como máximo una de cada tipo (un tamaño, un sabor).
 	 */
-	private static List<OpcionElegida> opciones(Producto producto, List<Long> elegidas) {
+	private static List<OpcionElegida> opciones(ProductoParaPedido producto, List<Long> elegidas) {
 		Set<Long> ids = new HashSet<>(elegidas);
-		List<OpcionPersonalizacion> delProducto = producto.getOpciones();
-		if (!delProducto.stream().map(OpcionPersonalizacion::getId).collect(Collectors.toSet()).containsAll(ids)) {
+		List<Opcion> delProducto = producto.opciones();
+		if (!delProducto.stream().map(Opcion::id).collect(Collectors.toSet()).containsAll(ids)) {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "OPCION_INVALIDA",
-					"Una de las opciones elegidas ya no está disponible para «" + producto.getNombre() + "».");
+					"Una de las opciones elegidas ya no está disponible para «" + producto.nombre() + "».");
 		}
 		Set<String> tipos = new HashSet<>();
 		List<OpcionElegida> resultado = new ArrayList<>();
-		for (OpcionPersonalizacion opcion : delProducto) {
-			if (!ids.contains(opcion.getId())) {
+		for (Opcion opcion : delProducto) {
+			if (!ids.contains(opcion.id())) {
 				continue;
 			}
-			if (!tipos.add(opcion.getTipo())) {
+			if (!tipos.add(opcion.tipo())) {
 				throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "OPCION_REPETIDA",
-						"Elige solo una opción de " + opcion.getTipo() + " para «" + producto.getNombre() + "».");
+						"Elige solo una opción de " + opcion.tipo() + " para «" + producto.nombre() + "».");
 			}
-			resultado.add(new OpcionElegida(opcion.getTipo(), opcion.getNombre(), opcion.getRecargo()));
+			resultado.add(new OpcionElegida(opcion.tipo(), opcion.nombre(), opcion.recargo()));
 		}
-		boolean tieneTamanos = delProducto.stream().anyMatch(o -> esTamano(o.getTipo()));
+		boolean tieneTamanos = delProducto.stream().anyMatch(o -> esTamano(o.tipo()));
 		if (tieneTamanos && tipos.stream().noneMatch(Cotizador::esTamano)) {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "TAMANO_REQUERIDO",
-					"Elige el tamaño de «" + producto.getNombre() + "».");
+					"Elige el tamaño de «" + producto.nombre() + "».");
 		}
 		return resultado;
 	}
@@ -101,13 +102,13 @@ class Cotizador {
 	/**
 	 * El mensaje va sobre una torta, así que solo lo admite un producto personalizable (RN17).
 	 */
-	private static String mensaje(Producto producto, String mensaje) {
+	private static String mensaje(ProductoParaPedido producto, String mensaje) {
 		if (!StringUtils.hasText(mensaje)) {
 			return null;
 		}
-		if (!producto.isPersonalizable()) {
+		if (!producto.personalizable()) {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "MENSAJE_NO_PERMITIDO",
-					"«" + producto.getNombre() + "» no admite un mensaje escrito.");
+					"«" + producto.nombre() + "» no admite un mensaje escrito.");
 		}
 		return mensaje.strip();
 	}

@@ -1,5 +1,6 @@
 package bo.dulcesaromas.cobros.pagos;
 
+import bo.dulcesaromas.cobros.EstadoPago;
 import java.math.BigDecimal;
 import java.time.Instant;
 

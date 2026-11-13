@@ -3,6 +3,9 @@ package bo.dulcesaromas.ecommerce.inventario;
 import java.math.BigDecimal;
 import java.util.List;
 
+import bo.dulcesaromas.ecommerce.IStock;
+import bo.dulcesaromas.ecommerce.IStock.Insumo;
+import bo.dulcesaromas.ecommerce.TipoMovimiento;
 import bo.dulcesaromas.seguridad.IAutenticacion;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -29,19 +32,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/inventario")
 class InventarioControlador {
 
-	private final InventarioServicio servicio;
+	private final IStock servicio;
 
 	private final IAutenticacion autenticacion;
 
-	InventarioControlador(InventarioServicio servicio, IAutenticacion autenticacion) {
+	InventarioControlador(IStock servicio, IAutenticacion autenticacion) {
 		this.servicio = servicio;
 		this.autenticacion = autenticacion;
 	}
 
 	@GetMapping
 	@PreAuthorize("hasAnyAuthority('INVENTARIO_CONSULTAR', 'INVENTARIO_MOVIMIENTOS')")
-	List<ItemVista> listar() {
-		return servicio.listar().stream().map(ItemVista::de).toList();
+	List<Insumo> listar() {
+		return servicio.insumos();
 	}
 
 	/**
@@ -49,33 +52,33 @@ class InventarioControlador {
 	 */
 	@GetMapping("/alertas")
 	@PreAuthorize("hasAnyAuthority('INVENTARIO_CONSULTAR', 'INVENTARIO_MOVIMIENTOS')")
-	List<ItemVista> alertas() {
-		return servicio.alertas().stream().map(ItemVista::de).toList();
+	List<Insumo> alertas() {
+		return servicio.alertas();
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("hasAuthority('INVENTARIO_MOVIMIENTOS')")
-	ItemVista crear(@Valid @RequestBody DatosItem datos) {
-		return ItemVista.de(servicio.crear(datos.nombre(), datos.unidad(), datos.minimo()));
+	Insumo crear(@Valid @RequestBody DatosItem datos) {
+		return servicio.crear(datos.nombre(), datos.unidad(), datos.minimo());
 	}
 
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAuthority('INVENTARIO_MOVIMIENTOS')")
-	ItemVista editar(@PathVariable Long id, @Valid @RequestBody DatosItem datos) {
-		return ItemVista.de(servicio.editar(id, datos.nombre(), datos.unidad(), datos.minimo()));
+	Insumo editar(@PathVariable Long id, @Valid @RequestBody DatosItem datos) {
+		return servicio.editar(id, datos.nombre(), datos.unidad(), datos.minimo());
 	}
 
 	@PostMapping("/{id}/movimientos")
 	@PreAuthorize("hasAuthority('INVENTARIO_MOVIMIENTOS')")
-	ItemVista registrarMovimiento(@PathVariable Long id, @Valid @RequestBody DatosMovimiento datos) {
-		return ItemVista.de(servicio.registrarMovimiento(id, datos.tipo(), datos.cantidad(), datos.motivo(),
-				autenticacion.usuarioActual().id()));
+	Insumo registrarMovimiento(@PathVariable Long id, @Valid @RequestBody DatosMovimiento datos) {
+		return servicio.registrarMovimiento(id, datos.tipo(), datos.cantidad(), datos.motivo(),
+				autenticacion.usuarioActual().id());
 	}
 
 	@GetMapping("/{id}/movimientos")
 	@PreAuthorize("hasAuthority('INVENTARIO_MOVIMIENTOS')")
-	List<InventarioServicio.MovimientoVista> historial(@PathVariable Long id) {
+	List<IStock.Movimiento> historial(@PathVariable Long id) {
 		return servicio.historial(id);
 	}
 
@@ -94,12 +97,5 @@ class InventarioControlador {
 			@NotBlank(message = "Escribe el motivo.") @Size(max = 255, message = "Usa como máximo 255 caracteres.") String motivo) {
 	}
 
-	record ItemVista(Long id, String nombre, String unidad, BigDecimal stock, BigDecimal minimo, boolean alerta) {
-
-		static ItemVista de(ItemInventario i) {
-			return new ItemVista(i.getId(), i.getNombre(), i.getUnidad(), i.getStock(), i.getMinimo(), i.enMinimo());
-		}
-
-	}
 
 }

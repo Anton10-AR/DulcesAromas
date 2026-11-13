@@ -9,6 +9,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import bo.dulcesaromas.cobros.EstadoPago;
+import bo.dulcesaromas.cobros.IPagos;
+import bo.dulcesaromas.cobros.PagoVista;
 import bo.dulcesaromas.compartido.ReglaNegocioException;
 import bo.dulcesaromas.ecommerce.EstadoPedido;
 import bo.dulcesaromas.ecommerce.IPedidos;
@@ -22,10 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Registrar un pago (CU06, HU11) y verificarlo (CU07, HU12).
+ * Registrar un pago (CU06, HU11) y verificarlo (CU07, HU12). Es la implementación de IPagos.
  */
 @Service
-class PagoServicio {
+class PagoServicio implements IPagos {
 
 	private final PagoRepositorio pagos;
 
@@ -60,8 +63,9 @@ class PagoServicio {
 		pagos.save(new Pago(pedidoId, monto, reloj.instant()));
 	}
 
+	@Override
 	@Transactional(readOnly = true)
-	List<PagoVista> dePedido(Long pedidoId, UsuarioActual usuario) {
+	public List<PagoVista> dePedido(Long pedidoId, UsuarioActual usuario) {
 		exigirAcceso(pedidos.resumen(pedidoId), usuario);
 		return vistas(pagos.findByPedidoIdOrderByIdAsc(pedidoId));
 	}
@@ -70,8 +74,9 @@ class PagoServicio {
 	 * El cliente informa el método, la referencia y el comprobante, y el pago pasa a En verificación. En un pedido
 	 * asistido lo registra el personal con permiso (CU17, alt. 2); otra persona lo verifica (RN06).
 	 */
+	@Override
 	@Transactional
-	PagoVista registrar(Long pedidoId, Long metodoPagoId, String referencia, byte[] comprobante, UsuarioActual usuario) {
+	public PagoVista registrar(Long pedidoId, Long metodoPagoId, String referencia, byte[] comprobante, UsuarioActual usuario) {
 		var pedido = pedidos.resumen(pedidoId);
 		if (usuario.tipo() == TipoUsuario.CLIENTE && !pedido.clienteId().equals(usuario.id())) {
 			throw pedidoNoEncontrado();
@@ -100,8 +105,9 @@ class PagoServicio {
 	 * El estado del cobro de cada pedido del cliente, para Mis pedidos (HU19). Si el último pago está Pendiente de
 	 * pago porque rechazaron el anterior, trae la observación del rechazo para que el cliente sepa qué corregir.
 	 */
+	@Override
 	@Transactional(readOnly = true)
-	List<CobroDePedido> deCliente(Long clienteId) {
+	public List<Cobro> deCliente(Long clienteId) {
 		List<Long> pedidoIds = pedidos.pedidosDeCliente(clienteId);
 		Map<Long, List<Pago>> porPedido = pagos.findByPedidoIdInOrderByIdAsc(pedidoIds).stream()
 			.collect(Collectors.groupingBy(Pago::getPedidoId));
@@ -116,21 +122,16 @@ class PagoServicio {
 			if (vigente.getEstado() == EstadoPago.PENDIENTE_DE_PAGO && historial.size() > 1) {
 				rechazo = observaciones.get(historial.get(historial.size() - 2).getId());
 			}
-			return new CobroDePedido(id, vigente.getId(), vigente.getEstado(), vigente.getMonto(), rechazo);
+			return new Cobro(id, vigente.getId(), vigente.getEstado(), vigente.getMonto(), rechazo);
 		}).toList();
-	}
-
-	/**
-	 * @param observacionRechazo por qué rechazaron el pago anterior, si el cobro se reabrió por eso
-	 */
-	record CobroDePedido(Long pedidoId, Long pagoId, EstadoPago estado, BigDecimal monto, String observacionRechazo) {
 	}
 
 	/**
 	 * El pago de un pedido cancelado no se vuelve a verificar (CU16), así que no aparece aquí.
 	 */
+	@Override
 	@Transactional(readOnly = true)
-	List<PagoVista> enVerificacion() {
+	public List<PagoVista> enVerificacion() {
 		List<Pago> lista = pagos.findByEstadoOrderByRegistradoAsc(EstadoPago.EN_VERIFICACION);
 		Set<Long> cancelados = pedidos.resumenes(lista.stream().map(Pago::getPedidoId).toList()).stream()
 			.filter(p -> p.estado() == EstadoPedido.CANCELADO).map(IPedidos.PedidoResumen::id)
@@ -141,8 +142,9 @@ class PagoServicio {
 	/**
 	 * El pago queda Pagado y el pedido Confirmado, en la misma transacción (RN05).
 	 */
+	@Override
 	@Transactional
-	PagoVista aprobar(Long pagoId, UsuarioActual verificador) {
+	public PagoVista aprobar(Long pagoId, UsuarioActual verificador) {
 		Pago pago = bloquearParaDecidir(pagoId, verificador);
 		pago.aprobar();
 		verificaciones.save(new Verificacion(pagoId, Verificacion.Decision.APROBADO, null, verificador.id(), reloj.instant()));
@@ -153,8 +155,9 @@ class PagoServicio {
 	/**
 	 * RN07: el rechazo lleva observación y el sistema reabre el cobro con un pago nuevo Pendiente de pago.
 	 */
+	@Override
 	@Transactional
-	PagoVista rechazar(Long pagoId, String observacion, UsuarioActual verificador) {
+	public PagoVista rechazar(Long pagoId, String observacion, UsuarioActual verificador) {
 		Pago pago = bloquearParaDecidir(pagoId, verificador);
 		pago.rechazar();
 		verificaciones.save(new Verificacion(pagoId, Verificacion.Decision.RECHAZADO, observacion.strip(),
@@ -163,11 +166,13 @@ class PagoServicio {
 		return vistas(List.of(pago)).getFirst();
 	}
 
+	@Override
 	@Transactional(readOnly = true)
-	Archivo comprobante(Long pagoId, UsuarioActual usuario) {
+	public ArchivoComprobante comprobante(Long pagoId, UsuarioActual usuario) {
 		Pago pago = pagos.findById(pagoId).orElseThrow(PagoServicio::pagoNoEncontrado);
 		exigirAcceso(pedidos.resumen(pago.getPedidoId()), usuario);
-		return comprobantes.findById(pagoId).orElseThrow(PagoServicio::pagoNoEncontrado).getArchivo();
+		Archivo archivo = comprobantes.findById(pagoId).orElseThrow(PagoServicio::pagoNoEncontrado).getArchivo();
+		return new ArchivoComprobante(archivo.tipoContenido(), archivo.datos());
 	}
 
 	/**
@@ -216,9 +221,12 @@ class PagoServicio {
 		Map<Long, String> nombres = autenticacion.nombres(personas);
 		return lista.stream().map(p -> {
 			Verificacion v = porPago.get(p.getId());
-			var verificacion = v == null ? null : new PagoVista.VerificacionVista(v.getDecision(), v.getObservacion(),
-					nombres.get(v.getVerificadorId()), v.getFecha());
-			return PagoVista.de(p, nombres.get(clientePorPedido.get(p.getPedidoId())), verificacion);
+			var verificacion = v == null ? null : new PagoVista.VerificacionVista(v.getDecision().name(),
+					v.getObservacion(), nombres.get(v.getVerificadorId()), v.getFecha());
+			String comprobante = p.getRegistrado() == null ? null : "/api/pagos/" + p.getId() + "/comprobante";
+			return new PagoVista(p.getId(), p.getPedidoId(), nombres.get(clientePorPedido.get(p.getPedidoId())),
+					p.getMonto(), p.getEstado(), p.getMetodoNombre(), p.getReferencia(), p.getRegistrado(), comprobante,
+					verificacion);
 		}).toList();
 	}
 

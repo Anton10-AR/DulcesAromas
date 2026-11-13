@@ -9,6 +9,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
+import bo.dulcesaromas.distribucion.EntregaVista;
+import bo.dulcesaromas.distribucion.IEntregas;
 import bo.dulcesaromas.ecommerce.EstadoPedido;
 import bo.dulcesaromas.ecommerce.IPedidos;
 import bo.dulcesaromas.ecommerce.TipoEntrega;
@@ -25,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
  * transacción que la entrega.
  */
 @Service
-class EntregaServicio {
+class EntregaServicio implements IEntregas {
 
 	/** Se puede asignar o cambiar el repartidor hasta que el pedido sale (CU08, alt. 4). */
 	private static final Set<EstadoPedido> ASIGNABLE = Set.of(EstadoPedido.CONFIRMADO, EstadoPedido.EN_PREPARACION,
@@ -46,12 +48,14 @@ class EntregaServicio {
 		this.reloj = reloj;
 	}
 
-	List<IAutenticacion.UsuarioResumen> repartidores() {
+	@Override
+	public List<IAutenticacion.UsuarioResumen> repartidores() {
 		return autenticacion.personalActivo(RolBase.REPARTIDOR);
 	}
 
+	@Override
 	@Transactional
-	EntregaVista asignar(Long pedidoId, Long repartidorId, UsuarioActual actor) {
+	public EntregaVista asignar(Long pedidoId, Long repartidorId, UsuarioActual actor) {
 		IPedidos.DatosEntrega pedido = datos(pedidoId);
 		if (pedido.tipoEntrega() != TipoEntrega.DELIVERY) {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "SOLO_DELIVERY",
@@ -77,35 +81,40 @@ class EntregaServicio {
 	/**
 	 * Entregas que siguen abiertas, para el personal que asigna.
 	 */
+	@Override
 	@Transactional(readOnly = true)
-	List<EntregaVista> abiertas() {
+	public List<EntregaVista> abiertas() {
 		return vistas(entregas.findByFechaEntregaIsNullOrderByIdAsc());
 	}
 
 	/**
 	 * Solo las entregas del repartidor (RF41, RNF16).
 	 */
+	@Override
 	@Transactional(readOnly = true)
-	List<EntregaVista> de(UsuarioActual repartidor) {
+	public List<EntregaVista> de(UsuarioActual repartidor) {
 		return vistas(entregas.findByRepartidorIdAndFechaEntregaIsNullOrderByIdAsc(repartidor.id()));
 	}
 
+	@Override
 	@Transactional(readOnly = true)
-	EntregaVista obtener(Long pedidoId, UsuarioActual usuario) {
+	public EntregaVista obtener(Long pedidoId, UsuarioActual usuario) {
 		Entrega entrega = entregas.findByPedidoId(pedidoId).orElseThrow(EntregaServicio::sinRepartidor);
 		exigirPropia(entrega, usuario);
 		return vistas(List.of(entrega)).getFirst();
 	}
 
+	@Override
 	@Transactional
-	EntregaVista marcarEnCamino(Long pedidoId, UsuarioActual usuario) {
+	public EntregaVista marcarEnCamino(Long pedidoId, UsuarioActual usuario) {
 		Entrega entrega = bloquearPropia(pedidoId, usuario);
 		pedidos.marcarEnCamino(pedidoId, usuario.id());
 		return vistas(List.of(entrega)).getFirst();
 	}
 
+	@Override
 	@Transactional
-	EntregaVista marcarEntregada(Long pedidoId, UsuarioActual usuario) {
+	public EntregaVista marcarEntregada(Long pedidoId, UsuarioActual usuario) {
 		Entrega entrega = bloquearPropia(pedidoId, usuario);
 		pedidos.marcarEntregado(pedidoId, usuario.id());
 		entrega.marcarEntregada(reloj.instant());
@@ -115,8 +124,9 @@ class EntregaServicio {
 	/**
 	 * RN13: el pedido vuelve a Listo con la observación, para reasignarlo o reintentar.
 	 */
+	@Override
 	@Transactional
-	EntregaVista registrarFallo(Long pedidoId, String observacion, UsuarioActual usuario) {
+	public EntregaVista registrarFallo(Long pedidoId, String observacion, UsuarioActual usuario) {
 		Entrega entrega = bloquearPropia(pedidoId, usuario);
 		pedidos.registrarEntregaFallida(pedidoId, usuario.id(), observacion);
 		entrega.registrarFallo(observacion);

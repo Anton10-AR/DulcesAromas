@@ -1,4 +1,4 @@
-package bo.dulcesaromas.ecommerce.inventario;
+package bo.dulcesaromas.ecommerce;
 
 /**
  * Entrada y salida suman o restan la cantidad. El ajuste corrige el stock al valor contado.
