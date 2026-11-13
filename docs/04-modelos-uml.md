@@ -581,13 +581,13 @@ stateDiagram-v2
   PendienteDePago --> EnVerificacion : registrar comprobante (CU06)
   EnVerificacion --> Pagado : aprobar (CU07) / pedido pasa a Confirmado
   EnVerificacion --> Rechazado : rechazar [observación obligatoria]
-  Rechazado --> PendienteDePago : reabrir cobro
+  Rechazado --> [*] : el sistema abre un pago nuevo Pendiente de pago
   Pagado --> [*]
   PendienteDePago : Pendiente de pago
   EnVerificacion : En verificación
 ```
 
-Un rechazo exige observación y reabre el cobro, así que un pedido puede acumular varios pagos hasta que uno se apruebe (RN07). Aprobar un pago es el único evento que cambia el estado de otro objeto, el pedido.
+Un rechazo exige observación y reabre el cobro: el pago rechazado queda como está, con su comprobante y su motivo, y el sistema abre un pago nuevo en Pendiente de pago. Así un pedido puede acumular varios pagos hasta que uno se apruebe (RN07). Aprobar un pago es el único evento que cambia el estado de otro objeto, el pedido.
 
 ## 6. Consistencia entre modelos
 
@@ -598,7 +598,7 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 | Roles fijos | Actores Cliente, Administrador, Vendedor, Repartidor | Usuario, Cliente, Personal, Rol, Permiso | Seguridad, IAutenticacion | Guardas \[con permiso\] | RN16, D6 |
 | Pedido | CU05, CU15, CU16, CU17 | Pedido, LineaPedido, HistorialEstado | E-commerce, IPedidos | Máquina del Pedido | RF13, RF43 |
 | Pago antes de preparar | CU06, CU07 | Pago, Verificacion | Cobros requiere IPedidos | Pagado lleva el pedido a Confirmado | RN05, D1 |
-| Rechazo de pago | CU07 alt. 1 y 2 | Verificacion.observacion | Cobros | Rechazado a Pendiente de pago | RN07 |
+| Rechazo de pago | CU07 alt. 1 y 2 | Verificacion.observacion | Cobros | En verificación a Rechazado, y un pago nuevo Pendiente de pago | RN07 |
 | Cancelación | CU16 | Pedido.motivoCancelacion | IPedidos | Desde Pendiente o Confirmado | RN14, D8 |
 | Entrega fallida | CU08 alt. 2 | Entrega.observacionFallo | Distribución, IEntregas | En camino a Listo | RN13 |
 | Recojo | CU08 | Pedido.tipoEntrega | Distribución | Listo a Entregado | RN12 |
@@ -622,6 +622,7 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | AsignacionEntrega | Clase nueva | Registrar cada cambio de repartidor (CU08, alt. 4) |
 | Componentes | Evento PedidoRegistrado | Cobros abre el pago sin que E-commerce dependa de Cobros |
 | Interfaces (v1.4) | Tabla de qué clase implementa cada interfaz del modelo de componentes. En el código se agregan IProductos, IStock, IPagos e IEntregas, que el diagrama ya tenía | El código no tenía cuatro de las seis interfaces; Pedidos leía el catálogo directamente y el catálogo leía las líneas de pedido |
+| Estado del pago (v1.4) | Rechazado es un estado final; el sistema abre un pago nuevo | El diagrama decía que el mismo pago volvía a Pendiente de pago, y el de clases ya mostraba varios pagos por pedido |
 | ImagenProducto, Comprobante, QrMetodoPago (v1.4) | Clases nuevas en el diagrama, en lugar de los atributos imagen, comprobante y qr | Ya eran clases en el código: separan los archivos para no cargarlos en cada lectura |
 | LineaPedido, OpcionElegida, Pedido, Pago (v1.4) | Se agregan nombreProducto (copia), tipo, creado; esAsistido pasa a método | El diagrama no mostraba datos que el código ya guardaba |
 | Despliegue (v1.3) | Sección 4.1 nueva: nodos de Render, Neon, Brevo y GitHub Actions | Documentar dónde corre cada componente al publicar el sistema en la nube (RNF21) |

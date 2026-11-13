@@ -96,7 +96,7 @@ La matriz completa de permisos está en la sección 8 de `docs/02-casos-de-uso.m
 El pedido y el pago tienen **máquinas de estado separadas**.
 
 - **Pedido:** Pendiente → Confirmado → En preparación → Listo → En camino → Entregado. También puede pasar a Cancelado.
-- **Pago:** Pendiente de pago → En verificación → Pagado o Rechazado. Un pago Rechazado vuelve a Pendiente de pago.
+- **Pago:** Pendiente de pago → En verificación → Pagado o Rechazado. Un pago Rechazado queda así; el sistema abre un pago nuevo en Pendiente de pago, para que el cliente suba otro comprobante.
 - El único punto de contacto: **aprobar el pago pasa el pedido de Pendiente a Confirmado**.
 - **Recojo:** el pedido va de Listo a Entregado sin pasar por En camino.
 - **Entrega fallida:** el pedido vuelve de En camino a Listo, con una observación.
@@ -171,7 +171,7 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 
 - **Tipografías:** títulos en Fraunces y texto en Work Sans.
 - **Tema claro:** fondo #FBF4EC, texto #3A2A23, café #4A342C, rosa #EFC3CE, #E19DB0 y #B96C86.
-- **Tema oscuro:** fondo #1E1714, texto #EDE0D6. Sigue la preferencia del dispositivo.
+- **Tema oscuro:** fondo #1E1714, texto #EDE0D6. Sigue la preferencia del dispositivo, salvo que la persona elija otro con el botón de la barra (`BotonTema`).
 - **Tarjetas y estados:** tarjetas blancas con borde #E6D8CA. Los estados usan `Tono` (rojo, azul, ámbar, verde, neutro) por medio de `EtiquetaEstado` y `EtiquetaPago`; el detalle está en la sección 6.1 de la Visión.
 - **Accesibilidad:** el texto tiene contraste de 4.5:1 o más (RNF20). En el tema claro, oscurece el rosa #B96C86 y el café #8A6C5C antes de usarlos en texto pequeño.
 

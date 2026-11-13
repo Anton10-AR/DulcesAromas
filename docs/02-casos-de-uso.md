@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.3 · 08/11/2026
+Versión 1.4 · 13/11/2026
 
 ## 1. Introducción y actores
 
@@ -50,7 +50,7 @@ El pedido y el pago tienen cada uno su propio estado. El pedido pasa a Confirmad
 | Pago: Pendiente de pago | El cliente registra método y comprobante | En verificación | Cliente | CU06 |
 | Pago: En verificación | Se aprueba | Pagado | Con permiso de verificar | CU07 |
 | Pago: En verificación | Se rechaza, con observación | Rechazado | Con permiso de verificar | CU07 |
-| Pago: Rechazado | El sistema reabre el cobro | Pendiente de pago | Sistema | CU06 |
+| Pago: En verificación | Se rechaza (fila anterior) | Un pago nuevo en Pendiente de pago; el rechazado queda como está | Sistema | CU06 |
 
 ### 2.3 Reglas de negocio
 
@@ -422,7 +422,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Frecuencia | Diaria |
 | Importancia | Alta |
 | Urgencia | Alta |
-| Observaciones | Cada verificación se guarda en la auditoría por 12 meses (RNF08) |
+| Observaciones | Cada verificación queda en la tabla de verificaciones, con quién la tomó y cuándo, y se conserva al menos 12 meses (RNF08). Se ve en el detalle del pedido |
 
 ## 7. Módulo Distribución
 
@@ -525,6 +525,7 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 | RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
 | CU05, CU17 (v1.3) | Si el producto ofrece tamaños, elegir uno es obligatorio; sin él, el pedido de una torta queda incompleto |
+| Tabla 2.2, CU07 (v1.4) | Un pago rechazado no vuelve a Pendiente de pago: queda Rechazado y el sistema abre un pago nuevo. Las verificaciones se guardan en su propia tabla, no en la auditoría de cuentas | Así lo hace el sistema: conserva cada comprobante y su motivo de rechazo |
 
 ## 10. Decisiones de implementación
 
