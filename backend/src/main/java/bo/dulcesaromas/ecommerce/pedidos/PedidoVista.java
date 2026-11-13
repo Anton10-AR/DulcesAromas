@@ -21,7 +21,7 @@ record PedidoVista(Long id, String cliente, EstadoPedido estado, TipoEntrega tip
 	static PedidoVista de(Pedido p, Map<Long, String> nombres) {
 		return new PedidoVista(p.getId(), nombres.get(p.getClienteId()), p.getEstado(), p.getTipoEntrega(), p.getDireccion(), p.getTelefono(),
 				p.getHorarioEntrega(), p.getLineas().stream().map(l -> LineaVista.de(l, true)).toList(),
-				p.getCostoEnvio(), p.getTotal(), p.getFechaCreacion(), p.getRegistradoPor() != null,
+				p.getCostoEnvio(), p.getTotal(), p.getFechaCreacion(), p.esAsistido(),
 				p.getMotivoCancelacion(),
 				p.getHistorial().stream()
 					.map(h -> new CambioVista(h.getEstadoAnterior(), h.getEstadoNuevo(), h.getFecha(),
@@ -61,7 +61,7 @@ record PedidoVista(Long id, String cliente, EstadoPedido estado, TipoEntrega tip
 		static Resumen de(Pedido p, Map<Long, String> nombres) {
 			return new Resumen(p.getId(), nombres.get(p.getClienteId()), p.getEstado(), p.getTipoEntrega(), p.getFechaCreacion(), p.getHorarioEntrega(),
 					p.getLineas().stream().mapToInt(LineaPedido::getCantidad).sum(), p.getTotal(),
-					p.getRegistradoPor() != null);
+					p.esAsistido());
 		}
 
 	}

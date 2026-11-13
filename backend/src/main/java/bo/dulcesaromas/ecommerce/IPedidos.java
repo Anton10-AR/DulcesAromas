@@ -28,6 +28,12 @@ public interface IPedidos {
 	List<PedidoResumen> creadosEntre(Instant desde, Instant hasta, EstadoPedido estado);
 
 	/**
+	 * Si el producto aparece en algún pedido, en cualquier estado. El catálogo lo usa para no borrar un producto con
+	 * pedidos (RN10).
+	 */
+	boolean tienePedidosConProducto(Long productoId);
+
+	/**
 	 * Ids de los pedidos de un cliente, del más reciente al más antiguo.
 	 */
 	List<Long> pedidosDeCliente(Long clienteId);

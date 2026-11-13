@@ -170,6 +170,13 @@ class Pedido {
 		return registradoPor;
 	}
 
+	/**
+	 * Lo registró una persona del personal, por teléfono o en mostrador (CU17, D7).
+	 */
+	boolean esAsistido() {
+		return registradoPor != null;
+	}
+
 	EstadoPedido getEstado() {
 		return estado;
 	}

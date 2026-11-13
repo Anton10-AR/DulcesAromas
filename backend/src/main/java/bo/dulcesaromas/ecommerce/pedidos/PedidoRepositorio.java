@@ -13,6 +13,9 @@ interface PedidoRepositorio extends JpaRepository<Pedido, Long>, JpaSpecificatio
 
 	List<Pedido> findByClienteIdOrderByFechaCreacionDescIdDesc(Long clienteId);
 
+	@Query("select count(l) > 0 from LineaPedido l where l.productoId = :productoId")
+	boolean existeLineaConProducto(Long productoId);
+
 	/**
 	 * Bloquea el pedido hasta el fin de la transacción, para que dos cambios de estado no se pisen.
 	 */

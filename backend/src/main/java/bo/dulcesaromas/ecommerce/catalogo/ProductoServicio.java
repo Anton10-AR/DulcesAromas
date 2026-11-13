@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
 import bo.dulcesaromas.compartido.Textos;
+import bo.dulcesaromas.ecommerce.IPedidos;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,13 +28,16 @@ class ProductoServicio {
 
 	private final ImagenProductoRepositorio imagenes;
 
+	private final IPedidos pedidos;
+
 	private final Clock reloj;
 
 	ProductoServicio(ProductoRepositorio productos, CategoriaRepositorio categorias, ImagenProductoRepositorio imagenes,
-			Clock reloj) {
+			IPedidos pedidos, Clock reloj) {
 		this.productos = productos;
 		this.categorias = categorias;
 		this.imagenes = imagenes;
+		this.pedidos = pedidos;
 		this.reloj = reloj;
 	}
 
@@ -120,7 +124,8 @@ class ProductoServicio {
 	@Transactional
 	void borrar(Long id) {
 		Producto producto = obtener(id);
-		if (productos.tienePedidos(id)) {
+		// Las líneas de pedido son de Pedidos: el catálogo pregunta por IPedidos en vez de leer su tabla.
+		if (pedidos.tienePedidosConProducto(id)) {
 			throw new ReglaNegocioException(HttpStatus.CONFLICT, "PRODUCTO_CON_PEDIDOS",
 					"Este producto ya tiene pedidos, así que no se borra: desactívalo para que deje de verse en la Tienda.");
 		}

@@ -48,6 +48,12 @@ class AdaptadorPedidos implements IPedidos {
 
 	@Override
 	@Transactional(readOnly = true)
+	public boolean tienePedidosConProducto(Long productoId) {
+		return pedidos.existeLineaConProducto(productoId);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public List<Long> pedidosDeCliente(Long clienteId) {
 		return pedidos.findByClienteIdOrderByFechaCreacionDescIdDesc(clienteId).stream().map(Pedido::getId).toList();
 	}
