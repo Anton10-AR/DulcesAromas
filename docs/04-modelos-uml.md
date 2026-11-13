@@ -453,7 +453,7 @@ En el código, cada interfaz está en el paquete raíz de su módulo, que es lo 
 
 | Interfaz | Paquete | La implementa | La usan |
 | --- | --- | --- | --- |
-| IAutenticacion | `seguridad` | `AdaptadorAutenticacion` | Los cuatro módulos, para saber quién hace cada acción |
+| IAutenticacion | `seguridad` | `AdaptadorAutenticacion` | E-commerce, Cobros y Distribución, para saber quién hace cada acción |
 | IProductos | `ecommerce` | `AdaptadorProductos` (catálogo) | Pedidos, para calcular el total con los precios y opciones de hoy |
 | IStock | `ecommerce` | `InventarioServicio` | El controlador de inventario |
 | IPedidos | `ecommerce` | `AdaptadorPedidos` | Cobros y Distribución |

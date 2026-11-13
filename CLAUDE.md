@@ -31,7 +31,7 @@ La API se organiza en cuatro módulos, cada uno en su propio paquete de `bo.dulc
 | Cobros | IPagos | IAutenticacion, IPedidos |
 | Distribución | IEntregas | IAutenticacion, IPedidos |
 
-Cada interfaz está en el paquete raíz de su módulo (por ejemplo ) y la implementa una clase interna. Pedidos usa el catálogo solo por IProductos, y los controladores REST usan la interfaz de su módulo;  lo comprueba, porque catálogo, inventario y pedidos son un mismo módulo y Spring Modulith no los separa. Cobros llama a IPedidos para pasar el pedido a Confirmado al aprobar un pago. No al revés. Cuando E-commerce necesita que otro módulo reaccione, publica un evento (por ejemplo `PedidoRegistrado`, que hace que Cobros abra el pago Pendiente de pago) y el otro módulo lo escucha con `@EventListener`, dentro de la misma transacción.
+Cada interfaz está en el paquete raíz de su módulo (por ejemplo `ecommerce/IProductos.java`) y la implementa una clase interna. Pedidos usa el catálogo solo por IProductos, y los controladores REST usan la interfaz de su módulo; `InterfacesTests` lo comprueba, porque catálogo, inventario y pedidos son un mismo módulo y Spring Modulith no los separa. Cobros llama a IPedidos para pasar el pedido a Confirmado al aprobar un pago. No al revés. Cuando E-commerce necesita que otro módulo reaccione, publica un evento (por ejemplo `PedidoRegistrado`, que hace que Cobros abra el pago Pendiente de pago) y el otro módulo lo escucha con `@EventListener`, dentro de la misma transacción.
 
 Estructura de carpetas:
 
