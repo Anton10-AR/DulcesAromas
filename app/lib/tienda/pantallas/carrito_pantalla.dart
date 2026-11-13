@@ -100,6 +100,13 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
                 onPressed: cotizacion.confirmable ? () => context.push('/confirmar') : null,
                 child: const Text('Continuar'),
               ),
+              const SizedBox(height: 8),
+              // Volver al catálogo sin buscar la flecha de arriba; el carrito se conserva.
+              OutlinedButton.icon(
+                onPressed: () => context.go('/'),
+                icon: const Icon(Icons.storefront_outlined),
+                label: const Text('Seguir comprando'),
+              ),
             ],
           ),
         ),

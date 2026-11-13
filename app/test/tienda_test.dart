@@ -523,5 +523,12 @@ void main() {
 
     expect(find.text('Torta de chocolate'), findsOneWidget);
     expect(find.text('Bs 240.00'), findsNWidgets(2));
+
+    // «Seguir comprando» vuelve al catálogo y el carrito se conserva.
+    await tester.ensureVisible(find.text('Seguir comprando'));
+    await tester.tap(find.text('Seguir comprando'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ver catálogo'), findsOneWidget);
+    expect(find.byTooltip('Carrito, 2 productos'), findsOneWidget);
   });
 }
