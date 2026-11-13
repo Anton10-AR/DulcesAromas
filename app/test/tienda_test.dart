@@ -49,6 +49,13 @@ Api apiFalsa({Map<String, http.Response Function(http.Request)> respuestas = con
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  /// Desliza hasta que se vea y lo toca: en el teléfono, la barra inferior puede tapar lo último de la pantalla.
+  Future<void> tocar(WidgetTester tester, Finder finder) async {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+  }
+
   Future<void> abrir(WidgetTester tester, Api api) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
@@ -100,7 +107,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await abrir(tester, apiFalsa());
 
-    await tester.tap(find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate'));
     await tester.pump();
     await tester.pump();
 
@@ -109,10 +116,41 @@ void main() {
     expect(find.text('Ver catálogo'), findsNothing);
   });
 
+  testWidgets('RNF01: la barra inferior lleva al carrito y al catálogo; Mis pedidos pide ingresar', (tester) async {
+    await abrir(tester, apiFalsa());
+    final barra = find.byType(NavigationBar);
+    expect(barra, findsOneWidget);
+
+    await tester.tap(find.descendant(of: barra, matching: find.text('Carrito')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tu carrito está vacío.'), findsOneWidget);
+
+    await tester.tap(find.descendant(of: barra, matching: find.text('Catálogo')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ver catálogo'), findsOneWidget);
+
+    // RN15: sin sesión, Mis pedidos lleva a ingresar, y ahí la barra no distrae del formulario.
+    await tester.tap(find.descendant(of: barra, matching: find.text('Mis pedidos')));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Correo'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+  });
+
+  testWidgets('RNF12: en pantallas anchas no hay barra inferior; el carrito va arriba', (tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(AppTienda(api: apiFalsa()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byTooltip('Carrito, 0 productos'), findsOneWidget);
+  });
+
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 
-    await tester.tap(find.text('Torta de fresa'));
+    await tocar(tester, find.text('Torta de fresa'));
     await tester.pumpAndSettle();
 
     expect(find.text('Este producto no está disponible por ahora.'), findsOneWidget);
@@ -128,7 +166,7 @@ void main() {
   testWidgets('agregar un producto suma al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 
-    await tester.tap(find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar al carrito'));
     await tester.pumpAndSettle();
@@ -289,7 +327,8 @@ void main() {
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-    expect(find.text('Mis pedidos'), findsOneWidget);
+    // El título de la pantalla; la barra inferior también dice «Mis pedidos».
+    expect(find.descendant(of: find.byType(AppBar), matching: find.text('Mis pedidos')), findsOneWidget);
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
@@ -330,7 +369,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(consultas, 2);
 
-    await tester.tap(find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate'));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();

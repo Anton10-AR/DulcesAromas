@@ -8,11 +8,14 @@ import '../../comun/preferencia_tema.dart';
 import '../../comun/formato.dart';
 import '../../comun/sesion.dart';
 import '../carrito.dart';
+import '../marco_tienda.dart';
 
-/// Acciones de la barra superior de la Tienda: el carrito con su cantidad y la cuenta.
+/// Acciones de la barra superior de la Tienda: el tema y, en pantallas anchas, el carrito con su cantidad y la
+/// cuenta. En el teléfono, el carrito y la cuenta están en la barra inferior (`MarcoTienda`).
 List<Widget> accionesTienda(BuildContext context) {
   final carrito = context.watch<Carrito>();
   final sesion = context.watch<Sesion>();
+  if (conBarraInferior(context)) return const [BotonTema()];
   return [
     const BotonTema(),
     IconButton(

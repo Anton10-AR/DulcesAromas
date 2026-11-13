@@ -8,6 +8,7 @@ import '../comun/sesion.dart';
 import '../comun/tema.dart';
 import '../comun/widgets.dart';
 import 'carrito.dart';
+import 'marco_tienda.dart';
 import 'pantallas/carrito_pantalla.dart';
 import 'pantallas/catalogo_pantalla.dart';
 import 'pantallas/confirmar_pantalla.dart';
@@ -39,45 +40,51 @@ GoRouter rutasTienda(Sesion sesion) {
     // Las rutas cuelgan del catálogo (y el pago, del pedido), así que al llegar a una con go() queda debajo la
     // pantalla de la que sale: siempre hay flecha para volver y el botón Atrás no cierra la app.
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, _) => const CatalogoPantalla(),
+      // El marco pone la barra inferior; adentro, las rutas siguen colgando del catálogo como antes.
+      ShellRoute(
+        builder: (context, estado, hijo) => MarcoTienda(ruta: estado.matchedLocation, child: hijo),
         routes: [
           GoRoute(
-            path: 'producto/:id',
-            builder: (_, e) => ProductoPantalla(id: int.parse(e.pathParameters['id']!)),
-          ),
-          GoRoute(path: 'carrito', builder: (_, _) => const CarritoPantalla()),
-          GoRoute(
-            path: 'ingresar',
-            builder: (_, e) => IngresarPantalla(volver: e.uri.queryParameters['volver']),
-          ),
-          GoRoute(
-            path: 'registro',
-            builder: (_, e) => RegistroPantalla(volver: e.uri.queryParameters['volver']),
-          ),
-          GoRoute(
-            path: 'recuperar',
-            builder: (_, e) => RecuperarPantalla(token: e.uri.queryParameters['token']),
-          ),
-          GoRoute(path: 'confirmar', builder: (_, _) => const ConfirmarPantalla()),
-          GoRoute(
-            path: 'pedidos',
-            builder: (_, _) => const MisPedidosPantalla(),
+            path: '/',
+            builder: (_, _) => const CatalogoPantalla(),
             routes: [
               GoRoute(
-                path: ':id',
-                builder: (_, e) => PedidoPantalla(id: int.parse(e.pathParameters['id']!)),
+                path: 'producto/:id',
+                builder: (_, e) => ProductoPantalla(id: int.parse(e.pathParameters['id']!)),
+              ),
+              GoRoute(path: 'carrito', builder: (_, _) => const CarritoPantalla()),
+              GoRoute(
+                path: 'ingresar',
+                builder: (_, e) => IngresarPantalla(volver: e.uri.queryParameters['volver']),
+              ),
+              GoRoute(
+                path: 'registro',
+                builder: (_, e) => RegistroPantalla(volver: e.uri.queryParameters['volver']),
+              ),
+              GoRoute(
+                path: 'recuperar',
+                builder: (_, e) => RecuperarPantalla(token: e.uri.queryParameters['token']),
+              ),
+              GoRoute(path: 'confirmar', builder: (_, _) => const ConfirmarPantalla()),
+              GoRoute(
+                path: 'pedidos',
+                builder: (_, _) => const MisPedidosPantalla(),
                 routes: [
                   GoRoute(
-                    path: 'pagar',
-                    builder: (_, e) => PagarPantalla(pedidoId: int.parse(e.pathParameters['id']!)),
+                    path: ':id',
+                    builder: (_, e) => PedidoPantalla(id: int.parse(e.pathParameters['id']!)),
+                    routes: [
+                      GoRoute(
+                        path: 'pagar',
+                        builder: (_, e) => PagarPantalla(pedidoId: int.parse(e.pathParameters['id']!)),
+                      ),
+                    ],
                   ),
                 ],
               ),
+              GoRoute(path: 'perfil', builder: (_, _) => const PerfilPantalla()),
             ],
           ),
-          GoRoute(path: 'perfil', builder: (_, _) => const PerfilPantalla()),
         ],
       ),
     ],
