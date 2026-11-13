@@ -209,7 +209,7 @@ classDiagram
     -nombre: Texto
     -descripcion: Texto
     -precio: Decimal
-    -imagen: Texto
+    -imagenActualizada: FechaHora
     -activo: Lógico
     -disponible: Lógico
     -personalizable: Lógico
@@ -220,6 +220,10 @@ classDiagram
     -tipo: Texto
     -nombre: Texto
     -recargo: Decimal
+  }
+  class ImagenProducto {
+    -tipoContenido: Texto
+    -datos: Archivo
   }
   class ItemInventario {
     -nombre: Texto
@@ -239,10 +243,11 @@ classDiagram
   class Personal
   Categoria "1" -- "*" Producto : agrupa
   Producto "1" -- "*" OpcionPersonalizacion : ofrece
+  Producto "1" -- "0..1" ImagenProducto : se muestra con
   ItemInventario "1" -- "*" MovimientoInventario : registra
   MovimientoInventario "*" --> "1" Personal : hecho por
 ```
-La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos.
+La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos. La imagen va en su propia clase, ImagenProducto, para no cargar los bytes cada vez que se lee un producto; el producto solo guarda cuándo cambió, para que la app no muestre una copia vieja.
 
 Una categoría agrupa productos y un producto ofrece opciones de personalización, cada una con su recargo fijo (D9). El inventario controla insumos y sus movimientos, y cada movimiento lo registra una persona del personal (RN09, CU03). Una entrada suma, una salida resta y un ajuste fija el stock al valor contado.
 
@@ -259,20 +264,22 @@ classDiagram
     -horarioEntrega: FechaHora
     -costoEnvio: Decimal
     -total: Decimal
-    -esAsistido: Lógico
     -motivoCancelacion: Texto
+    +esAsistido(): Lógico
     +calcularTotal()
     +confirmar()
     +cancelar(motivo)
     +cambiarEstado(estado)
   }
   class LineaPedido {
+    -nombreProducto: Texto (copia)
     -cantidad: Entero
     -precioUnitario: Decimal
     -mensaje: Texto (hasta 24)
     -subtotal: Decimal
   }
   class OpcionElegida {
+    -tipo: Texto
     -nombre: Texto
     -recargo: Decimal
   }
@@ -309,7 +316,7 @@ classDiagram
   Pedido ..> Configuracion : usa
 ```
 
-Un cliente realiza muchos pedidos; un pedido asistido lo registra una persona del personal (RF34). El total se calcula con las líneas, los recargos de las opciones elegidas y la tarifa de envío de Configuración (RN11). Las opciones elegidas guardan una copia del nombre y del recargo, para que un cambio posterior en el producto no altere pedidos anteriores. Cada cambio de estado deja una fila en HistorialEstado (RF43).
+Un cliente realiza muchos pedidos; un pedido asistido lo registra una persona del personal (RF34), y esAsistido() dice si el pedido tiene quien lo registró. El total se calcula con las líneas, los recargos de las opciones elegidas y la tarifa de envío de Configuración (RN11). La línea guarda una copia del nombre y del precio del producto, y cada opción elegida, una copia de su tipo, nombre y recargo, para que un cambio posterior en el producto no altere pedidos anteriores. Cada cambio de estado deja una fila en HistorialEstado (RF43).
 
 ### 3.4 Cobros y Distribución
 
@@ -319,8 +326,8 @@ classDiagram
     -metodoNombre: Texto (copia)
     -referencia: Texto
     -monto: Decimal
-    -comprobante: Archivo
     -estado: EstadoPago
+    -creado: FechaHora
     -fechaRegistro: FechaHora
     +registrar()
     +aprobar()
@@ -345,8 +352,15 @@ classDiagram
   class MetodoPago {
     -nombre: Texto
     -instrucciones: Texto
-    -qr: Archivo
     -activo: Lógico
+  }
+  class Comprobante {
+    -tipoContenido: Texto
+    -datos: Archivo
+  }
+  class QrMetodoPago {
+    -tipoContenido: Texto
+    -datos: Archivo
   }
   class EstadoPago {
     <<enumeration>>
@@ -359,6 +373,8 @@ classDiagram
   class Personal
   Pedido "1" -- "*" Pago : se paga con
   Pago "*" --> "0..1" MetodoPago : usa
+  Pago "1" -- "0..1" Comprobante : respaldado por
+  MetodoPago "1" -- "0..1" QrMetodoPago : muestra
   Pago "1" -- "*" Verificacion : tiene
   Verificacion "*" --> "1" Personal : verificada por
   Pedido "1" -- "0..1" Entrega : se entrega con
@@ -367,7 +383,7 @@ classDiagram
   AsignacionEntrega "*" --> "1" Personal : asignada por
 ```
 
-Un pedido puede tener varios pagos porque un comprobante rechazado obliga a registrar otro (RN07). MetodoPago es una clase y no una enumeración: el administrador agrega métodos y edita sus datos para pagar desde el Panel, sin cambiar código (RNF18). El pago guarda una copia del nombre del método, por si luego se renombra. Cada decisión queda en Verificacion con quién la tomó (RF39). La entrega existe solo para pedidos con delivery y apunta al repartidor asignado (RF40). Cada asignación o cambio de repartidor queda en AsignacionEntrega (CU08, alt. 4).
+Un pedido puede tener varios pagos porque un comprobante rechazado obliga a registrar otro (RN07). MetodoPago es una clase y no una enumeración: el administrador agrega métodos y edita sus datos para pagar desde el Panel, sin cambiar código (RNF18). El pago guarda una copia del nombre del método, por si luego se renombra. El pago nace Pendiente de pago al crearse el pedido (creado) y se registra cuando el cliente sube el comprobante (fechaRegistro). El comprobante y el QR de cada método van en sus propias clases, Comprobante y QrMetodoPago, para no cargar los archivos cada vez que se lee un pago o un método. Cada decisión queda en Verificacion con quién la tomó (RF39). La entrega existe solo para pedidos con delivery y apunta al repartidor asignado (RF40). Cada asignación o cambio de repartidor queda en AsignacionEntrega (CU08, alt. 4).
 
 ### 3.5 Diccionario de clases
 
@@ -384,6 +400,7 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | Categoría | E-commerce | Agrupa productos para el filtro del catálogo |
 | Producto | E-commerce | Lo que se vende, con precio y disponibilidad |
 | OpcionPersonalizacion | E-commerce | Tamaño, sabor, relleno o decoración con su recargo |
+| ImagenProducto | E-commerce | La foto del producto, cuadrada y de 1200 px como máximo (RNF10) |
 | ItemInventario | E-commerce | Insumo con stock y mínimo |
 | MovimientoInventario | E-commerce | Entrada, salida o ajuste de un insumo |
 | Pedido | E-commerce | Compra de un cliente con su estado y su entrega |
@@ -393,13 +410,15 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | Configuracion | E-commerce | Tarifa fija de envío |
 | Pago | Cobros | Intento de pago con método, referencia y comprobante |
 | MetodoPago | Cobros | QR, transferencia, depósito u otro, con sus datos para pagar |
+| Comprobante | Cobros | El archivo JPG, PNG o PDF que respalda un pago (RNF09) |
+| QrMetodoPago | Cobros | La imagen del QR de un método de pago |
 | Verificacion | Cobros | Aprobación o rechazo de un pago |
 | Entrega | Distribución | Asignación, entrega o fallo de un pedido con delivery |
 | AsignacionEntrega | Distribución | Cada asignación o cambio de repartidor de una entrega |
 
 ## 4. Modelo de componentes
 
-El sistema tiene dos interfaces de usuario, cuatro componentes de negocio y tres recursos de soporte. Cada módulo ofrece interfaces y los demás las usan; ningún módulo accede a los datos de otro sin pasar por su interfaz (RNF17).
+El sistema tiene dos interfaces de usuario, cuatro componentes de negocio y tres recursos de soporte. Las imágenes y los comprobantes son archivos, pero se guardan dentro de la base de datos (sección 4.1). Cada módulo ofrece interfaces y los demás las usan; ningún módulo accede a los datos de otro sin pasar por su interfaz (RNF17).
 
 ```mermaid
 flowchart TB
@@ -418,7 +437,7 @@ flowchart TB
   Cob["«component» Cobros"]
   Dis["«component» Distribución"]
   BD[("«database» Base de datos")]
-  Arch["«artifact» Imágenes y comprobantes"]
+  Arch["«artifact» Imágenes y comprobantes (guardados en la base)"]
   Correo["«externo» Correo"]
   Tienda -.-> IAut & IProd & IPed & IPag
   Panel -.-> Interfaces
@@ -435,6 +454,7 @@ flowchart TB
   Dis --> BD
   Eco --> Arch
   Cob --> Arch
+  Arch -.-> BD
   Seg -.-> Correo
 ```
 
@@ -456,11 +476,11 @@ En el código, cada interfaz está en el paquete raíz de su módulo, que es lo 
 | IAutenticacion | `seguridad` | `AdaptadorAutenticacion` | E-commerce, Cobros y Distribución, para saber quién hace cada acción |
 | IProductos | `ecommerce` | `AdaptadorProductos` (catálogo) | Pedidos, para calcular el total con los precios y opciones de hoy |
 | IStock | `ecommerce` | `InventarioServicio` | El controlador de inventario |
-| IPedidos | `ecommerce` | `AdaptadorPedidos` | Cobros y Distribución |
+| IPedidos | `ecommerce` | `AdaptadorPedidos` | Cobros y Distribución; también el catálogo, para no borrar un producto con pedidos (RN10) |
 | IPagos | `cobros` | `PagoServicio` | El controlador de pagos |
 | IEntregas | `distribucion` | `EntregaServicio` | El controlador de entregas |
 
-Catálogo, inventario y pedidos forman un solo módulo, así que Spring Modulith no impide que uno use las clases del otro. Por eso la prueba `InterfacesTests` comprueba que Pedidos no use las clases internas del catálogo ni del inventario, y que los controladores usen la interfaz de su módulo. `ModularidadTests` comprueba el resto.
+Catálogo, inventario y pedidos forman un solo módulo, así que Spring Modulith no impide que uno use las clases del otro. Por eso la prueba `InterfacesTests` comprueba que Pedidos no use las clases internas del catálogo ni del inventario, que cada consulta a la base lea solo las tablas de su propio paquete y que los controladores usen la interfaz de su módulo. `ModularidadTests` comprueba el resto.
 
 ### 4.1 Despliegue en la nube
 
@@ -596,5 +616,7 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | MovimientoInventario | Agrega stockResultante | El historial muestra el stock que dejó cada movimiento (RF31) |
 | AsignacionEntrega | Clase nueva | Registrar cada cambio de repartidor (CU08, alt. 4) |
 | Componentes | Evento PedidoRegistrado | Cobros abre el pago sin que E-commerce dependa de Cobros |
-| Interfaces (v1.4) | Tabla de qué clase implementa cada interfaz del modelo de componentes. En el código se agregan IProductos, IStock, IPagos e IEntregas, que el diagrama ya tenía | El código no tenía cuatro de las seis interfaces y Pedidos leía el catálogo directamente |
+| Interfaces (v1.4) | Tabla de qué clase implementa cada interfaz del modelo de componentes. En el código se agregan IProductos, IStock, IPagos e IEntregas, que el diagrama ya tenía | El código no tenía cuatro de las seis interfaces; Pedidos leía el catálogo directamente y el catálogo leía las líneas de pedido |
+| ImagenProducto, Comprobante, QrMetodoPago (v1.4) | Clases nuevas en el diagrama, en lugar de los atributos imagen, comprobante y qr | Ya eran clases en el código: separan los archivos para no cargarlos en cada lectura |
+| LineaPedido, OpcionElegida, Pedido, Pago (v1.4) | Se agregan nombreProducto (copia), tipo, creado; esAsistido pasa a método | El diagrama no mostraba datos que el código ya guardaba |
 | Despliegue (v1.3) | Sección 4.1 nueva: nodos de Render, Neon, Brevo y GitHub Actions | Documentar dónde corre cada componente al publicar el sistema en la nube (RNF21) |
