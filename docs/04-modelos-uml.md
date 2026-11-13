@@ -145,7 +145,7 @@ classDiagram
     <<abstract>>
     -id: Entero
     -nombre: Texto
-    -correo: Texto (único)
+    -correo: Texto, único
     -telefono: Texto
     -contrasenaHash: Texto
     -activo: Lógico
@@ -265,17 +265,17 @@ classDiagram
     -costoEnvio: Decimal
     -total: Decimal
     -motivoCancelacion: Texto
-    +esAsistido(): Lógico
+    +esAsistido() Lógico
     +calcularTotal()
     +confirmar()
     +cancelar(motivo)
     +cambiarEstado(estado)
   }
   class LineaPedido {
-    -nombreProducto: Texto (copia)
+    -nombreProducto: Texto, copia
     -cantidad: Entero
     -precioUnitario: Decimal
-    -mensaje: Texto (hasta 24)
+    -mensaje: Texto, hasta 24
     -subtotal: Decimal
   }
   class OpcionElegida {
@@ -323,7 +323,7 @@ Un cliente realiza muchos pedidos; un pedido asistido lo registra una persona de
 ```mermaid
 classDiagram
   class Pago {
-    -metodoNombre: Texto (copia)
+    -metodoNombre: Texto, copia
     -referencia: Texto
     -monto: Decimal
     -estado: EstadoPago
@@ -424,41 +424,46 @@ El sistema tiene dos interfaces de usuario, cuatro componentes de negocio y tres
 flowchart TB
   Tienda["«component» Tienda (Flutter, cliente)"]
   Panel["«component» Panel (personal)"]
-  subgraph Interfaces
-    IAut((IAutenticacion))
-    IProd((IProductos))
-    IStock((IStock))
-    IPed((IPedidos))
-    IPag((IPagos))
-    IEnt((IEntregas))
-  end
+  IAut((IAutenticacion))
+  IProd((IProductos))
+  IStock((IStock))
+  IPed((IPedidos))
+  IPag((IPagos))
+  IEnt((IEntregas))
   Seg["«component» Seguridad"]
   Eco["«component» E-commerce"]
   Cob["«component» Cobros"]
   Dis["«component» Distribución"]
+  Correo["«externo» Correo"]
   BD[("«database» Base de datos")]
   Arch["«artifact» Imágenes y comprobantes (guardados en la base)"]
-  Correo["«externo» Correo"]
   Tienda -.-> IAut & IProd & IPed & IPag
-  Panel -.-> Interfaces
-  Seg --- IAut
-  Eco --- IProd & IStock & IPed
-  Cob --- IPag
-  Dis --- IEnt
+  Panel -.-> IAut & IProd & IStock & IPed & IPag & IEnt
+  IAut --- Seg
+  IProd & IStock & IPed --- Eco
+  IPag --- Cob
+  IEnt --- Dis
+  Seg -.-> Correo
+  Seg & Eco & Cob & Dis --> BD
+  Eco & Cob --> Arch
+  Arch -.-> BD
+```
+
+Lo que cada componente de negocio requiere de los demás:
+
+```mermaid
+flowchart LR
+  Eco["«component» E-commerce"]
+  Cob["«component» Cobros"]
+  Dis["«component» Distribución"]
+  IAut((IAutenticacion))
+  IPed((IPedidos))
   Eco -.->|requiere| IAut
   Cob -.->|requiere| IAut & IPed
   Dis -.->|requiere| IAut & IPed
-  Seg --> BD
-  Eco --> BD
-  Cob --> BD
-  Dis --> BD
-  Eco --> Arch
-  Cob --> Arch
-  Arch -.-> BD
-  Seg -.-> Correo
 ```
 
-La flecha discontinua va del componente que requiere hacia la interfaz que usa. Cobros llama a IPedidos para pasar el pedido a Confirmado cuando aprueba un pago, y Distribución la usa para leer pedidos listos y actualizar su estado. Cuando E-commerce necesita que otro módulo reaccione, publica un evento: al crearse un pedido, el evento PedidoRegistrado hace que Cobros abra su pago Pendiente de pago, en la misma transacción. Así E-commerce no depende de Cobros. Esto corrige el diagrama anterior, donde las flechas entre Pedidos, Cobranza y Distribución iban en sentido contrario.
+El primer diagrama se lee de arriba abajo: la Tienda y el Panel usan las interfaces (flecha discontinua), cada componente de negocio provee las suyas (línea continua) y guarda sus datos en los recursos de soporte. El segundo muestra qué interfaz de otro módulo requiere cada componente; la flecha va del que requiere hacia la interfaz que usa. Cobros llama a IPedidos para pasar el pedido a Confirmado cuando aprueba un pago, y Distribución la usa para leer pedidos listos y actualizar su estado. Cuando E-commerce necesita que otro módulo reaccione, publica un evento: al crearse un pedido, el evento PedidoRegistrado hace que Cobros abra su pago Pendiente de pago, en la misma transacción. Así E-commerce no depende de Cobros. Esto corrige el diagrama anterior, donde las flechas entre Pedidos, Cobranza y Distribución iban en sentido contrario.
 
 | Componente | Provee | Requiere |
 | --- | --- | --- |
