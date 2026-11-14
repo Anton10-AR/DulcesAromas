@@ -30,6 +30,14 @@ abstract final class Colores {
   static const textoSuaveOscuro = Color(0xFFC9B8AC);
   static const errorOscuro = Color(0xFFFFB4AB);
   static const bordeOscuro = Color(0xFF3D2F29);
+
+  // Degradado del botón principal: de izquierda a derecha. El texto llega a 4.5:1 sobre los dos extremos.
+  static const botonClaro = (Color(0xFF4A342C), Color(0xFF7A5241));
+  static const botonOscuro = (Color(0xFFE8AFC0), Color(0xFFD98FA6));
+
+  /// Al presionarlo, el botón se oscurece un poco.
+  static const botonClaroPresionado = (Color(0xFF3A2822), Color(0xFF5E3F33));
+  static const botonOscuroPresionado = (Color(0xFFDB98AB), Color(0xFFC97D95));
 }
 
 /// Color de una etiqueta de estado: el texto y el relleno de cada tono, en los dos temas. Todos llegan a 4.5:1.
@@ -188,11 +196,88 @@ ThemeData _tema(ColorScheme esquema, TextTheme textos, {required Color tarjeta, 
     navigationBarTheme: NavigationBarThemeData(indicatorColor: esquema.secondaryContainer),
     // Las ayudas y los errores largos pasan a otra línea en vez de cortarse con «…» en pantallas angostas (RNF12).
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(), helperMaxLines: 3, errorMaxLines: 3),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(minimumSize: const Size(48, 48), textStyle: textos.labelLarge),
-    ),
+    filledButtonTheme: FilledButtonThemeData(style: _botonPrincipal(esquema, textos)),
+    // El botón con borde, en píldora y con un borde del color principal.
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48), textStyle: textos.labelLarge),
+      style:
+          OutlinedButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            textStyle: textos.labelLarge,
+            shape: const StadiumBorder(),
+            foregroundColor: esquema.primary,
+          ).copyWith(
+            side: WidgetStateProperty.resolveWith(
+              (estados) => BorderSide(
+                color: estados.contains(WidgetState.disabled)
+                    ? esquema.onSurface.withValues(alpha: 0.12)
+                    : esquema.primary.withValues(alpha: estados.contains(WidgetState.hovered) ? 1 : 0.7),
+                width: 1.5,
+              ),
+            ),
+          ),
     ),
+    // El botón de texto, en píldora y con el rosa de la marca.
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(48, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        textStyle: textos.labelLarge,
+        shape: const StadiumBorder(),
+        foregroundColor: esquema.secondary,
+      ),
+    ),
+  );
+}
+
+/// El botón principal: una píldora con un degradado (café en el tema claro, rosa en el oscuro) y una sombra que crece
+/// al pasar el ratón o al llegar con el teclado. Al presionarlo se oscurece; deshabilitado, queda gris y plano.
+/// El estilo de FilledButton.tonal con su color explícito: así conserva su relleno suave y no toma el degradado del
+/// botón principal.
+ButtonStyle estiloTonal(BuildContext context) {
+  final colores = Theme.of(context).colorScheme;
+  return FilledButton.styleFrom(
+    backgroundColor: colores.secondaryContainer,
+    foregroundColor: colores.onSecondaryContainer,
+  );
+}
+
+ButtonStyle _botonPrincipal(ColorScheme esquema, TextTheme textos) {
+  final oscuro = esquema.brightness == Brightness.dark;
+  final normal = oscuro ? Colores.botonOscuro : Colores.botonClaro;
+  final presionado = oscuro ? Colores.botonOscuroPresionado : Colores.botonClaroPresionado;
+  bool activo(Set<WidgetState> estados) => !estados.contains(WidgetState.disabled);
+  return FilledButton.styleFrom(
+    minimumSize: const Size(48, 50),
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+    textStyle: textos.labelLarge,
+    shape: const StadiumBorder(),
+  ).copyWith(
+    // Transparente para que se vea el degradado; deshabilitado, el gris de siempre.
+    backgroundColor: WidgetStateProperty.resolveWith((estados) => activo(estados) ? Colors.transparent : null),
+    elevation: WidgetStateProperty.resolveWith((estados) {
+      if (!activo(estados) || estados.contains(WidgetState.pressed)) return 0;
+      return estados.contains(WidgetState.hovered) || estados.contains(WidgetState.focused) ? 6 : 2;
+    }),
+    shadowColor: WidgetStatePropertyAll(
+      oscuro ? Colors.black.withValues(alpha: 0.6) : Colores.cafe.withValues(alpha: 0.35),
+    ),
+    // La tinta del toque queda debajo del degradado; el cambio de color al presionar la reemplaza.
+    overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+    backgroundBuilder: (context, estados, hijo) {
+      if (!activo(estados)) return hijo ?? const SizedBox.shrink();
+      // Un botón con color propio (como «Ver catálogo» en la portada o los tonales) lo conserva.
+      final boton = context.widget;
+      if (boton is ButtonStyleButton && boton.style?.backgroundColor != null) return hijo ?? const SizedBox.shrink();
+      final (inicio, fin) = estados.contains(WidgetState.pressed) ? presionado : normal;
+      final encima = estados.contains(WidgetState.hovered);
+      return DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: const StadiumBorder(),
+          gradient: LinearGradient(colors: encima ? [fin, inicio] : [inicio, fin]),
+        ),
+        child: hijo,
+      );
+    },
   );
 }

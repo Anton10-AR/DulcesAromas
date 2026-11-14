@@ -65,6 +65,19 @@ void main() {
     }
   }
 
+  // El texto del botón principal sobre los extremos de su degradado, normal y presionado.
+  for (final (nombre, texto, colores) in [
+    ('claro', Colors.white, Colores.botonClaro),
+    ('claro presionado', Colors.white, Colores.botonClaroPresionado),
+    ('oscuro', Colores.fondoOscuro, Colores.botonOscuro),
+    ('oscuro presionado', Colores.fondoOscuro, Colores.botonOscuroPresionado),
+  ]) {
+    test('RNF20: el texto del botón principal $nombre llega a 4.5:1 en todo el degradado', () {
+      expect(contraste(texto, colores.$1), greaterThanOrEqualTo(4.5));
+      expect(contraste(texto, colores.$2), greaterThanOrEqualTo(4.5));
+    });
+  }
+
   test('el rosa y el café originales no alcanzan para texto pequeño, por eso se oscurecen', () {
     expect(contraste(Colores.rosa, Colores.fondo), lessThan(4.5));
     expect(contraste(const Color(0xFF8A6C5C), Colores.fondo), lessThan(4.5));

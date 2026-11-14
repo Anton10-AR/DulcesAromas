@@ -5,6 +5,7 @@ import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
+import '../../comun/tema.dart';
 import '../../comun/widgets.dart';
 import '../modelos_panel.dart';
 import 'formulario.dart';
@@ -217,7 +218,11 @@ class _InventarioPanelState extends State<InventarioPanel> {
                             onPressed: () => _item(item: item),
                             icon: const Icon(Icons.edit_outlined),
                           ),
-                          FilledButton.tonal(onPressed: () => _movimiento(item), child: const Text('Movimiento')),
+                          FilledButton.tonal(
+                            style: estiloTonal(context),
+                            onPressed: () => _movimiento(item),
+                            child: const Text('Movimiento'),
+                          ),
                         ],
                       ],
                     );

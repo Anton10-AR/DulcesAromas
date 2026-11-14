@@ -195,6 +195,7 @@ class _ConfiguracionPanelState extends State<ConfiguracionPanel> {
                                         child: const Text('Desactivar'),
                                       )
                                     : FilledButton.tonal(
+                                        style: estiloTonal(context),
                                         onPressed: () => _ejecutar(
                                           () => _api.post('/api/metodos-pago/${m.id}/activar'),
                                           'Método activado.',

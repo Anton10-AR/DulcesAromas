@@ -6,6 +6,7 @@ import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
+import '../../comun/tema.dart';
 import '../../comun/widgets.dart';
 import 'dialogos.dart';
 import 'formulario.dart';
@@ -198,7 +199,11 @@ class _PedidoPanelState extends State<PedidoPanel> {
       if (p.estado == 'LISTO' && p.esDelivery && entrega != null && u.puede('DISTRIBUCION_ASIGNAR'))
         boton('Sale en camino', () => _api.post('/api/entregas/${p.id}/en-camino'), 'Pedido en camino.'),
       if (p.asistido && p.estado == 'PENDIENTE' && pagoPendiente && u.puede('COBRANZA_REGISTRAR'))
-        FilledButton.tonal(onPressed: _ocupado ? null : _registrarPago, child: const Text('Registrar pago')),
+        FilledButton.tonal(
+          style: estiloTonal(context),
+          onPressed: _ocupado ? null : _registrarPago,
+          child: const Text('Registrar pago'),
+        ),
     ];
   }
 
