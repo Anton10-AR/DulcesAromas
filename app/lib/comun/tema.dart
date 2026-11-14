@@ -155,10 +155,32 @@ ThemeData _tema(ColorScheme esquema, TextTheme textos, {required Color tarjeta, 
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: borde),
       ),
     ),
+    // Chips en píldora; el elegido, con el rosa de la marca.
+    chipTheme: ChipThemeData(
+      shape: StadiumBorder(side: BorderSide(color: borde)),
+      side: BorderSide(color: borde),
+      backgroundColor: tarjeta,
+      selectedColor: esquema.secondaryContainer,
+      labelStyle: textos.labelLarge?.copyWith(color: esquema.onSurface),
+      secondaryLabelStyle: textos.labelLarge?.copyWith(color: esquema.onSecondaryContainer),
+      checkmarkColor: esquema.onSecondaryContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    ),
+    // El menú del Panel: la sección actual con el rosa de la marca.
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: tarjeta,
+      indicatorColor: esquema.secondaryContainer,
+      selectedIconTheme: IconThemeData(color: esquema.onSecondaryContainer),
+      selectedLabelTextStyle: textos.labelLarge?.copyWith(color: esquema.onSurface),
+      unselectedLabelTextStyle: textos.bodyMedium?.copyWith(color: esquema.onSurfaceVariant),
+      unselectedIconTheme: IconThemeData(color: esquema.onSurfaceVariant),
+    ),
+    navigationDrawerTheme: NavigationDrawerThemeData(indicatorColor: esquema.secondaryContainer),
+    navigationBarTheme: NavigationBarThemeData(indicatorColor: esquema.secondaryContainer),
     // Las ayudas y los errores largos pasan a otra línea en vez de cortarse con «…» en pantallas angostas (RNF12).
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(), helperMaxLines: 3, errorMaxLines: 3),
     filledButtonTheme: FilledButtonThemeData(

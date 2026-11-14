@@ -7,6 +7,7 @@ import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
 import '../carrito.dart';
+import 'catalogo_pantalla.dart' show iconoCategoria;
 import 'comunes.dart';
 
 /// Detalle de un producto con sus opciones de personalización (CU04, CU05).
@@ -21,6 +22,9 @@ class ProductoPantalla extends StatefulWidget {
 
 class _ProductoPantallaState extends State<ProductoPantalla> {
   late Future<Producto> _producto;
+
+  /// Otros productos de la misma categoría, para «Más de …».
+  late Future<List<Producto>> _parecidos;
 
   /// Opción elegida de cada tipo; como máximo una por tipo. Solo el tamaño es obligatorio.
   final Map<String, Opcion> _elegidas = {};
@@ -40,11 +44,16 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
   }
 
   void _cargar() {
+    final api = context.read<Api>();
     setState(() {
-      _producto = context
-          .read<Api>()
-          .get('/api/catalogo/productos/${widget.id}')
-          .then((j) => Producto.deJson(j as Json));
+      _producto = api.get('/api/catalogo/productos/${widget.id}').then((j) => Producto.deJson(j as Json));
+      _parecidos = _producto.then(
+        (p) => api
+            .get('/api/catalogo/productos', {'categoria': '${p.categoria.id}'})
+            .then(
+              (j) => lista(j, Producto.deJson).where((o) => o.id != p.id && o.categoria.id == p.categoria.id).toList(),
+            ),
+      );
     });
   }
 
@@ -109,23 +118,58 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
                     child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
                   ),
           );
+          final colores = Theme.of(context).colorScheme;
+          final personalizar = [
+            for (final grupo in p.opcionesPorTipo.entries) _grupoOpciones(grupo.key, grupo.value),
+            if (p.personalizable)
+              Campo(
+                controlador: _mensaje,
+                etiqueta: 'Mensaje sobre la torta (opcional)',
+                nombre: 'mensaje',
+                ayuda: 'Hasta 24 caracteres, sin costo adicional.',
+                maximo: 24,
+              ),
+          ];
           final detalles = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Icon(iconoCategoria(p.categoria.nombre), size: 18, color: colores.secondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    p.categoria.nombre.toUpperCase(),
+                    style: textos.labelLarge?.copyWith(color: colores.secondary, letterSpacing: 1.1),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               Text(p.nombre, style: textos.headlineMedium),
               const SizedBox(height: 4),
-              Text(bolivianos(p.precio), style: textos.titleLarge),
+              Text(bolivianos(p.precio), style: textos.headlineSmall?.copyWith(color: colores.secondary)),
               const SizedBox(height: 12),
               Text(p.descripcion, style: textos.bodyLarge),
-              const SizedBox(height: 16),
-              for (final grupo in p.opcionesPorTipo.entries) _grupoOpciones(grupo.key, grupo.value),
-              if (p.personalizable)
-                Campo(
-                  controlador: _mensaje,
-                  etiqueta: 'Mensaje sobre la torta (opcional)',
-                  nombre: 'mensaje',
-                  ayuda: 'Hasta 24 caracteres, sin costo adicional.',
-                  maximo: 24,
+              const SizedBox(height: 20),
+              if (personalizar.isNotEmpty)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.auto_awesome, size: 20, color: colores.secondary),
+                            const SizedBox(width: 8),
+                            Text('Personalízalo', style: textos.titleLarge),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ...personalizar,
+                      ],
+                    ),
+                  ),
                 ),
               Row(
                 children: [
@@ -149,27 +193,35 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
               ),
               const SizedBox(height: 24),
               // En el teléfono, el botón va fijo abajo (bottomNavigationBar).
-              if (ancha) _botonAgregar(p),
+              if (ancha) ...[_botonAgregar(p), const SizedBox(height: 24)],
+              const _ComoRecibirlo(),
             ],
           );
+          final parecidos = _Parecidos(futuro: _parecidos, categoria: p.categoria.nombre);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: ancha
                 ? Contenido(
                     ancho: 1100,
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 5, child: imagen),
-                        const SizedBox(width: 32),
-                        Expanded(flex: 6, child: detalles),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 5, child: imagen),
+                            const SizedBox(width: 32),
+                            Expanded(flex: 6, child: detalles),
+                          ],
+                        ),
+                        parecidos,
                       ],
                     ),
                   )
                 : Contenido(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [imagen, const SizedBox(height: 16), detalles],
+                      children: [imagen, const SizedBox(height: 16), detalles, parecidos],
                     ),
                   ),
           );
@@ -242,6 +294,7 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(esTamano(tipo) ? '$tipo (elige uno)' : '$tipo (opcional)', style: textos.titleMedium),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -306,6 +359,128 @@ class _Agregado extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Cómo se recibe y se paga un pedido, en tres líneas, para no tener que preguntarlo.
+class _ComoRecibirlo extends StatelessWidget {
+  const _ComoRecibirlo();
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final colores = Theme.of(context).colorScheme;
+    Widget linea(IconData icono, String titulo, String detalle) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, size: 22, color: colores.secondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: textos.titleSmall),
+                Text(detalle, style: textos.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(),
+        const SizedBox(height: 8),
+        linea(
+          Icons.storefront_outlined,
+          'Recojo o delivery',
+          'Recógelo en la tienda o recíbelo en casa, con tarifa fija.',
+        ),
+        linea(Icons.qr_code_2, 'Pago por QR, transferencia o depósito', 'Subes el comprobante y lo verificamos.'),
+        linea(Icons.timeline, 'Sigue tu pedido', 'En «Mis pedidos» ves en qué paso está.'),
+      ],
+    );
+  }
+}
+
+/// Otros productos de la misma categoría, en una fila que se desliza.
+class _Parecidos extends StatelessWidget {
+  const _Parecidos({required this.futuro, required this.categoria});
+
+  final Future<List<Producto>> futuro;
+  final String categoria;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final colores = Theme.of(context).colorScheme;
+    return FutureBuilder(
+      future: futuro,
+      builder: (context, estado) {
+        final productos = estado.data ?? const <Producto>[];
+        if (productos.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Semantics(header: true, child: Text('Más de $categoria', style: textos.headlineSmall)),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 150 + MediaQuery.textScalerOf(context).scale(86),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: productos.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  itemBuilder: (context, i) {
+                    final p = productos[i];
+                    return SizedBox(
+                      width: 160,
+                      child: Card(
+                        margin: EdgeInsets.zero,
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => context.push('/producto/${p.id}'),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(
+                                height: 150,
+                                child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+                                child: Text(
+                                  p.nombre,
+                                  style: textos.titleSmall,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const Spacer(),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                                child: Text(
+                                  bolivianos(p.precio),
+                                  style: textos.titleSmall?.copyWith(color: colores.secondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

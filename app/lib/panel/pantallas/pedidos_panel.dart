@@ -87,10 +87,14 @@ class _PedidosPanelState extends State<PedidosPanel> {
                           cantidadProductos(p.productos),
                         ].join(' · '),
                       ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [EtiquetaEstado(p.estado), const SizedBox(height: 4), Text(bolivianos(p.total))],
+                      // En una fila: en una columna, la etiqueta y el monto no caben en el alto de la fila.
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(bolivianos(p.total), style: Theme.of(context).textTheme.titleSmall),
+                          const SizedBox(width: 12),
+                          EtiquetaEstado(p.estado),
+                        ],
                       ),
                     );
                   },

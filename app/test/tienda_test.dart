@@ -68,9 +68,10 @@ void main() {
   testWidgets('RN15: el catálogo se ve sin iniciar sesión, con precio y disponibilidad', (tester) async {
     await abrir(tester, apiFalsa());
 
-    expect(find.text('Torta de chocolate'), findsOneWidget);
-    expect(find.text('Bs 120.00'), findsNWidgets(2));
-    expect(find.text('No disponible'), findsOneWidget);
+    // En el teléfono, con la portada completa, los productos quedan justo debajo de lo visible.
+    expect(find.text('Torta de chocolate', skipOffstage: false), findsOneWidget);
+    expect(find.text('Bs 120.00', skipOffstage: false), findsNWidgets(2));
+    expect(find.text('No disponible', skipOffstage: false), findsOneWidget);
     expect(find.text('Ingresar'), findsOneWidget);
   });
 
@@ -90,7 +91,7 @@ void main() {
 
   testWidgets('el botón de tema cambia a oscuro y la elección se guarda', (tester) async {
     await abrir(tester, apiFalsa());
-    Brightness brillo() => Theme.of(tester.element(find.text('Torta de chocolate'))).brightness;
+    Brightness brillo() => Theme.of(tester.element(find.text('Torta de chocolate', skipOffstage: false))).brightness;
     expect(brillo(), Brightness.light);
 
     await tester.tap(find.byTooltip('Tema: como el dispositivo'));
@@ -108,7 +109,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await abrir(tester, apiFalsa());
 
-    await tocar(tester, find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate', skipOffstage: false));
     await tester.pump();
     await tester.pump();
 
@@ -166,7 +167,7 @@ void main() {
     tester,
   ) async {
     await abrir(tester, apiFalsa());
-    await tocar(tester, find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate', skipOffstage: false));
     await tester.pumpAndSettle();
 
     final boton = tester.getRect(find.widgetWithText(FilledButton, 'Agregar al carrito'));
@@ -190,7 +191,7 @@ void main() {
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 
-    await tocar(tester, find.text('Torta de fresa'));
+    await tocar(tester, find.text('Torta de fresa', skipOffstage: false));
     await tester.pumpAndSettle();
 
     expect(find.text('Este producto no está disponible por ahora.'), findsOneWidget);
@@ -206,7 +207,7 @@ void main() {
   testWidgets('agregar un producto suma al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 
-    await tocar(tester, find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate', skipOffstage: false));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar al carrito'));
     await tester.pumpAndSettle();
@@ -226,7 +227,7 @@ void main() {
 
   testWidgets('al agregar un producto, «Ver carrito» lleva al carrito', (tester) async {
     await abrir(tester, apiFalsa());
-    await tocar(tester, find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate', skipOffstage: false));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Agregar al carrito'));
     await tester.pumpAndSettle();
@@ -396,7 +397,8 @@ void main() {
     final api = apiFalsa(
       respuestas: {
         '/api/catalogo/productos': (solicitud) {
-          consultas++;
+          // La ficha del producto también pide los de su categoría, para «Más de …»; esa consulta no cuenta.
+          if (solicitud.url.queryParameters['categoria']?.isNotEmpty != true) consultas++;
           return http.Response(
             jsonEncode([
               {
@@ -425,7 +427,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(consultas, 2);
 
-    await tocar(tester, find.text('Torta de chocolate'));
+    await tocar(tester, find.text('Torta de chocolate', skipOffstage: false));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();

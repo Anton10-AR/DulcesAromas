@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
+import '../../comun/marca.dart';
 import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/tema.dart';
@@ -175,12 +176,7 @@ class _InicioPanelState extends State<InicioPanel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Hola, $primerNombre', style: textos.headlineMedium),
-                const SizedBox(height: 4),
-                Text(
-                  '${fechaLarga(DateTime.now())} · Sucre',
-                  style: textos.bodyLarge?.copyWith(color: colores.onSurfaceVariant),
-                ),
+                _Bienvenida(nombre: primerNombre, rol: usuario.rol),
                 if (_hoy != null) ...[titulo('Hoy'), _Hoy(futuro: _hoy!, reintentar: _cargar)],
                 FutureBuilder(
                   future: _pendientes,
@@ -429,16 +425,107 @@ class _Ultimos extends StatelessWidget {
                       cantidadProductos(p.productos),
                     ].join(' · '),
                   ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [EtiquetaEstado(p.estado), const SizedBox(height: 4), Text(bolivianos(p.total))],
+                  // En una fila: en una columna, la etiqueta y el monto no caben en el alto de la fila.
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(bolivianos(p.total), style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(width: 12),
+                      EtiquetaEstado(p.estado),
+                    ],
                   ),
                 ),
               ],
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Nombre del rol para el saludo.
+const _nombresRol = {
+  'ADMINISTRADOR': 'Administrador',
+  'VENDEDOR': 'Vendedor',
+  'REPARTIDOR': 'Repartidor',
+  'REPOSTERO': 'Repostero',
+};
+
+/// El saludo del inicio, en una franja café con fotos de postres a la derecha en pantallas anchas.
+class _Bienvenida extends StatelessWidget {
+  const _Bienvenida({required this.nombre, required this.rol});
+
+  final String nombre;
+  final String? rol;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colores.cafe, Color(0xFF6E4B3E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, limites) {
+            final conFotos = limites.maxWidth >= 640;
+            return Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 26, 20, 26),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_nombresRol[rol] case final r?)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colores.rosaClaro,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(r, style: textos.labelLarge?.copyWith(color: Colores.texto)),
+                          ),
+                        Text('Hola, $nombre', style: textos.headlineMedium?.copyWith(color: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${fechaLarga(DateTime.now())} · Sucre',
+                          style: textos.bodyLarge?.copyWith(color: const Color(0xFFF3E6DC)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Las fotos son decoración: el lector de pantalla no las anuncia.
+                if (conFotos)
+                  ExcludeSemantics(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        children: [
+                          for (final (id, _) in fotosPortada.take(3))
+                            Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.asset(rutaFoto(id), width: 96, height: 112, fit: BoxFit.cover),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
