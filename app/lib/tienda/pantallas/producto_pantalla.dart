@@ -60,13 +60,24 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
         mensaje: _mensaje.text.trim().isEmpty ? null : _mensaje.text.trim(),
       ),
     );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${p.nombre} se agregó al carrito.'),
-        // Con un botón, Flutter deja el aviso fijo hasta tocarlo; aquí se va solo, como los demás.
-        persist: false,
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(label: 'Ver carrito', onPressed: () => context.push('/carrito')),
+    final detalle = [
+      '$_cantidad × ${p.nombre}',
+      if (opciones.isNotEmpty) '(${opciones.map((o) => o.nombre).join(', ')})',
+    ].join(' ');
+    // Qué sigue: ir a pagar o volver al catálogo, sin buscar la flecha de arriba. Al cerrarla, sigue en el producto.
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (hoja) => _Agregado(
+        detalle: detalle,
+        alVerCarrito: () {
+          Navigator.pop(hoja);
+          context.go('/carrito');
+        },
+        alSeguir: () {
+          Navigator.pop(hoja);
+          context.go('/');
+        },
       ),
     );
   }
@@ -192,6 +203,56 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// La hoja que aparece al agregar un producto al carrito.
+class _Agregado extends StatelessWidget {
+  const _Agregado({required this.detalle, required this.alVerCarrito, required this.alSeguir});
+
+  final String detalle;
+  final VoidCallback alVerCarrito;
+  final VoidCallback alSeguir;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    final colores = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle_outline, color: colores.primary),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('Se agregó al carrito', style: textos.titleLarge)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(detalle, style: textos.bodyLarge),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: alVerCarrito,
+              icon: const Icon(Icons.shopping_bag_outlined),
+              label: const Text('Ver carrito'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: alSeguir,
+              icon: const Icon(Icons.storefront_outlined),
+              label: const Text('Seguir comprando'),
+            ),
+          ],
+        ),
       ),
     );
   }

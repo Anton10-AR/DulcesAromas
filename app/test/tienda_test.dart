@@ -172,12 +172,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Carrito, 1 producto'), findsOneWidget);
-    expect(find.text('Torta de chocolate se agregó al carrito.'), findsOneWidget);
+    expect(find.text('Se agregó al carrito'), findsOneWidget);
+    expect(find.text('1 × Torta de chocolate'), findsOneWidget);
 
-    // El aviso se va solo, aunque tenga el botón «Ver carrito».
-    await tester.pump(const Duration(seconds: 6));
+    // «Seguir comprando» vuelve al catálogo, con el producto ya en el carrito.
+    await tester.tap(find.text('Seguir comprando'));
     await tester.pumpAndSettle();
-    expect(find.text('Torta de chocolate se agregó al carrito.'), findsNothing);
+    // De vuelta en el catálogo, en la misma posición en que se dejó.
+    expect(find.text('Agregar al carrito'), findsNothing);
+    expect(find.text('Torta de fresa'), findsOneWidget);
+    expect(find.byTooltip('Carrito, 1 producto'), findsOneWidget);
+  });
+
+  testWidgets('al agregar un producto, «Ver carrito» lleva al carrito', (tester) async {
+    await abrir(tester, apiFalsa());
+    await tocar(tester, find.text('Torta de chocolate'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Agregar al carrito'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Ver carrito'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tu carrito'), findsOneWidget);
   });
 
   testWidgets('RN15: confirmar el pedido sin sesión pide ingresar y conserva el carrito', (tester) async {
