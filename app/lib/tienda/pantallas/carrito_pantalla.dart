@@ -31,6 +31,24 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
     });
   }
 
+  /// Vaciar no se puede deshacer: primero se confirma.
+  Future<void> _vaciar(Carrito carrito) async {
+    final vaciar = await showDialog<bool>(
+      context: context,
+      builder: (dialogo) => AlertDialog(
+        title: const Text('¿Vaciar el carrito?'),
+        content: Text('Se quitarán ${cantidadProductos(carrito.unidades)}. No se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogo, false), child: const Text('Cancelar')),
+          FilledButton(onPressed: () => Navigator.pop(dialogo, true), child: const Text('Vaciar')),
+        ],
+      ),
+    );
+    if (vaciar != true || !mounted) return;
+    context.read<Carrito>().vaciar();
+    _cotizar();
+  }
+
   void _cambiar(int indice, int cantidad) {
     context.read<Carrito>().cambiarCantidad(indice, cantidad);
     _cotizar();
@@ -44,14 +62,7 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
         title: const Text('Tu carrito'),
         actions: [
           // Si un producto del carrito se eliminó del catálogo, la cotización falla; así se puede empezar de nuevo.
-          if (!carrito.vacio)
-            TextButton(
-              onPressed: () {
-                context.read<Carrito>().vaciar();
-                _cotizar();
-              },
-              child: const Text('Vaciar'),
-            ),
+          if (!carrito.vacio) TextButton(onPressed: () => _vaciar(carrito), child: const Text('Vaciar')),
         ],
       ),
       body: carrito.vacio

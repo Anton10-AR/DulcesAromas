@@ -133,15 +133,18 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
                       ),
                       FutureBuilder(
                         future: _categorias,
-                        builder: (context, estado) => SizedBox(
-                          height: 56,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            children: [
-                              _chip('Todo', null),
-                              for (final c in estado.data ?? const <Categoria>[]) _chip(c.nombre, c.id),
-                            ],
+                        // Si no entran en una fila, bajan a la siguiente: ninguna queda cortada.
+                        builder: (context, estado) => Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Wrap(
+                              runSpacing: 8,
+                              children: [
+                                _chip('Todo', null),
+                                for (final c in estado.data ?? const <Categoria>[]) _chip(c.nombre, c.id),
+                              ],
+                            ),
                           ),
                         ),
                       ),

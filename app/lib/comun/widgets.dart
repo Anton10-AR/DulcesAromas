@@ -496,8 +496,15 @@ class EtiquetaPago extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) =>
-      Etiqueta('Pago: ${nombresEstadoPago[estado] ?? estado}', tono: tonos[estado] ?? Tono.neutro);
+  Widget build(BuildContext context) => Etiqueta(textos[estado] ?? estado, tono: tonos[estado] ?? Tono.neutro);
+
+  /// Cortas, para que entren en la misma fila que la etiqueta del pedido en un teléfono.
+  static const textos = {
+    'PENDIENTE_DE_PAGO': 'Pago pendiente',
+    'EN_VERIFICACION': 'Pago en verificación',
+    'PAGADO': 'Pagado',
+    'RECHAZADO': 'Pago rechazado',
+  };
 }
 
 void avisar(BuildContext context, String mensaje) {

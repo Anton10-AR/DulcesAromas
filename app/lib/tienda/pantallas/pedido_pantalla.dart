@@ -101,6 +101,8 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
           runSpacing: 8,
           children: [EtiquetaEstado(pedido.estado), if (vigente != null) EtiquetaPago(vigente.estado)],
         ),
+        const SizedBox(height: 12),
+        _QueSigue(queSigue(pedido.estado, vigente?.estado, delivery: pedido.esDelivery)),
         const SizedBox(height: 16),
         if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
         if (debePagar)
@@ -147,6 +149,50 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
           OutlinedButton(onPressed: _cancelar, child: const Text('Cancelar pedido')),
         ],
       ],
+    );
+  }
+}
+
+/// Qué sigue con el pedido, en palabras del cliente: qué tiene que hacer él o qué está haciendo la pastelería.
+String queSigue(String estado, String? pago, {required bool delivery}) => switch (estado) {
+  'PENDIENTE' when pago == 'EN_VERIFICACION' =>
+    'Estamos revisando tu pago. Cuando lo aprobemos, tu pedido quedará confirmado.',
+  'PENDIENTE' => 'Paga y registra el comprobante para que confirmemos tu pedido.',
+  'CONFIRMADO' => 'Tu pago está aprobado. Pronto empezamos a preparar tu pedido.',
+  'EN_PREPARACION' => 'Estamos preparando tu pedido.',
+  'LISTO' when delivery => 'Tu pedido está listo y pronto sale a entregarse.',
+  'LISTO' => 'Tu pedido está listo: puedes pasar a recogerlo.',
+  'EN_CAMINO' => 'Tu pedido va en camino.',
+  'ENTREGADO' => 'Pedido entregado. ¡Gracias por tu compra!',
+  'CANCELADO' => 'Este pedido se canceló.',
+  _ => '',
+};
+
+class _QueSigue extends StatelessWidget {
+  const _QueSigue(this.texto);
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    if (texto.isEmpty) return const SizedBox.shrink();
+    final colores = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: colores.secondaryContainer, borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: colores.onSecondaryContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              texto,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colores.onSecondaryContainer),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

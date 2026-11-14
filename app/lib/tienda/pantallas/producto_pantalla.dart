@@ -86,20 +86,29 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(actions: accionesTienda(context)),
+      bottomNavigationBar: _barraAgregar(),
       body: Cargador(
         futuro: _producto,
         reintentar: _cargar,
         constructor: (context, p) {
           final textos = Theme.of(context).textTheme;
+          // En pantallas anchas, la imagen a la izquierda y las opciones a la derecha: se elige sin bajar (RNF12).
+          final ancha = _ancha(context);
+          final pantalla = MediaQuery.sizeOf(context);
           final imagen = ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
-            ),
+            child: ancha
+                ? AspectRatio(
+                    aspectRatio: 1,
+                    child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
+                  )
+                // En el teléfono, una foto más baja deja ver el nombre, el precio y las opciones sin deslizar.
+                : SizedBox(
+                    width: double.infinity,
+                    height: (pantalla.height * 0.32).clamp(180.0, pantalla.width - 32),
+                    child: ImagenProducto(ruta: p.imagen, descripcion: p.nombre),
+                  ),
           );
-          // En pantallas anchas, la imagen a la izquierda y las opciones a la derecha: se elige sin bajar (RNF12).
-          final ancha = MediaQuery.sizeOf(context).width >= 720;
           final detalles = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -139,21 +148,8 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
                 ],
               ),
               const SizedBox(height: 24),
-              // HU07: un producto no disponible no se puede agregar al carrito.
-              if (!p.disponible) const AvisoError('Este producto no está disponible por ahora.'),
-              if (p.disponible && p.faltaTamano(_elegidas))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text('Elige un tamaño para agregarlo al carrito.', style: textos.bodyMedium),
-                ),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: p.disponible && !p.faltaTamano(_elegidas) ? () => _agregar(p) : null,
-                  icon: const Icon(Icons.add_shopping_cart),
-                  label: const Text('Agregar al carrito'),
-                ),
-              ),
+              // En el teléfono, el botón va fijo abajo (bottomNavigationBar).
+              if (ancha) _botonAgregar(p),
             ],
           );
           return SingleChildScrollView(
@@ -179,6 +175,62 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
           );
         },
       ),
+    );
+  }
+
+  bool _ancha(BuildContext context) => MediaQuery.sizeOf(context).width >= 720;
+
+  /// El aviso de no disponible o de falta el tamaño, y el botón para agregar.
+  Widget _botonAgregar(Producto p) {
+    final textos = Theme.of(context).textTheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // HU07: un producto no disponible no se puede agregar al carrito.
+        if (!p.disponible) const AvisoError('Este producto no está disponible por ahora.'),
+        if (p.disponible && p.faltaTamano(_elegidas))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text('Elige un tamaño para agregarlo al carrito.', style: textos.bodyMedium),
+          ),
+        FilledButton.icon(
+          onPressed: p.disponible && !p.faltaTamano(_elegidas) ? () => _agregar(p) : null,
+          icon: const Icon(Icons.add_shopping_cart),
+          label: const Text('Agregar al carrito'),
+        ),
+      ],
+    );
+  }
+
+  /// En el teléfono, «Agregar al carrito» queda siempre a la vista, sobre la barra inferior.
+  Widget _barraAgregar() {
+    return FutureBuilder(
+      future: _producto,
+      builder: (context, estado) {
+        if (_ancha(context) || !estado.hasData) return const SizedBox.shrink();
+        final colores = Theme.of(context).colorScheme;
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: colores.surface,
+            border: Border(top: BorderSide(color: colores.outlineVariant)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              // Centrado y con el ancho máximo del contenido, pero solo tan alto como el botón.
+              child: Center(
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: anchoMaximo),
+                  child: _botonAgregar(estado.data!),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

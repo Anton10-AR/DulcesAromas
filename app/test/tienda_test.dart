@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:dulces_aromas/comun/api.dart';
 import 'package:dulces_aromas/tienda/app_tienda.dart';
+import 'package:dulces_aromas/tienda/pantallas/pedido_pantalla.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -159,6 +160,31 @@ void main() {
     expect(find.text('Ver catálogo'), findsNothing);
     expect(find.bySemanticsLabel('Dulces Aromas'), findsOneWidget);
     expect(tester.getRect(find.text('Torta de chocolate')).bottom, lessThan(800 - 80));
+  });
+
+  testWidgets('RNF01: en el teléfono, «Agregar al carrito» se ve sin deslizar, sobre la barra inferior', (
+    tester,
+  ) async {
+    await abrir(tester, apiFalsa());
+    await tocar(tester, find.text('Torta de chocolate'));
+    await tester.pumpAndSettle();
+
+    final boton = tester.getRect(find.widgetWithText(FilledButton, 'Agregar al carrito'));
+    final barra = tester.getRect(find.byType(NavigationBar));
+    expect(boton.bottom, lessThanOrEqualTo(barra.top));
+    expect(boton.top, greaterThan(800 / 2));
+    // La flecha de arriba sigue funcionando.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Agregar al carrito'), findsNothing);
+  });
+
+  test('el detalle del pedido dice qué sigue según el estado del pedido y del pago', () {
+    expect(queSigue('PENDIENTE', 'PENDIENTE_DE_PAGO', delivery: false), contains('registra el comprobante'));
+    expect(queSigue('PENDIENTE', 'EN_VERIFICACION', delivery: false), contains('revisando tu pago'));
+    expect(queSigue('LISTO', 'PAGADO', delivery: false), contains('pasar a recogerlo'));
+    expect(queSigue('LISTO', 'PAGADO', delivery: true), contains('sale a entregarse'));
+    expect(queSigue('EN_CAMINO', 'PAGADO', delivery: true), 'Tu pedido va en camino.');
   });
 
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
@@ -497,11 +523,11 @@ void main() {
     expect(find.text('Relleno (opcional)'), findsOneWidget);
     expect(agregar().onPressed, isNull);
 
-    await tester.tap(find.text('Frutilla (+Bs 10.00)'));
+    await tocar(tester, find.text('Frutilla (+Bs 10.00)'));
     await tester.pumpAndSettle();
     expect(agregar().onPressed, isNull);
 
-    await tester.tap(find.text('Mediana'));
+    await tocar(tester, find.text('Mediana'));
     await tester.pumpAndSettle();
     expect(agregar().onPressed, isNotNull);
   });
@@ -599,5 +625,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ver catálogo'), findsOneWidget);
     expect(find.byTooltip('Carrito, 2 productos'), findsOneWidget);
+  });
+
+  testWidgets('vaciar el carrito pide confirmación', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'carrito': jsonEncode([
+        {'productoId': 1, 'nombre': 'Torta de chocolate', 'cantidad': 2, 'opciones': [], 'nombresOpciones': []},
+      ]),
+    });
+    await abrirEn(tester, apiFalsa(), '/carrito');
+
+    await tester.tap(find.text('Vaciar'));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Vaciar el carrito?'), findsOneWidget);
+    expect(find.textContaining('Se quitarán 2 productos'), findsOneWidget);
+
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Carrito, 2 productos'), findsOneWidget);
+
+    await tester.tap(find.text('Vaciar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Vaciar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tu carrito está vacío.'), findsOneWidget);
   });
 }
