@@ -27,14 +27,17 @@ class PermisosTests extends PruebaIntegracion {
 	}
 
 	@Test
-	void muestraLosTresRolesConSuDescripcionYSusPermisos() throws Exception {
+	void muestraLosCuatroRolesConSuDescripcionYSusPermisos() throws Exception {
 		mvc.perform(con(admin, get("/api/roles"))).andExpect(status().isOk())
-			.andExpect(jsonPath("$.length()").value(3))
+			.andExpect(jsonPath("$.length()").value(4))
 			.andExpect(jsonPath("$[0].codigo").value("ADMINISTRADOR"))
 			.andExpect(jsonPath("$[1].nombre").value("Vendedor"))
 			.andExpect(jsonPath("$[1].descripcion").isNotEmpty())
 			.andExpect(jsonPath("$[1].permisos", not(hasItem("COBRANZA_VERIFICAR"))))
-			.andExpect(jsonPath("$[2].permisos[0]").value("DISTRIBUCION_ENTREGAS"));
+			.andExpect(jsonPath("$[2].permisos[0]").value("DISTRIBUCION_ENTREGAS"))
+			.andExpect(jsonPath("$[3].nombre").value("Repostero"))
+			.andExpect(jsonPath("$[3].permisos", hasItem("PEDIDOS_PREPARAR")))
+			.andExpect(jsonPath("$[3].permisos", not(hasItem("PEDIDOS_CONSULTAR"))));
 	}
 
 	@Test
@@ -42,7 +45,8 @@ class PermisosTests extends PruebaIntegracion {
 		mvc.perform(con(admin, post("/api/roles")).content("{\"codigo\":\"PRODUCCION\"}"))
 			.andExpect(status().is4xxClientError());
 
-		assertThat(jdbc.queryForObject("select count(*) from rol", Integer.class)).isEqualTo(3);
+		// Los cuatro roles fijos; el administrador no agrega otros.
+		assertThat(jdbc.queryForObject("select count(*) from rol", Integer.class)).isEqualTo(4);
 	}
 
 	@Test

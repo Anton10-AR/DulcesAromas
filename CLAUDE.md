@@ -82,12 +82,13 @@ Convenciones de la app: los montos llegan del servidor y se convierten con `deci
 
 ### Roles
 
-Hay cuatro roles **fijos**. El administrador edita sus permisos, pero **no se crean roles nuevos**.
+Hay cinco roles **fijos**: el Cliente y cuatro de personal. El administrador edita sus permisos, pero **no se crean roles nuevos**.
 
 - **Cliente:** usa la Tienda. Se registra solo y nunca puede tener un rol de personal.
 - **Administrador:** acceso total. Siempre conserva el acceso a Seguridad.
 - **Vendedor:** atiende pedidos y pagos, registra pedidos asistidos y asigna repartidores. Marca la preparación y verifica pagos solo si tiene ese permiso.
 - **Repartidor:** ve y actualiza solo sus propias entregas.
+- **Repostero:** prepara los pedidos desde Cocina (`/api/cocina`): marca En preparación y Listo y consulta los insumos. No ve datos personales ni montos del cliente; la lista y el detalle completos de los pedidos piden además `PEDIDOS_CONSULTAR`.
 
 La matriz completa de permisos está en la sección 8 de `docs/02-casos-de-uso.md`.
 
@@ -130,7 +131,7 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 
 - **D1:** el pago se aprueba antes de preparar el pedido.
 - **D2:** la disponibilidad de un producto es un indicador manual; no sale del inventario de insumos.
-- **D3:** el Vendedor con permiso marca la preparación. No existe un rol Producción.
+- **D3:** el Repostero marca la preparación; el Vendedor, solo con el permiso. Revisada el 13/11/2026: antes no había un rol para preparar.
 - **D4:** el delivery tiene tarifa fija, guardada en Configuracion.
 - **D5:** el cliente recupera su contraseña por un enlace de correo (un solo uso, 60 min); al personal se la restablece el administrador.
 - **D6:** no hay roles personalizados.

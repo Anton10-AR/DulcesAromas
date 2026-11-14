@@ -12,6 +12,7 @@ import '../comun/widgets.dart';
 import 'menu_usuario.dart';
 import 'pantallas/asistido_panel.dart';
 import 'pantallas/catalogo_panel.dart';
+import 'pantallas/cocina_panel.dart';
 import 'pantallas/configuracion_panel.dart';
 import 'pantallas/entregas_panel.dart';
 import 'pantallas/ingresar_panel.dart';
@@ -40,11 +41,10 @@ class Seccion {
 
 const secciones = [
   Seccion('/', 'Inicio', Icons.home_outlined, []),
-  Seccion('/pedidos', 'Pedidos', Icons.receipt_long_outlined, [
-    'PEDIDOS_CONSULTAR',
-    'PEDIDOS_PREPARAR',
-    'DISTRIBUCION_ASIGNAR',
-  ]),
+  // Con solo el permiso de preparar (el Repostero) no se ve la lista de pedidos, que trae datos del cliente: se usa
+  // Cocina (RNF16).
+  Seccion('/pedidos', 'Pedidos', Icons.receipt_long_outlined, ['PEDIDOS_CONSULTAR', 'DISTRIBUCION_ASIGNAR']),
+  Seccion('/cocina', 'Cocina', Icons.soup_kitchen_outlined, ['PEDIDOS_PREPARAR']),
   Seccion('/pagos', 'Verificar pagos', Icons.fact_check_outlined, ['COBRANZA_VERIFICAR']),
   Seccion('/entregas', 'Entregas', Icons.local_shipping_outlined, ['DISTRIBUCION_ASIGNAR']),
   Seccion('/mis-entregas', 'Mis entregas', Icons.delivery_dining_outlined, ['DISTRIBUCION_ENTREGAS']),
@@ -81,6 +81,7 @@ GoRouter rutasPanel(Sesion sesion) {
             path: '/pedidos/:id',
             builder: (_, e) => PedidoPanel(id: int.parse(e.pathParameters['id']!)),
           ),
+          GoRoute(path: '/cocina', builder: (_, _) => const CocinaPanel()),
           GoRoute(path: '/pagos', builder: (_, _) => const PagosPanel()),
           GoRoute(path: '/entregas', builder: (_, _) => const EntregasPanel()),
           GoRoute(path: '/mis-entregas', builder: (_, _) => const MisEntregasPanel()),

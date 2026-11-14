@@ -173,12 +173,34 @@ class PedidoServicio {
 	 */
 	@Transactional
 	PedidoVista avanzarPreparacion(Long id, EstadoPedido nuevo, UsuarioActual usuario) {
+		return vista(avanzar(id, nuevo, usuario));
+	}
+
+	/**
+	 * Lo mismo que {@link #avanzarPreparacion}, pero devuelve solo lo que ve la cocina (RNF16).
+	 */
+	@Transactional
+	PedidoCocina avanzarEnCocina(Long id, EstadoPedido nuevo, UsuarioActual usuario) {
+		return PedidoCocina.de(avanzar(id, nuevo, usuario));
+	}
+
+	/**
+	 * Lo que hay que preparar: los pedidos Confirmados y En preparación, del horario de entrega más cercano al más
+	 * lejano.
+	 */
+	@Transactional(readOnly = true)
+	List<PedidoCocina> paraCocina() {
+		var filtro = FiltrosPedido.de(Set.of(EstadoPedido.CONFIRMADO, EstadoPedido.EN_PREPARACION), null, null);
+		return pedidos.findAll(filtro, Sort.by("horarioEntrega", "id")).stream().map(PedidoCocina::de).toList();
+	}
+
+	private Pedido avanzar(Long id, EstadoPedido nuevo, UsuarioActual usuario) {
 		if (nuevo != EstadoPedido.EN_PREPARACION && nuevo != EstadoPedido.LISTO) {
 			throw new IllegalArgumentException("No es un paso de la preparación: " + nuevo);
 		}
 		Pedido pedido = bloquear(id);
 		pedido.cambiarEstado(nuevo, usuario.id(), null, reloj.instant());
-		return vista(pedido);
+		return pedido;
 	}
 
 	/**

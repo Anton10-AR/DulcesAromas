@@ -1,6 +1,6 @@
 # Dulces Aromas — Visión del Proyecto v1
 
-Versión 1.0 · 29/10/2026
+Versión 1.1 · 13/11/2026
 
 Versión 1.0 del documento que reemplaza a la Visión v0. Universidad Mayor Real y Pontíficia San Francisco Xavier de Chuquisaca, Facultad de Ciencias y Tecnología, Sucre, Bolivia, 2026. Estudiantes: Avendaño Retamozo Juan Antonio, Dávalos Nuñez Gabriela y Morejon Morales Luz Yumara. Docente: Ing. Ramiro Duran.
 
@@ -58,6 +58,7 @@ Estas funciones podrán considerarse en versiones futuras.
 | Administrador | Responsable de la gestión completa del sistema |
 | Vendedor | Personal que atiende pedidos y pagos |
 | Repartidor | Personal que entrega los pedidos con delivery |
+| Repostero | Personal que prepara los pedidos |
 | Producto | Artículo a la venta; puede ser personalizable |
 | Insumo | Materia prima o material que se controla en inventario |
 | Pedido | Solicitud de compra confirmada por un cliente o registrada por un vendedor |
@@ -104,7 +105,7 @@ Para quienes quieren comprar productos de pastelería de forma rápida, organiza
 
 ### 3.2 Usuarios
 
-Hay un usuario externo y tres roles de personal. Los roles de personal son fijos y el administrador edita sus permisos. Las funciones que antes se llamaban «encargado de inventario», «encargado de cobranza» o «encargado de distribución» son permisos que se asignan a un rol, no roles nuevos.
+Hay un usuario externo y cuatro roles de personal. Los roles de personal son fijos y el administrador edita sus permisos. Las funciones que antes se llamaban «encargado de inventario», «encargado de cobranza» o «encargado de distribución» son permisos que se asignan a un rol, no roles nuevos.
 
 | Rol | Descripción | Cuenta |
 | --- | --- | --- |
@@ -112,6 +113,7 @@ Hay un usuario externo y tres roles de personal. Los roles de personal son fijos
 | Administrador | Gestiona usuarios, permisos, catálogo, inventario, pagos y reportes | Lo crea otro administrador |
 | Vendedor | Atiende pedidos y pagos, registra pedidos asistidos, asigna repartidores y marca la preparación si tiene el permiso | Lo crea el administrador |
 | Repartidor | Ve y actualiza solo las entregas que se le asignaron | Lo crea el administrador |
+| Repostero | Prepara los pedidos: ve en Cocina qué hay que hacer y para cuándo, y marca En preparación y Listo. No ve datos personales ni montos del cliente | Lo crea el administrador |
 
 ### 3.3 Entorno del usuario
 
@@ -137,7 +139,7 @@ El sistema se organiza en cuatro módulos. Catálogo e inventario forman parte d
 | Módulo | Qué resuelve | Quién lo usa |
 | --- | --- | --- |
 | Seguridad | Cuentas, inicio de sesión, roles, permisos y auditoría | Todos |
-| E-commerce | Catálogo, categorías, personalización, carrito, pedidos, inventario, disponibilidad, reportes y pedidos asistidos | Cliente, Administrador, Vendedor |
+| E-commerce | Catálogo, categorías, personalización, carrito, pedidos, inventario, disponibilidad, reportes y pedidos asistidos | Cliente, Administrador, Vendedor, Repostero |
 | Cobros | Registro de pagos con comprobante, verificación y su historial | Cliente, Administrador, Vendedor con permiso |
 | Distribución | Entrega: asignación de repartidor, seguimiento y entregas fallidas | Vendedor, Repartidor, Administrador |
 
@@ -294,7 +296,7 @@ La landing es una pieza de presentación y no forma parte del alcance de los doc
 - **Despliegue:** el sistema se publica con planes gratuitos: la API en Render (contenedor Docker) con la base en Neon (PostgreSQL), el correo por Brevo y el sitio web compilado por GitHub Actions. Los planes gratuitos imponen límites: 512 MB de memoria para la API, que se apaga tras 15 minutos sin uso; 0.5 GB de base de datos y 300 correos al día. El detalle está en la sección 4.1 de los Modelos UML.
 - **Pagos:** el sistema registra y verifica comprobantes de forma manual. No se conecta a bancos ni a pasarelas de pago, y los reembolsos se hacen fuera del sistema.
 - **Entrega:** el costo de envío es una tarifa fija; no hay cálculo por distancia ni rastreo en mapa.
-- **Roles:** los cuatro roles son fijos; el administrador edita sus permisos pero no crea roles nuevos.
+- **Roles:** los cinco roles (Cliente y cuatro de personal) son fijos; el administrador edita sus permisos pero no crea roles nuevos.
 - **Alcance del negocio:** una sola pastelería, con una sola moneda (bolivianos) y una sola zona horaria.
 
 ## 8. Objetivo general y objetivos específicos
@@ -321,7 +323,7 @@ Dulces Aromas reemplaza la gestión dispersa de pedidos por un solo sistema con 
 | Tema | Visión v0 | Visión v1 |
 | --- | --- | --- |
 | Módulos | Catálogo e inventario por separado | 4 módulos: Seguridad, E-commerce, Cobros, Distribución |
-| Roles | Varios catálogos distintos entre documentos | Cliente, Administrador, Vendedor, Repartidor |
+| Roles | Varios catálogos distintos entre documentos | Cliente, Administrador, Vendedor, Repartidor y Repostero (desde el 13/11/2026) |
 | Estados | Pedido y pago mezclados | Dos ciclos separados, con el pago aprobado antes de preparar |
 | Requisitos funcionales | RF01–RF23 | RF01–RF43, agrupados por módulo |
 | Requisitos no funcionales | Enunciados generales | RNF01–RNF21 con valor y forma de verificación |

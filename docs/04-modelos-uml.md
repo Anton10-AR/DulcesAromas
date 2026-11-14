@@ -17,7 +17,7 @@ La notación es UML 2.5. Los nombres de clases, atributos y estados están en es
 
 ## 2. Modelo de casos de uso
 
-Son 17 casos de uso en cuatro módulos y cuatro roles. Un diagrama por módulo mantiene legibles las relaciones. Donde los cuatro roles hacen lo mismo se usa el actor abstracto Usuario, del que heredan Cliente, Administrador, Vendedor y Repartidor.
+Son 17 casos de uso en cuatro módulos y cinco roles. Un diagrama por módulo mantiene legibles las relaciones. Donde todos los roles hacen lo mismo se usa el actor abstracto Usuario, del que heredan Cliente, Administrador, Vendedor, Repartidor y Repostero.
 
 ### 2.1 Seguridad
 
@@ -91,6 +91,7 @@ flowchart LR
   Administrador((Administrador))
   Vendedor((Vendedor))
   Repartidor((Repartidor))
+  Repostero((Repostero))
   subgraph Cobros
     CU06([CU06 Registrar pago])
     CU07([CU07 Verificar pago])
@@ -105,31 +106,32 @@ flowchart LR
   Administrador --- CU08
   Vendedor --- CU08
   Repartidor --- CU08
+  Repostero ---|prepara| CU08
 ```
 
-El Cliente registra el pago (CU06); el Administrador o el Vendedor con permiso lo verifica (CU07). Con el pago aprobado, el personal prepara y asigna, y el Repartidor entrega (CU08).
+El Cliente registra el pago (CU06); el Administrador o el Vendedor con permiso lo verifica (CU07). Con el pago aprobado, el Repostero prepara, el Vendedor asigna y el Repartidor entrega (CU08).
 
 ### 2.4 Actores y casos de uso
 
-| Caso de uso | Cliente | Administrador | Vendedor | Repartidor |
-| --- | --- | --- | --- | --- |
-| CU01 Iniciar y cerrar sesión | Sí | Sí | Sí | Sí |
-| CU02 Gestionar productos | No | Sí | Solo disponibilidad | No |
-| CU03 Gestionar inventario | No | Sí | Solo consulta | No |
-| CU04 Consultar catálogo | Sí | Sí | Sí | No |
-| CU05 Hacer un pedido | Sí | No | No | No |
-| CU06 Registrar pago | Sí | No | Pedido asistido | No |
-| CU07 Verificar pago | No | Sí | Con permiso | No |
-| CU08 Gestionar entrega | No | Sí | Sí | Solo las suyas |
-| CU09 Gestionar usuarios y permisos | No | Sí | No | No |
-| CU10 Consultar pedidos y ventas | No | Sí | Solo pedidos | No |
-| CU11 Registrarse como cliente | Sí | No | No | No |
-| CU12 Recuperar contraseña | Sí | Sí | Sí | Sí |
-| CU13 Gestionar perfil | Sí | Sí | Sí | Sí |
-| CU14 Gestionar categorías | No | Sí | No | No |
-| CU15 Consultar mis pedidos | Sí | No | No | No |
-| CU16 Cancelar pedido | Sí | Sí | Sí | No |
-| CU17 Registrar pedido asistido | No | Sí | Sí | No |
+| Caso de uso | Cliente | Administrador | Vendedor | Repartidor | Repostero |
+| --- | --- | --- | --- | --- | --- |
+| CU01 Iniciar y cerrar sesión | Sí | Sí | Sí | Sí | Sí |
+| CU02 Gestionar productos | No | Sí | Solo disponibilidad | No | No |
+| CU03 Gestionar inventario | No | Sí | Solo consulta | No | Solo consulta |
+| CU04 Consultar catálogo | Sí | Sí | Sí | No | No |
+| CU05 Hacer un pedido | Sí | No | No | No | No |
+| CU06 Registrar pago | Sí | No | Pedido asistido | No | No |
+| CU07 Verificar pago | No | Sí | Con permiso | No | No |
+| CU08 Gestionar entrega | No | Sí | Sí | Solo las suyas | Solo la preparación |
+| CU09 Gestionar usuarios y permisos | No | Sí | No | No | No |
+| CU10 Consultar pedidos y ventas | No | Sí | Solo pedidos | No | No |
+| CU11 Registrarse como cliente | Sí | No | No | No | No |
+| CU12 Recuperar contraseña | Sí | Sí | Sí | Sí | Sí |
+| CU13 Gestionar perfil | Sí | Sí | Sí | Sí | Sí |
+| CU14 Gestionar categorías | No | Sí | No | No | No |
+| CU15 Consultar mis pedidos | Sí | No | No | No | No |
+| CU16 Cancelar pedido | Sí | Sí | Sí | No | No |
+| CU17 Registrar pedido asistido | No | Sí | Sí | No | No |
 
 El Administrador puede hacer todo lo que hace el Vendedor; los diagramas dibujan solo las asociaciones principales de cada rol para no saturarlos, y esta tabla es la referencia completa.
 
@@ -392,7 +394,7 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | Usuario | Seguridad | Credenciales, estado de la cuenta y bloqueo por intentos |
 | Cliente | Seguridad | Persona que compra desde la Tienda |
 | Personal | Seguridad | Cuenta del Panel con un rol fijo |
-| Rol | Seguridad | Administrador, Vendedor o Repartidor, con sus permisos |
+| Rol | Seguridad | Administrador, Vendedor, Repartidor o Repostero, con sus permisos |
 | Permiso | Seguridad | Acción permitida sobre un módulo |
 | Auditoría | Seguridad | Registro de cambios en usuarios y permisos, bloqueos y accesos denegados |
 | Sesion | Seguridad | Sesión abierta, con el hash de su token y su último uso |
@@ -595,7 +597,7 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 
 | Elemento | Casos de uso | Clases | Componentes | Estados | Regla o requisito |
 | --- | --- | --- | --- | --- | --- |
-| Roles fijos | Actores Cliente, Administrador, Vendedor, Repartidor | Usuario, Cliente, Personal, Rol, Permiso | Seguridad, IAutenticacion | Guardas \[con permiso\] | RN16, D6 |
+| Roles fijos | Actores Cliente, Administrador, Vendedor, Repartidor, Repostero | Usuario, Cliente, Personal, Rol, Permiso | Seguridad, IAutenticacion | Guardas \[con permiso\] | RN16, D6 |
 | Pedido | CU05, CU15, CU16, CU17 | Pedido, LineaPedido, HistorialEstado | E-commerce, IPedidos | Máquina del Pedido | RF13, RF43 |
 | Pago antes de preparar | CU06, CU07 | Pago, Verificacion | Cobros requiere IPedidos | Pagado lleva el pedido a Confirmado | RN05, D1 |
 | Rechazo de pago | CU07 alt. 1 y 2 | Verificacion.observacion | Cobros | En verificación a Rechazado, y un pago nuevo Pendiente de pago | RN07 |
@@ -622,6 +624,7 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | AsignacionEntrega | Clase nueva | Registrar cada cambio de repartidor (CU08, alt. 4) |
 | Componentes | Evento PedidoRegistrado | Cobros abre el pago sin que E-commerce dependa de Cobros |
 | Interfaces (v1.4) | Tabla de qué clase implementa cada interfaz del modelo de componentes. En el código se agregan IProductos, IStock, IPagos e IEntregas, que el diagrama ya tenía | El código no tenía cuatro de las seis interfaces; Pedidos leía el catálogo directamente y el catálogo leía las líneas de pedido |
+| Repostero (v1.4) | Actor nuevo en los casos de uso: prepara los pedidos (CU08) | Rol fijo agregado el 13/11/2026 (decisión D3 revisada) |
 | Estado del pago (v1.4) | Rechazado es un estado final; el sistema abre un pago nuevo | El diagrama decía que el mismo pago volvía a Pendiente de pago, y el de clases ya mostraba varios pagos por pedido |
 | ImagenProducto, Comprobante, QrMetodoPago (v1.4) | Clases nuevas en el diagrama, en lugar de los atributos imagen, comprobante y qr | Ya eran clases en el código: separan los archivos para no cargarlos en cada lectura |
 | LineaPedido, OpcionElegida, Pedido, Pago (v1.4) | Se agregan nombreProducto (copia), tipo, creado; esAsistido pasa a método | El diagrama no mostraba datos que el código ya guardaba |

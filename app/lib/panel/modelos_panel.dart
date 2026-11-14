@@ -47,7 +47,12 @@ class Movimiento {
   final DateTime fecha;
 }
 
-const nombresRol = {'ADMINISTRADOR': 'Administrador', 'VENDEDOR': 'Vendedor', 'REPARTIDOR': 'Repartidor'};
+const nombresRol = {
+  'ADMINISTRADOR': 'Administrador',
+  'VENDEDOR': 'Vendedor',
+  'REPARTIDOR': 'Repartidor',
+  'REPOSTERO': 'Repostero',
+};
 
 class CuentaPersonal {
   CuentaPersonal(this.id, this.nombre, this.correo, this.telefono, this.rol, this.activo, this.bloqueadoHasta);

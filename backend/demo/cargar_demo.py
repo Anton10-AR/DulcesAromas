@@ -253,6 +253,7 @@ PERSONAL = [
     ('Diego Flores Quispe', 'diego.flores@dulcesaromas.bo', '72234567', 'VENDEDOR'),
     ('Marco Vargas Llanos', 'marco.vargas@dulcesaromas.bo', '73345678', 'REPARTIDOR'),
     ('Rosa Cruz Mamani', 'rosa.cruz@dulcesaromas.bo', '74456789', 'REPARTIDOR'),
+    ('Ana Quispe Flores', 'ana.quispe@dulcesaromas.bo', '75567890', 'REPOSTERO'),
 ]
 
 # Los correos de clientes usan example.com, un dominio reservado: nunca llega un correo a nadie real.
@@ -432,6 +433,7 @@ def main():
     print('Listo. Todas las cuentas de demostración usan la contraseña de DEMO_CONTRASENA.')
     print('  Vendedores:   carla.mendoza@dulcesaromas.bo, diego.flores@dulcesaromas.bo')
     print('  Repartidores: marco.vargas@dulcesaromas.bo, rosa.cruz@dulcesaromas.bo')
+    print('  Repostera:    ana.quispe@dulcesaromas.bo')
     print('  Clientes:     ' + ', '.join(c[1] for c in CLIENTES))
 
 

@@ -64,7 +64,8 @@ class PedidosControlador {
 	 * @param desde y {@code hasta}: días de creación en formato aaaa-mm-dd, incluidos
 	 */
 	@GetMapping
-	@PreAuthorize("hasAnyAuthority('PEDIDOS_CONSULTAR', 'PEDIDOS_PREPARAR', 'DISTRIBUCION_ASIGNAR')")
+	// Con solo el permiso de preparar (el Repostero) no se ve esta lista, que trae nombres y montos: se usa Cocina.
+	@PreAuthorize("hasAnyAuthority('PEDIDOS_CONSULTAR', 'DISTRIBUCION_ASIGNAR')")
 	List<PedidoVista.Resumen> delPanel(@RequestParam(required = false) EstadoPedido estado,
 			@RequestParam(required = false) LocalDate desde, @RequestParam(required = false) LocalDate hasta) {
 		return servicio.delPanel(estado, desde, hasta);
@@ -96,14 +97,16 @@ class PedidosControlador {
 	/**
 	 * Quién prepara depende del permiso del rol (D3).
 	 */
+	// Devuelve el pedido completo, así que además del permiso de preparar pide el de consultar pedidos. El Repostero
+	// marca la preparación desde Cocina, que muestra solo lo necesario (RNF16).
 	@PostMapping("/{id}/en-preparacion")
-	@PreAuthorize("hasAuthority('PEDIDOS_PREPARAR')")
+	@PreAuthorize("hasAuthority('PEDIDOS_PREPARAR') and hasAuthority('PEDIDOS_CONSULTAR')")
 	PedidoVista enPreparacion(@PathVariable Long id) {
 		return servicio.avanzarPreparacion(id, EstadoPedido.EN_PREPARACION, autenticacion.usuarioActual());
 	}
 
 	@PostMapping("/{id}/listo")
-	@PreAuthorize("hasAuthority('PEDIDOS_PREPARAR')")
+	@PreAuthorize("hasAuthority('PEDIDOS_PREPARAR') and hasAuthority('PEDIDOS_CONSULTAR')")
 	PedidoVista listo(@PathVariable Long id) {
 		return servicio.avanzarPreparacion(id, EstadoPedido.LISTO, autenticacion.usuarioActual());
 	}

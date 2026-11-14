@@ -110,7 +110,7 @@ pip install pillow
 python demo/cargar_demo.py
 ```
 
-Carga 14 productos en 4 categorías, inventario con alertas, dos vendedores, dos repartidores, cuatro clientes y 12 pedidos que recorren todos los estados (entregado, en camino, entrega fallida, pago rechazado, cancelado, pedido asistido…). Todas las cuentas usan la contraseña de `DEMO_CONTRASENA`; los correos de clientes usan el dominio reservado `example.com`. Si la base ya tiene catálogo, el script no carga nada.
+Carga 14 productos en 4 categorías, inventario con alertas, dos vendedores, dos repartidores, una repostera, cuatro clientes y 12 pedidos que recorren todos los estados (entregado, en camino, entrega fallida, pago rechazado, cancelado, pedido asistido…). Todas las cuentas usan la contraseña de `DEMO_CONTRASENA`; los correos de clientes usan el dominio reservado `example.com`. Si la base ya tiene catálogo, el script no carga nada.
 
 Para empezar de cero, detén la API, recrea el esquema y vuelve a arrancarla:
 
@@ -138,8 +138,9 @@ Antes de subir cambios en la app, aplica el formato con `dart format lib test` (
 | Administrador | Panel | Acceso total. Es el único con acceso a Seguridad |
 | Vendedor | Panel | Atiende pedidos y pagos, registra pedidos asistidos y asigna repartidores. Verifica pagos y marca la preparación solo con ese permiso |
 | Repartidor | Panel | Ve y actualiza solo sus propias entregas |
+| Repostero | Panel | Prepara los pedidos desde Cocina: marca En preparación y Listo. No ve datos personales ni montos del cliente |
 
-Los roles son fijos; el administrador edita los permisos del Vendedor y del Repartidor. La matriz completa está en la sección 8 de [docs/02-casos-de-uso.md](docs/02-casos-de-uso.md).
+Los roles son fijos; el administrador edita los permisos del Vendedor, del Repartidor y del Repostero. La matriz completa está en la sección 8 de [docs/02-casos-de-uso.md](docs/02-casos-de-uso.md).
 
 ## Despliegue en la nube (RNF21)
 

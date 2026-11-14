@@ -185,6 +185,49 @@ void main() {
     expect(find.text('Hola, Luz'), findsNothing);
   });
 
+  testWidgets('D3: el Repostero ve Cocina, no la lista de pedidos, y marca la preparación', (tester) async {
+    final pedido = {
+      'id': 7,
+      'estado': 'CONFIRMADO',
+      'tipoEntrega': 'RECOJO',
+      'horarioEntrega': '2026-11-15T14:00:00Z',
+      'lineas': [
+        {
+          'producto': 'Torta de chocolate',
+          'cantidad': 2,
+          'opciones': ['Grande', 'Frutilla'],
+          'mensaje': 'Feliz cumple',
+        },
+      ],
+    };
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'REPOSTERO',
+        permisos: ['INICIO_PENDIENTES', 'PEDIDOS_PREPARAR', 'INVENTARIO_CONSULTAR'],
+        respuestas: {
+          '/api/cocina': [pedido],
+        },
+      ),
+    );
+
+    for (final visible in ['Cocina', 'Inventario', 'Mi perfil']) {
+      expect(enMenu(visible), findsOneWidget, reason: visible);
+    }
+    for (final oculto in ['Pedidos', 'Verificar pagos', 'Entregas', 'Reportes']) {
+      expect(enMenu(oculto), findsNothing, reason: oculto);
+    }
+    expect(find.text('Pedidos por preparar'), findsOneWidget);
+
+    await tester.tap(enMenu('Cocina'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 × Torta de chocolate'), findsOneWidget);
+    expect(find.text('Grande · Frutilla'), findsOneWidget);
+    expect(find.text('Mensaje sobre la torta: «Feliz cumple»'), findsOneWidget);
+    expect(find.text('Empezar a preparar'), findsOneWidget);
+  });
+
   test('las iniciales salen de las dos primeras palabras del nombre', () {
     expect(iniciales('Luz Yumara Morejon'), 'LY');
     expect(iniciales(' carla  mendoza '), 'CM');

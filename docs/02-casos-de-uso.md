@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.4 · 13/11/2026
+Versión 1.5 · 13/11/2026
 
 ## 1. Introducción y actores
 
@@ -20,6 +20,7 @@ Cada caso de uso usa la misma plantilla que el documento v0: ID, versión, nombr
 | Administrador | Acceso total. Gestiona usuarios, permisos, catálogo, inventario, pagos y reportes. Lo crea otro administrador | Panel |
 | Vendedor | Atiende pedidos y pagos, registra pedidos asistidos y asigna repartidores. Marca la preparación y verifica pagos solo si tiene el permiso. Lo crea el administrador | Panel |
 | Repartidor | Ve y actualiza solo sus entregas. Lo crea el administrador | Panel |
+| Repostero | Prepara los pedidos: ve en Cocina qué hay que hacer y para cuándo, y marca En preparación y Listo. No ve datos personales ni montos del cliente. Lo crea el administrador | Panel |
 | Sistema | Ejecuta pasos automáticos, como cambiar un estado o registrar la auditoría | — |
 
 Las funciones que el documento v0 llamaba «Encargado de inventario», «Encargado de cobranza» y «Encargado de distribución» son ahora permisos de los roles fijos (decisión D6). El rol «Empleado» de otros documentos se llama «Vendedor» (D11).
@@ -41,8 +42,8 @@ El pedido y el pago tienen cada uno su propio estado. El pedido pasa a Confirmad
 | --- | --- | --- | --- | --- |
 | Pedido: Pendiente | El pago pasa a Pagado | Confirmado | Sistema, tras CU07 | CU07 |
 | Pedido: Pendiente o Confirmado | Se cancela | Cancelado | Cliente o personal | CU16 |
-| Pedido: Confirmado | Comienza la preparación | En preparación | Administrador, o Vendedor con permiso | CU08 |
-| Pedido: En preparación | Termina la preparación | Listo | Administrador, o Vendedor con permiso | CU08 |
+| Pedido: Confirmado | Comienza la preparación | En preparación | Repostero, Administrador, o Vendedor con permiso | CU08 |
+| Pedido: En preparación | Termina la preparación | Listo | Repostero, Administrador, o Vendedor con permiso | CU08 |
 | Pedido: Listo | Sale con repartidor (delivery) | En camino | Vendedor o Repartidor | CU08 |
 | Pedido: Listo | El cliente retira (recojo) | Entregado | Vendedor | CU08 |
 | Pedido: En camino | El repartidor confirma la entrega | Entregado | Repartidor | CU08 |
@@ -96,7 +97,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | E-commerce | CU10 | Consultar pedidos y ventas | Administrador | Media | v0, ajustado |
 | Cobros | CU06 | Registrar pago | Cliente | Alta | v0, ajustado |
 | Cobros | CU07 | Verificar pago | Administrador, Vendedor con permiso | Alta | v0, ajustado |
-| Distribución | CU08 | Gestionar entrega | Administrador, Vendedor, Repartidor | Alta | v0, ajustado |
+| Distribución | CU08 | Gestionar entrega | Administrador, Vendedor, Repartidor, Repostero | Alta | v0, ajustado |
 
 ## 4. Módulo Seguridad
 
@@ -105,7 +106,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Campo | Contenido |
 | --- | --- |
 | ID / versión | CU01 / 1.0 |
-| Actor principal | Cliente, Administrador, Vendedor, Repartidor |
+| Actor principal | Cliente, Administrador, Vendedor, Repartidor, Repostero |
 | Fuente | RF02, RF03, RF26, RF27 |
 | Prioridad | Alta |
 | Objetivo | Acceder al sistema con la cuenta propia y salir de forma segura |
@@ -431,43 +432,43 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Campo | Contenido |
 | --- | --- |
 | ID / versión | CU08 / 1.0 |
-| Actor principal | Administrador o Vendedor (preparan y asignan), Repartidor (sus entregas) |
+| Actor principal | Repostero (prepara), Administrador o Vendedor (asignan; preparan con permiso), Repartidor (sus entregas) |
 | Fuente | RF21, RF40, RF41, RF42, RF43 |
 | Prioridad | Alta |
 | Objetivo | Llevar el pedido confirmado hasta su entrega |
 | Descripción | El personal marca la preparación, asigna un repartidor a los pedidos con delivery y el Repartidor marca En camino y Entregado. El recojo en tienda lo cierra el Vendedor |
 | Precondición | El pedido está Confirmado (pago Pagado) |
 | Postcondición | El pedido queda Entregado, o vuelve a Listo si la entrega falló. Cada cambio queda en el historial |
-| Secuencia normal | 1. El administrador, o el Vendedor con permiso, marca En preparación y luego Listo. 2. Si es delivery, el Vendedor o el Administrador asigna un repartidor. 3. El Repartidor ve el pedido con dirección y teléfono y marca En camino. 4. Entrega y marca Entregado. 5. El sistema guarda cada cambio con usuario y fecha. Si es recojo: el Vendedor marca Entregado cuando el cliente retira |
+| Secuencia normal | 1. El Repostero, desde Cocina, ve los pedidos Confirmados por horario de entrega y marca En preparación y luego Listo; también puede hacerlo el Administrador, o el Vendedor con permiso. 2. Si es delivery, el Vendedor o el Administrador asigna un repartidor. 3. El Repartidor ve el pedido con dirección y teléfono y marca En camino. 4. Entrega y marca Entregado. 5. El sistema guarda cada cambio con usuario y fecha. Si es recojo: el Vendedor marca Entregado cuando el cliente retira |
 | Secuencia opcional | Alt. 1: pedido sin pago aprobado. El sistema no permite prepararlo (RN05). Alt. 2: la entrega falla. El Repartidor registra una observación y el pedido vuelve a Listo (RN13), para reasignar o reintentar. Alt. 3: el Repartidor intenta abrir un pedido que no es suyo. El sistema lo niega (RNF16). Alt. 4: se cambia el repartidor antes de En camino. El sistema registra el cambio |
 | Rendimiento | 2 s o menos por cambio de estado |
 | Frecuencia | Diaria |
 | Importancia | Alta |
 | Urgencia | Alta |
-| Observaciones | Quien marca la preparación depende del permiso del rol (D3). La tarifa de envío es fija (D4) |
+| Observaciones | Quien marca la preparación depende del permiso del rol (D3): el Repostero lo tiene; el Vendedor, solo si se le da. Cocina muestra productos, opciones, mensaje y horario, sin nombre, teléfono, dirección ni montos del cliente (RNF16). La tarifa de envío es fija (D4) |
 
 ## 8. Matriz de permisos por rol
 
-«Sí» significa permitido. El administrador puede editar los permisos del Vendedor y del Repartidor (CU09), salvo el acceso a Seguridad: es solo del administrador, no se da a otro rol y no se le quita (RN04).
+«Sí» significa permitido. El administrador puede editar los permisos del Vendedor, del Repartidor y del Repostero (CU09), salvo el acceso a Seguridad: es solo del administrador, no se da a otro rol y no se le quita (RN04).
 
-| Permiso | Administrador | Vendedor | Repartidor | CU |
-| --- | --- | --- | --- | --- |
-| Inicio con montos de ventas | Sí | No | No | CU10 |
-| Inicio con pedidos y pagos pendientes | Sí | Sí | No | CU10 |
-| Catálogo: crear, editar, desactivar | Sí | No | No | CU02, CU14 |
-| Catálogo: consultar y cambiar disponibilidad | Sí | Sí | No | CU02 |
-| Inventario: consultar y ver alertas | Sí | Sí | No | CU03 |
-| Inventario: registrar movimientos | Sí | No | No | CU03 |
-| Pedidos: consultar y registrar pedido asistido | Sí | Sí | No | CU10, CU17 |
-| Pedidos: cancelar | Sí | Sí | No | CU16 |
-| Pedidos: marcar preparación y Listo | Sí | Solo con permiso | No | CU08 |
-| Cobranza: registrar pago de un pedido asistido | Sí | Sí | No | CU06 |
-| Cobranza: aprobar o rechazar pago | Sí | Solo con el permiso «Verificar pagos» | No | CU07 |
-| Distribución: asignar repartidor, marcar En camino y cerrar un recojo | Sí | Sí | No | CU08 |
-| Distribución: actualizar entregas | Sí | No | Sí, solo las suyas | CU08 |
-| Reportes de pedidos y ventas | Sí | No | No | CU10 |
-| Seguridad: usuarios y permisos | Sí | No | No | CU09 |
-| Configuración: tarifa de envío y métodos de pago | Sí | No | No | CU05, CU06 |
+| Permiso | Administrador | Vendedor | Repartidor | Repostero | CU |
+| --- | --- | --- | --- | --- | --- |
+| Inicio con montos de ventas | Sí | No | No | No | CU10 |
+| Inicio con pedidos y pagos pendientes | Sí | Sí | No | Sí, los pedidos por preparar | CU10 |
+| Catálogo: crear, editar, desactivar | Sí | No | No | No | CU02, CU14 |
+| Catálogo: consultar y cambiar disponibilidad | Sí | Sí | No | No | CU02 |
+| Inventario: consultar y ver alertas | Sí | Sí | No | Sí | CU03 |
+| Inventario: registrar movimientos | Sí | No | No | No | CU03 |
+| Pedidos: consultar y registrar pedido asistido | Sí | Sí | No | No | CU10, CU17 |
+| Pedidos: cancelar | Sí | Sí | No | No | CU16 |
+| Pedidos: marcar preparación y Listo | Sí | Solo con permiso | No | Sí, desde Cocina | CU08 |
+| Cobranza: registrar pago de un pedido asistido | Sí | Sí | No | No | CU06 |
+| Cobranza: aprobar o rechazar pago | Sí | Solo con el permiso «Verificar pagos» | No | No | CU07 |
+| Distribución: asignar repartidor, marcar En camino y cerrar un recojo | Sí | Sí | No | No | CU08 |
+| Distribución: actualizar entregas | Sí | No | Sí, solo las suyas | No | CU08 |
+| Reportes de pedidos y ventas | Sí | No | No | No | CU10 |
+| Seguridad: usuarios y permisos | Sí | No | No | No | CU09 |
+| Configuración: tarifa de envío y métodos de pago | Sí | No | No | No | CU05, CU06 |
 
 El Vendedor que registró un pedido asistido no puede verificar el pago de ese mismo pedido (RN06). El Cliente no usa el Panel; solo accede a la Tienda (CU04, CU05, CU06, CU13, CU15, CU16).
 
@@ -525,6 +526,7 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 | RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
 | CU05, CU17 (v1.3) | Si el producto ofrece tamaños, elegir uno es obligatorio; sin él, el pedido de una torta queda incompleto |
+| Actores, tabla 2.2, CU08, matriz (v1.5) | Nuevo rol fijo Repostero, que prepara los pedidos desde Cocina | Con tres roles, quien prepara necesitaba una cuenta de Vendedor, que también cobra y cancela. Lo observó el docente |
 | Tabla 2.2, CU07 (v1.4) | Un pago rechazado no vuelve a Pendiente de pago: queda Rechazado y el sistema abre un pago nuevo. Las verificaciones se guardan en su propia tabla, no en la auditoría de cuentas | Así lo hace el sistema: conserva cada comprobante y su motivo de rechazo |
 
 ## 10. Decisiones de implementación
@@ -544,6 +546,7 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. El equ
 | Borrar productos (RN10) | Un producto sin pedidos se puede borrar; uno con pedidos solo se desactiva |
 | Sesión de la Tienda | Se cierra tras 30 días sin uso (el Panel, tras 30 minutos, según RNF06) |
 | Permiso de Seguridad (RN04) | Es solo del administrador: no se da a otro rol ni se le quita |
+| Rol Repostero (D3, revisada el 13/11/2026) | Rol fijo de personal que prepara los pedidos desde Cocina. El Vendedor marca la preparación solo si el administrador le da el permiso. Quien solo prepara no ve la lista ni el detalle completo de los pedidos |
 | Cambio del propio rol | Un administrador no puede cambiar su propio rol |
 | Cuenta desactivada | Al ingresar recibe el mismo mensaje que con datos incorrectos |
 | Imágenes y comprobantes | Se guardan en la base de datos, para desplegar en la nube sin disco propio (RNF21) |

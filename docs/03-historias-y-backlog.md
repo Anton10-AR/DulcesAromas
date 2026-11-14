@@ -1,6 +1,6 @@
 # Dulces Aromas — Historias de Usuario y Product Backlog v1
 
-Versión 1.0 · 29/10/2026
+Versión 1.1 · 13/11/2026
 
 ## 1. Introducción
 
@@ -32,7 +32,7 @@ Las historias se agrupan por módulo. HU01 a HU14 conservan la numeración de la
 | HU01 | Como usuario, quiero iniciar sesión con mi correo y contraseña, para acceder a las funciones de mi rol | 1) Con credenciales válidas entro a la Tienda (cliente) o al Panel (personal). 2) Con credenciales incorrectas veo un mensaje general sin saber qué dato falló. 3) Una cuenta desactivada no entra. 4) Tras 5 intentos fallidos la cuenta se bloquea 15 minutos | CU01 / RF02, RF27 | Alta | 5 |
 | HU02 | Como usuario, quiero cerrar sesión, para proteger mi cuenta | 1) Al cerrar sesión vuelvo al inicio. 2) Con el botón Atrás no veo páginas privadas. 3) En el Panel, la sesión se cierra sola tras 30 minutos sin uso | CU01 / RF03 | Alta | 2 |
 | HU03 | Como administrador, quiero crear, editar, activar y desactivar cuentas de personal, para controlar quién usa el Panel | 1) Creo una cuenta con nombre, correo, rol y contraseña inicial. 2) No se repite un correo. 3) Una cuenta desactivada conserva su historial. 4) No puedo desactivar mi propia cuenta ni al último administrador. 5) Cada cambio queda en la auditoría | CU09 / RF22, RF28 | Alta | 5 |
-| HU04 | Como administrador, quiero ver los roles base (Administrador, Vendedor, Repartidor) y asignarlos a las cuentas de personal, para que cada persona tenga el rol que le corresponde | 1) Veo los tres roles con su descripción y sus permisos actuales. 2) Asigno o cambio el rol de una cuenta. 3) No existe la opción de crear roles nuevos. 4) Un cliente no puede recibir un rol de personal | CU09 / RF22, RF26 | Alta | 3 |
+| HU04 | Como administrador, quiero ver los roles base (Administrador, Vendedor, Repartidor, Repostero) y asignarlos a las cuentas de personal, para que cada persona tenga el rol que le corresponde | 1) Veo los tres roles con su descripción y sus permisos actuales. 2) Asigno o cambio el rol de una cuenta. 3) No existe la opción de crear roles nuevos. 4) Un cliente no puede recibir un rol de personal | CU09 / RF22, RF26 | Alta | 3 |
 | HU05 | Como administrador, quiero editar los permisos de cada rol base, para ajustar lo que puede hacer cada uno | 1) Marco o desmarco permisos por módulo y acción. 2) El cambio rige en el siguiente inicio de sesión o antes. 3) El administrador siempre conserva el acceso a Seguridad. 4) El cambio queda en la auditoría | CU09 / RF25, RF28 | Alta | 5 |
 | HU06 | Como usuario del sistema, quiero ver y ejecutar solo lo que mi rol permite, para evitar accesos indebidos | 1) El menú muestra solo lo permitido. 2) Una URL directa a una pantalla no permitida devuelve «acceso denegado» y se registra. 3) El Repartidor solo ve sus entregas. 4) El servidor valida cada acción | CU01, CU09 / RF26 | Alta | 5 |
 | HU15 | Como visitante, quiero registrarme como cliente, para poder hacer pedidos | 1) Me registro con nombre, correo y contraseña de 8 caracteres o más con letra y número. 2) Si el correo ya existe, me ofrece iniciar sesión o recuperar la contraseña. 3) Al terminar entro con sesión iniciada | CU11 / RF01 | Alta | 3 |
@@ -122,6 +122,7 @@ Si el tiempo no alcanza, las etapas A a D forman el núcleo: permiten comprar, p
 | HU04 y HU05 | Crear y administrar roles | HU04 ver y asignar roles base; HU05 editar sus permisos. No se crean roles nuevos |
 | HU07 y HU08 | Prioridad Media | Prioridad Alta, porque no hay pedido sin productos |
 | HU08, HU09 y HU13 | Actor «empleado autorizado» o «responsable de distribución» | Actores concretos: Administrador, Vendedor y Repartidor |
+| HU04 y HU13 (v1.1) | Tres roles de personal | Se agrega el Repostero, que prepara los pedidos desde Cocina (decisión D3 revisada el 13/11/2026) |
 | Criterios de aceptación | Solo para las historias del Sprint 1 | Para las 21 historias, con valores medibles |
 | Puntos | Dos columnas con la misma etiqueta pero distinta escala (27 contra 52) | Una sola escala de puntos por historia; las tareas no se estiman |
 | Sprints | Sprint 1 con 14 tareas | Sin sprints; etapas A a E por dependencia |

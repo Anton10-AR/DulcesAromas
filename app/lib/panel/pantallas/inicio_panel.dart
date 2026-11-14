@@ -38,6 +38,7 @@ class Acceso {
 /// Qué se hace en cada sección, para los accesos rápidos.
 const _descripciones = {
   '/pedidos': 'Ver, preparar y entregar pedidos.',
+  '/cocina': 'Lo que hay que preparar y para cuándo.',
   '/pagos': 'Aprobar o rechazar comprobantes.',
   '/entregas': 'Asignar repartidores a los delivery.',
   '/mis-entregas': 'Tus entregas, con dirección y teléfono.',
@@ -102,15 +103,24 @@ class _InicioPanelState extends State<InicioPanel> {
     final ahora = aLaPaz(DateTime.now());
     final hoy = DateFormat('yyyy-MM-dd').format(ahora);
     final haceUnMes = DateFormat('yyyy-MM-dd').format(ahora.subtract(const Duration(days: 30)));
-    final vePedidos = ['PEDIDOS_CONSULTAR', 'PEDIDOS_PREPARAR', 'DISTRIBUCION_ASIGNAR'].any(usuario.puede);
+    final vePedidos = ['PEDIDOS_CONSULTAR', 'DISTRIBUCION_ASIGNAR'].any(usuario.puede);
     setState(() {
       _pendientes = [
         if (usuario.puede('COBRANZA_VERIFICAR'))
           contar('Pagos por verificar', '/api/pagos/en-verificacion', '/pagos', Icons.fact_check_outlined, Tono.ambar),
+        // Cocina trae los Confirmados y los En preparación; por preparar son los que nadie empezó.
         if (usuario.puede('PEDIDOS_PREPARAR'))
-          contar('Pedidos por preparar', '/api/pedidos', '/pedidos', Icons.cake_outlined, Tono.azul, {
-            'estado': 'CONFIRMADO',
-          }),
+          api
+              .get('/api/cocina')
+              .then(
+                (j) => Pendiente(
+                  'Pedidos por preparar',
+                  (j as List).where((p) => (p as Json)['estado'] == 'CONFIRMADO').length,
+                  '/cocina',
+                  Icons.soup_kitchen_outlined,
+                  Tono.azul,
+                ),
+              ),
         if (usuario.puede('DISTRIBUCION_ASIGNAR'))
           contar('Pedidos listos para entregar', '/api/pedidos', '/pedidos', Icons.inventory_outlined, Tono.verde, {
             'estado': 'LISTO',
