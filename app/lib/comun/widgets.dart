@@ -247,6 +247,39 @@ class _SaltoAlContenidoState extends State<SaltoAlContenido> {
   }
 }
 
+/// Una lista dentro de una tarjeta blanca, con una línea suave entre filas, como en el resto del Panel. Se desliza
+/// como una lista normal, así funciona con «deslizar para actualizar».
+class ListaEnTarjeta extends StatelessWidget {
+  const ListaEnTarjeta({super.key, this.padding, required this.itemCount, required this.itemBuilder});
+
+  final EdgeInsetsGeometry? padding;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: padding,
+      children: [
+        if (itemCount > 0)
+          Card(
+            margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: ListView.separated(
+              shrinkWrap: true,
+              primary: false,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: itemCount,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: itemBuilder,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Fila de una lista con acciones a la derecha. En pantallas angostas las acciones bajan debajo del texto, para que
 /// el nombre no quede partido letra por letra (RNF12).
 class FilaConAcciones extends StatelessWidget {

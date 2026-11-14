@@ -131,6 +131,22 @@ class _PedidoPanelState extends State<PedidoPanel> {
                   _productos(pedido),
                   const Divider(height: 32),
                   _historial(pedido),
+                  // Cancelar no se deshace: va al final, separado de las acciones del día a día.
+                  if (pedido.cancelable && _usuario.puede('PEDIDOS_CANCELAR')) ...[
+                    const Divider(height: 48),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          side: BorderSide(color: Theme.of(context).colorScheme.error),
+                        ),
+                        onPressed: _ocupado ? null : _cancelar,
+                        icon: const Icon(Icons.cancel_outlined),
+                        label: const Text('Cancelar pedido'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -183,8 +199,6 @@ class _PedidoPanelState extends State<PedidoPanel> {
         boton('Sale en camino', () => _api.post('/api/entregas/${p.id}/en-camino'), 'Pedido en camino.'),
       if (p.asistido && p.estado == 'PENDIENTE' && pagoPendiente && u.puede('COBRANZA_REGISTRAR'))
         FilledButton.tonal(onPressed: _ocupado ? null : _registrarPago, child: const Text('Registrar pago')),
-      if (p.cancelable && u.puede('PEDIDOS_CANCELAR'))
-        OutlinedButton(onPressed: _ocupado ? null : _cancelar, child: const Text('Cancelar pedido')),
     ];
   }
 

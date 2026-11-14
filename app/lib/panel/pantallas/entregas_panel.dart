@@ -45,10 +45,9 @@ class _EntregasPanelState extends State<EntregasPanel> {
               ),
             );
           }
-          return ListView.separated(
+          return ListaEnTarjeta(
             padding: const EdgeInsets.all(16),
             itemCount: entregas.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (_, i) {
               final e = entregas[i];
               return ListTile(

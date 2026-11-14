@@ -191,10 +191,9 @@ class _InventarioPanelState extends State<InventarioPanel> {
                 if (items.isEmpty) {
                   return Center(child: Text(_soloAlertas ? 'No hay alertas.' : 'Todavía no hay insumos.'));
                 }
-                return ListView.separated(
+                return ListaEnTarjeta(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
                   itemCount: items.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final item = items[i];
                     return FilaConAcciones(

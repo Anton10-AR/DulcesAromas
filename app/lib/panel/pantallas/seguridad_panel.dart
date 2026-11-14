@@ -155,17 +155,26 @@ class _PersonalState extends State<_Personal> {
       body: Cargador(
         futuro: _cuentas,
         reintentar: _cargar,
-        constructor: (context, cuentas) => ListView.separated(
+        constructor: (context, cuentas) => ListaEnTarjeta(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
           itemCount: cuentas.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (_, i) {
             final c = cuentas[i];
             return FilaConAcciones(
               titulo: Text('${c.nombre}${c.activo ? '' : ' (desactivada)'}'),
-              subtitulo: Text(
-                '${nombresRol[c.rol]} · ${c.correo}'
-                '${c.bloqueadoHasta != null && c.bloqueadoHasta!.isAfter(DateTime.now()) ? ' · Bloqueada hasta ${fechaHora(c.bloqueadoHasta!)}' : ''}',
+              subtitulo: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Etiqueta(nombresRol[c.rol] ?? c.rol),
+                    Text(c.correo),
+                    if (c.bloqueadoHasta != null && c.bloqueadoHasta!.isAfter(DateTime.now()))
+                      Text('Bloqueada hasta ${fechaHora(c.bloqueadoHasta!)}'),
+                  ],
+                ),
               ),
               acciones: [
                 IconButton(
@@ -323,10 +332,9 @@ class _AuditoriaState extends State<_Auditoria> {
         return Column(
           children: [
             Expanded(
-              child: ListView.separated(
+              child: ListaEnTarjeta(
                 padding: const EdgeInsets.all(16),
                 itemCount: registros.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (_, i) {
                   final r = registros[i];
                   return ListTile(

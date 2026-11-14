@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
+import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
 import 'dialogos.dart';
 
@@ -122,10 +123,7 @@ class _PagosPanelState extends State<PagosPanel> {
                       children: [
                         Row(
                           children: [
-                            TextButton(
-                              onPressed: () => context.go('/pedidos/${p.pedidoId}'),
-                              child: Text('Pedido #${p.pedidoId}'),
-                            ),
+                            Text('Pedido #${p.pedidoId}', style: textos.titleMedium),
                             const Spacer(),
                             Text(bolivianos(p.monto), style: textos.titleLarge),
                           ],
@@ -139,6 +137,13 @@ class _PagosPanelState extends State<PagosPanel> {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
+                            // Qué se pidió, antes de aprobar.
+                            if (context.read<Sesion>().usuario!.puede('PEDIDOS_CONSULTAR'))
+                              OutlinedButton.icon(
+                                onPressed: () => context.go('/pedidos/${p.pedidoId}'),
+                                icon: const Icon(Icons.receipt_long_outlined),
+                                label: Text('Ver pedido #${p.pedidoId}'),
+                              ),
                             OutlinedButton.icon(
                               onPressed: () => _verComprobante(p),
                               icon: const Icon(Icons.receipt_outlined),

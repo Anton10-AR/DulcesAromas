@@ -125,7 +125,8 @@ class _InicioPanelState extends State<InicioPanel> {
           contar('Pedidos listos para entregar', '/api/pedidos', '/pedidos', Icons.inventory_outlined, Tono.verde, {
             'estado': 'LISTO',
           }),
-        if (usuario.puede('DISTRIBUCION_ENTREGAS'))
+        // Solo el Repartidor tiene entregas propias; el administrador las ve todas en Entregas.
+        if (usuario.rol == 'REPARTIDOR' && usuario.puede('DISTRIBUCION_ENTREGAS'))
           contar(
             'Mis entregas abiertas',
             '/api/entregas/mias',

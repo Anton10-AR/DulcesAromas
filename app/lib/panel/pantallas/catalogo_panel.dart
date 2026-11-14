@@ -93,23 +93,32 @@ class _ProductosState extends State<_Productos> {
         reintentar: _cargar,
         constructor: (context, productos) {
           if (productos.isEmpty) return const Center(child: Text('Todavía no hay productos.'));
-          return ListView.separated(
+          return ListaEnTarjeta(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
             itemCount: productos.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (_, i) {
               final p = productos[i];
               return ListTile(
                 onTap: widget.gestiona ? () => context.go('/catalogo/${p.id}') : null,
-                title: Text('${p.nombre}${p.activo ? '' : ' (desactivado)'}'),
-                subtitle: Text('${p.categoria.nombre} · ${bolivianos(p.precio)}'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(p.disponible ? 'Disponible' : 'No disponible'),
-                    Switch(value: p.disponible, onChanged: puedeDisponibilidad ? (v) => _disponibilidad(p, v) : null),
-                  ],
+                // Desactivado, no se ve en la Tienda: la disponibilidad no importa hasta reactivarlo.
+                enabled: p.activo || widget.gestiona,
+                title: Text(
+                  p.nombre,
+                  style: p.activo ? null : TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
+                subtitle: Text('${p.categoria.nombre} · ${bolivianos(p.precio)}'),
+                trailing: p.activo
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(p.disponible ? 'Disponible' : 'No disponible'),
+                          Switch(
+                            value: p.disponible,
+                            onChanged: puedeDisponibilidad ? (v) => _disponibilidad(p, v) : null,
+                          ),
+                        ],
+                      )
+                    : const Etiqueta('Desactivado'),
               );
             },
           );
@@ -200,10 +209,9 @@ class _CategoriasState extends State<_Categorias> {
       body: Cargador(
         futuro: _categorias,
         reintentar: _cargar,
-        constructor: (context, categorias) => ListView.separated(
+        constructor: (context, categorias) => ListaEnTarjeta(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
           itemCount: categorias.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
           itemBuilder: (_, i) {
             final c = categorias[i];
             return ListTile(

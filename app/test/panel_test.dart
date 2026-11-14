@@ -284,6 +284,10 @@ void main() {
     for (final seccion in ['Inventario', 'Reportes', 'Seguridad', 'Configuración', 'Verificar pagos']) {
       expect(enMenu(seccion), findsOneWidget, reason: seccion);
     }
+    // Tiene el permiso de actualizar entregas, pero no reparte: ve todas en Entregas, no «Mis entregas».
+    expect(enMenu('Entregas'), findsOneWidget);
+    expect(enMenu('Mis entregas'), findsNothing);
+    expect(find.text('Mis entregas abiertas'), findsNothing);
   });
 
   testWidgets('RN04: Seguridad es solo del administrador y no se le quita', (tester) async {

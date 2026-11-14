@@ -69,10 +69,9 @@ class _PedidosPanelState extends State<PedidosPanel> {
               reintentar: _cargar,
               constructor: (context, pedidos) {
                 if (pedidos.isEmpty) return const Center(child: Text('No hay pedidos en este estado.'));
-                return ListView.separated(
+                return ListaEnTarjeta(
                   padding: const EdgeInsets.all(16),
                   itemCount: pedidos.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (_, i) {
                     final p = pedidos[i];
                     return ListTile(

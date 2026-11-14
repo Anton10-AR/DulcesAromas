@@ -29,14 +29,19 @@ import 'pantallas/seguridad_panel.dart';
 /// Una sección del menú del Panel y los permisos que la muestran. Mostrarla o no es comodidad: el servidor
 /// valida igual cada acción (HU06, RNF07).
 class Seccion {
-  const Seccion(this.ruta, this.titulo, this.icono, this.permisos);
+  const Seccion(this.ruta, this.titulo, this.icono, this.permisos, {this.rol});
 
   final String ruta;
   final String titulo;
   final IconData icono;
   final List<String> permisos;
 
-  bool visiblePara(Usuario usuario) => permisos.isEmpty || permisos.any(usuario.puede);
+  /// Si la sección es de un rol en particular: «Mis entregas» es del Repartidor, aunque el administrador también
+  /// tenga el permiso de actualizar entregas.
+  final String? rol;
+
+  bool visiblePara(Usuario usuario) =>
+      (rol == null || usuario.rol == rol) && (permisos.isEmpty || permisos.any(usuario.puede));
 }
 
 const secciones = [
@@ -47,7 +52,9 @@ const secciones = [
   Seccion('/cocina', 'Cocina', Icons.soup_kitchen_outlined, ['PEDIDOS_PREPARAR']),
   Seccion('/pagos', 'Verificar pagos', Icons.fact_check_outlined, ['COBRANZA_VERIFICAR']),
   Seccion('/entregas', 'Entregas', Icons.local_shipping_outlined, ['DISTRIBUCION_ASIGNAR']),
-  Seccion('/mis-entregas', 'Mis entregas', Icons.delivery_dining_outlined, ['DISTRIBUCION_ENTREGAS']),
+  Seccion('/mis-entregas', 'Mis entregas', Icons.delivery_dining_outlined, [
+    'DISTRIBUCION_ENTREGAS',
+  ], rol: 'REPARTIDOR'),
   Seccion('/catalogo', 'Catálogo', Icons.cake_outlined, ['CATALOGO_GESTIONAR', 'CATALOGO_DISPONIBILIDAD']),
   Seccion('/inventario', 'Inventario', Icons.inventory_2_outlined, ['INVENTARIO_CONSULTAR', 'INVENTARIO_MOVIMIENTOS']),
   Seccion('/reportes', 'Reportes', Icons.bar_chart_outlined, ['REPORTES']),
