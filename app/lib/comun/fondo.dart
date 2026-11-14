@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'tema.dart';
 
 /// El fondo de las pantallas: el color del tema con un brillo rosa arriba a la derecha, un tono cálido abajo a la
-/// izquierda, una trama de puntos y dibujos de línea de postres (cuatro a cada lado en pantallas anchas, tres en el
-/// teléfono). Es decoración y queda fija mientras el contenido se desliza. Los colores están elegidos para que el
+/// izquierda, una trama de puntos y dibujos de línea de postres: en pantallas anchas, un patrón que cubre toda la
+/// pantalla; en el teléfono, tres. Es decoración y queda fija mientras el contenido se desliza. Los colores están elegidos para que el
 /// texto que cae encima, incluso sobre un trazo, llegue a 4.5:1 (RNF20); `tema_test` lo comprueba.
 class FondoDecorado extends StatelessWidget {
   const FondoDecorado({super.key, required this.child, this.reservaIzquierda = 0});
@@ -31,7 +31,7 @@ class FondoDecorado extends StatelessWidget {
   static Color trazo(bool oscuro) =>
       oscuro ? Colores.rosaMedio.withValues(alpha: 0.16) : Colores.rosa.withValues(alpha: 0.18);
 
-  /// Desde este ancho van cuatro dibujos a cada lado; por debajo, tres en total.
+  /// Desde este ancho los dibujos forman un patrón en toda la pantalla; por debajo, van tres.
   static const anchoEscritorio = 900.0;
 
   @override
@@ -65,8 +65,8 @@ class FondoDecorado extends StatelessWidget {
   }
 }
 
-/// Un dibujo del fondo: cuál, dónde (en fracciones del área libre) y su giro en grados.
-typedef _Dibujo = (void Function(Canvas, Paint) dibujo, double x, double y, double giro);
+/// Un dibujo del fondo: cuál, dónde (en fracciones del área libre), su giro en grados y su escala.
+typedef _Dibujo = (void Function(Canvas, Paint) dibujo, double x, double y, double giro, double escala);
 
 class _Decoracion extends CustomPainter {
   const _Decoracion({
@@ -86,21 +86,18 @@ class _Decoracion extends CustomPainter {
   /// Distancia entre los puntos de la trama.
   static const paso = 24.0;
 
-  /// En pantalla ancha, cuatro a cada lado, en los costados que el contenido (de hasta 1100 px) suele dejar libres.
-  /// Se alternan un poco hacia adentro y hacia afuera para que no formen una columna.
-  static const _escritorio = <_Dibujo>[
-    (_torta, 0.05, 0.20, -10),
-    (_taza, 0.085, 0.42, 8),
-    (_galleta, 0.045, 0.64, -4),
-    (_cupcake, 0.08, 0.86, 6),
-    (_cupcake, 0.95, 0.18, 9),
-    (_porcion, 0.915, 0.40, -8),
-    (_dona, 0.955, 0.62, 5),
-    (_torta, 0.92, 0.84, -6),
-  ];
+  /// Los dibujos del patrón de pantalla ancha, en el orden en que se alternan.
+  static const _patron = <void Function(Canvas, Paint)>[_torta, _taza, _cupcake, _galleta, _porcion, _dona];
+
+  /// Lado de cada celda del patrón: un dibujo por celda.
+  static const _celda = 210.0;
 
   /// En el teléfono, tres, repartidos de arriba abajo y alternando los lados; asoman entre las tarjetas.
-  static const _telefono = <_Dibujo>[(_cupcake, 0.86, 0.24, 10), (_taza, 0.13, 0.56, -8), (_porcion, 0.84, 0.86, 6)];
+  static const _telefono = <_Dibujo>[
+    (_cupcake, 0.86, 0.24, 10, 1),
+    (_taza, 0.13, 0.56, -8, 1),
+    (_porcion, 0.84, 0.86, 6, 1),
+  ];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -140,27 +137,48 @@ class _Decoracion extends CustomPainter {
     final libre = Rect.fromLTRB(min(reservaIzquierda, size.width), 0, size.width, size.height);
     if (libre.width < 200 || libre.height < 200) return;
     final escritorio = size.width >= FondoDecorado.anchoEscritorio;
-    final dibujos = escritorio ? _escritorio : _telefono;
-    // En pantalla ancha, cuatro a cada lado deben caber de arriba abajo sin tocarse.
-    final tamano = escritorio
-        ? min((libre.width * 0.07).clamp(72.0, 112.0), libre.height * 0.17)
-        : (libre.width * 0.26).clamp(72.0, 110.0);
+    final dibujos = escritorio ? _dibujosDelPatron(libre) : _telefono;
+    final tamano = escritorio ? 84.0 : (libre.width * 0.26).clamp(72.0, 110.0);
     final lapiz = Paint()
       ..color = trazo
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    for (final (dibujo, x, y, giro) in dibujos) {
+    for (final (dibujo, x, y, giro, escala) in dibujos) {
       canvas.save();
       canvas.translate(libre.left + libre.width * x, libre.top + libre.height * y);
       canvas.rotate(giro * pi / 180);
       // Los dibujos están hechos en un cuadro de 64 × 64, centrado en el punto elegido.
-      canvas.scale(tamano / 64);
+      canvas.scale(tamano * escala / 64);
       canvas.translate(-32, -32);
       dibujo(canvas, lapiz);
       canvas.restore();
     }
+  }
+
+  /// El patrón de pantalla ancha: un dibujo por celda, en filas corridas media celda como ladrillos. Cada uno se mueve,
+  /// gira y cambia un poco de tamaño según su celda (siempre igual para la misma celda), para que no se vea como un
+  /// estampado repetido.
+  static List<_Dibujo> _dibujosDelPatron(Rect libre) {
+    final columnas = (libre.width / _celda).ceil() + 1;
+    final filas = (libre.height / _celda).ceil() + 1;
+    final dibujos = <_Dibujo>[];
+    for (var fila = 0; fila < filas; fila++) {
+      for (var columna = 0; columna < columnas; columna++) {
+        // Un generador que depende solo de la celda, para el desvío de cada dibujo.
+        final azar = Random(fila * 1000 + columna);
+        final corrimiento = fila.isOdd ? _celda / 2 : 0.0;
+        final x = columna * _celda + corrimiento + (azar.nextDouble() - 0.5) * _celda * 0.3;
+        final y = fila * _celda + _celda / 2 + (azar.nextDouble() - 0.5) * _celda * 0.3;
+        // Corrido dos lugares por fila: un dibujo no queda junto a otro igual, ni al lado ni abajo.
+        final dibujo = _patron[(columna + fila * 2) % _patron.length];
+        final giro = (azar.nextDouble() - 0.5) * 28;
+        final escala = 0.85 + azar.nextDouble() * 0.3;
+        dibujos.add((dibujo, x / libre.width, y / libre.height, giro, escala));
+      }
+    }
+    return dibujos;
   }
 
   @override
