@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:dulces_aromas/comun/api.dart';
 import 'package:dulces_aromas/comun/fondo.dart';
+import 'package:dulces_aromas/tienda/pantallas/comunes.dart';
 import 'package:dulces_aromas/tienda/app_tienda.dart';
 import 'package:dulces_aromas/tienda/pantallas/pedido_pantalla.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -75,6 +77,31 @@ void main() {
     expect(find.text('No disponible', skipOffstage: false), findsOneWidget);
     expect(find.text('Ingresar'), findsOneWidget);
   });
+
+  testWidgets(
+    'la foto de un producto se decodifica al tamaño en que se muestra, para que el catálogo quepa en el caché',
+    (tester) async {
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        Provider<Api>.value(
+          value: apiFalsa(),
+          child: const Directionality(
+            textDirection: TextDirection.ltr,
+            child: Center(
+              child: SizedBox.square(
+                dimension: 200,
+                child: ImagenProducto(ruta: '/api/catalogo/productos/1/imagen?v=1', descripcion: 'Torta'),
+              ),
+            ),
+          ),
+        ),
+      );
+      final imagen = tester.widget<Image>(find.byType(Image));
+      // 200 px lógicos × 2 = 400 píxeles reales, redondeados hacia arriba a un múltiplo de 128.
+      expect(imagen.image, isA<ResizeImage>().having((i) => i.width, 'ancho', 512));
+    },
+  );
 
   testWidgets('las pantallas van sobre el fondo decorado, no sobre un color plano', (tester) async {
     await abrir(tester, apiFalsa());
