@@ -10,10 +10,13 @@ import '../../comun/tema.dart';
 /// teléfono, una foto a la vez que se cambia deslizando (no avanza sola, para quien prefiere menos movimiento); en
 /// pantallas anchas, las ocho en mosaico.
 class Portada extends StatefulWidget {
-  const Portada({super.key, required this.alto, required this.alVerCatalogo});
+  const Portada({super.key, required this.alto, required this.alVerCatalogo, this.baja = false});
 
   final double alto;
   final VoidCallback alVerCatalogo;
+
+  /// Una franja con el logo y las fotos, sin el botón «Ver catálogo»: los productos ya se ven debajo.
+  final bool baja;
 
   /// Desde este ancho las fotos van en mosaico.
   static const anchoMosaico = 720.0;
@@ -45,19 +48,24 @@ class _PortadaState extends State<Portada> {
                 children: [
                   // Ancho fijo: el logo se agranda o achica hasta llenarlo.
                   SizedBox(
-                    width: min(ancha ? 460.0 : 300.0, MediaQuery.sizeOf(context).width - 48),
+                    width: min(
+                      widget.baja ? (ancha ? 320.0 : 220.0) : (ancha ? 460.0 : 300.0),
+                      MediaQuery.sizeOf(context).width - 48,
+                    ),
                     child: const LogoDulcesAromas(color: Colors.white, acento: Colores.rosaClaro),
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colores.fondo,
-                      foregroundColor: Colores.cafe,
-                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                  if (!widget.baja) ...[
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colores.fondo,
+                        foregroundColor: Colores.cafe,
+                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                      ),
+                      onPressed: widget.alVerCatalogo,
+                      child: const Text('Ver catálogo'),
                     ),
-                    onPressed: widget.alVerCatalogo,
-                    child: const Text('Ver catálogo'),
-                  ),
+                  ],
                 ],
               ),
             ),

@@ -147,6 +147,20 @@ void main() {
     expect(find.byTooltip('Carrito, 0 productos'), findsOneWidget);
   });
 
+  testWidgets('desde la segunda visita, la portada es baja y los productos se ven sin deslizar', (tester) async {
+    await abrir(tester, apiFalsa());
+    expect(find.text('Ver catálogo'), findsOneWidget);
+    expect((await SharedPreferences.getInstance()).getBool('portada_vista'), isTrue);
+
+    // Otra visita en el mismo dispositivo.
+    await tester.pumpWidget(const SizedBox());
+    await abrir(tester, apiFalsa());
+
+    expect(find.text('Ver catálogo'), findsNothing);
+    expect(find.bySemanticsLabel('Dulces Aromas'), findsOneWidget);
+    expect(tester.getRect(find.text('Torta de chocolate')).bottom, lessThan(800 - 80));
+  });
+
   testWidgets('HU07: un producto no disponible no se puede agregar al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 

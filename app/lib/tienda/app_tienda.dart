@@ -9,6 +9,7 @@ import '../comun/tema.dart';
 import '../comun/widgets.dart';
 import 'carrito.dart';
 import 'marco_tienda.dart';
+import 'recuerdo_portada.dart';
 import 'pantallas/carrito_pantalla.dart';
 import 'pantallas/catalogo_pantalla.dart';
 import 'pantallas/confirmar_pantalla.dart';
@@ -105,11 +106,17 @@ class _AppTiendaState extends State<AppTienda> {
   late final Sesion _sesion = Sesion(widget.api, claveGuardado: 'sesion_tienda');
   late final Carrito _carrito = Carrito();
   late final PreferenciaTema _tema = PreferenciaTema(claveGuardado: 'tema_tienda');
+  late final RecuerdoPortada _portada = RecuerdoPortada();
   late final GoRouter _rutas = rutasTienda(_sesion);
 
   /// Las pantallas esperan a la sesión y al carrito guardados. Si no, al abrir o recargar una ruta como /pedidos o
   /// /carrito en la web, la pantalla pediría datos sin token o mostraría el carrito vacío.
-  late final Future<void> _listo = Future.wait([_sesion.restaurar(), _carrito.cargar(), _tema.cargar()]);
+  late final Future<void> _listo = Future.wait([
+    _sesion.restaurar(),
+    _carrito.cargar(),
+    _tema.cargar(),
+    _portada.cargar(),
+  ]);
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +126,7 @@ class _AppTiendaState extends State<AppTienda> {
         ChangeNotifierProvider.value(value: _sesion),
         ChangeNotifierProvider.value(value: _carrito),
         ChangeNotifierProvider.value(value: _tema),
+        Provider.value(value: _portada),
       ],
       child: FutureBuilder(
         future: _listo,

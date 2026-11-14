@@ -7,8 +7,10 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
+import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
 import 'comunes.dart';
+import '../recuerdo_portada.dart';
 import 'portada.dart';
 
 /// Catálogo de la Tienda (CU04, HU07). Se ve sin iniciar sesión (RN15).
@@ -65,8 +67,17 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
     _buscar();
   }
 
-  /// Alto de la portada: la mitad de la pantalla, entre 320 y 460 px.
-  double _altoPortada(BuildContext context) => (MediaQuery.sizeOf(context).height * 0.5).clamp(320.0, 460.0);
+  /// La portada completa se ve en la primera visita. Después, o con la sesión iniciada, va una portada baja: quien ya
+  /// conoce la tienda ve los productos sin deslizar.
+  bool _portadaBaja(BuildContext context) =>
+      context.read<RecuerdoPortada>().vistaAntes || context.read<Sesion>().iniciada;
+
+  /// Alto de la portada: la completa ocupa la mitad de la pantalla, entre 320 y 460 px; la baja, una franja.
+  double _altoPortada(BuildContext context) {
+    final tamano = MediaQuery.sizeOf(context);
+    if (_portadaBaja(context)) return tamano.width >= Portada.anchoMosaico ? 260 : 190;
+    return (tamano.height * 0.5).clamp(320.0, 460.0);
+  }
 
   /// El nombre vuelve a la barra cuando la portada, que lo muestra, sale de la pantalla.
   bool _alDesplazar(ScrollNotification aviso) {
@@ -87,6 +98,8 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
 
   @override
   Widget build(BuildContext context) {
+    // Al iniciar o cerrar sesión cambia la portada: el catálogo se vuelve a dibujar.
+    context.watch<Sesion>();
     return Scaffold(
       appBar: AppBar(title: _portadaPasada ? const Text('Dulces Aromas') : null, actions: accionesTienda(context)),
       body: NotificationListener<ScrollNotification>(
@@ -99,7 +112,7 @@ class _CatalogoPantallaState extends State<CatalogoPantalla> {
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(
-                child: Portada(alto: _altoPortada(context), alVerCatalogo: _verCatalogo),
+                child: Portada(alto: _altoPortada(context), baja: _portadaBaja(context), alVerCatalogo: _verCatalogo),
               ),
               SliverToBoxAdapter(
                 child: Contenido(
