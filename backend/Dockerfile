@@ -24,8 +24,11 @@ RUN useradd --system --no-create-home api
 COPY --from=construccion /fuente/api.jar api.jar
 USER api
 
-# Los planes gratuitos dan unos 512 MB: el heap usa como mucho el 65 % (lo demás queda para la propia JVM) y un
-# recolector de memoria pequeño.
-ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=65 -XX:+UseSerialGC"
+# Los planes gratuitos dan unos 512 MB y una fracción de procesador. Con el heap al 65 % la API arrancaba al límite
+# de la memoria y un despliegue se quedó sin terminar (13/11/2026). Ahora:
+# - heap al 55 % y un recolector de memoria pequeño;
+# - solo el compilador rápido de la JVM (TieredStopAtLevel=1): arranca antes y usa menos procesador y memoria;
+# - topes para el código compilado, las clases cargadas y la pila de cada hilo.
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=55 -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=40m -XX:MaxMetaspaceSize=150m -Xss512k"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "api.jar"]
