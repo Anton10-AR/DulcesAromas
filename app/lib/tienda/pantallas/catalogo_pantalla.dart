@@ -337,7 +337,7 @@ class _EncabezadoSeccion extends StatelessWidget {
     return Contenido(
       ancho: 1100,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 8, 4),
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 4),
         child: Row(
           children: [
             Container(
@@ -369,8 +369,8 @@ class _TarjetaProducto extends StatefulWidget {
 
   final Producto producto;
 
-  /// Alto del texto bajo la imagen: el nombre en hasta dos líneas y el precio, con su margen.
-  static const altoTexto = 112.0;
+  /// Alto bajo la imagen: el nombre en hasta dos líneas, la descripción en dos y el precio con su botón.
+  static const altoTexto = 168.0;
 
   /// Al volver del detalle, el catálogo se actualiza: pudo cambiar la imagen o la disponibilidad.
   final VoidCallback alVolver;
@@ -380,7 +380,7 @@ class _TarjetaProducto extends StatefulWidget {
 }
 
 class _TarjetaProductoState extends State<_TarjetaProducto> {
-  /// Con el ratón encima, la foto se acerca un poco, salvo que el dispositivo pida menos movimiento.
+  /// Con el ratón encima, la tarjeta sube un poco y la foto se acerca, salvo que el dispositivo pida menos movimiento.
   bool _encima = false;
 
   @override
@@ -389,83 +389,124 @@ class _TarjetaProductoState extends State<_TarjetaProducto> {
     final textos = Theme.of(context).textTheme;
     final colores = Theme.of(context).colorScheme;
     final quieto = MediaQuery.disableAnimationsOf(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onHover: (encima) => setState(() => _encima = encima),
-        onTap: () async {
-          await context.push('/producto/${producto.id}');
-          widget.alVolver();
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRect(
-                    child: AnimatedScale(
-                      scale: _encima && !quieto ? 1.05 : 1,
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOut,
-                      child: Opacity(
-                        opacity: producto.disponible ? 1 : 0.45,
-                        child: ImagenProducto(ruta: producto.imagen, descripcion: producto.nombre),
-                      ),
-                    ),
-                  ),
-                  // HU07: se nota de lejos que no se puede pedir.
-                  if (!producto.disponible)
-                    const Positioned(left: 8, top: 8, child: _NoDisponible())
-                  else if (producto.personalizable)
-                    const Positioned(left: 8, top: 8, child: _Personalizable()),
-                ],
-              ),
-            ),
-            // Si el texto no cabe (letra grande en el dispositivo), el nombre se acorta con «…» en vez de desbordar.
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        producto.nombre,
-                        style: textos.titleMedium,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
+    final elevada = _encima && !quieto;
+    const duracion = Duration(milliseconds: 220);
+    return AnimatedSlide(
+      offset: elevada ? const Offset(0, -0.015) : Offset.zero,
+      duration: duracion,
+      curve: Curves.easeOut,
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: elevada ? 10 : null,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onHover: (encima) => setState(() => _encima = encima),
+          onTap: () async {
+            await context.push('/producto/${producto.id}');
+            widget.alVolver();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // La foto, con su propio borde redondeado dentro de la tarjeta.
+                AspectRatio(
+                  aspectRatio: 1,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Expanded(
-                          child: Text(
-                            bolivianos(producto.precio),
-                            style: textos.titleLarge?.copyWith(color: colores.secondary),
-                            maxLines: 1,
+                        AnimatedScale(
+                          scale: elevada ? 1.06 : 1,
+                          duration: duracion,
+                          curve: Curves.easeOut,
+                          child: Opacity(
+                            opacity: producto.disponible ? 1 : 0.45,
+                            child: ImagenProducto(ruta: producto.imagen, descripcion: producto.nombre),
                           ),
                         ),
-                        // Decoración: toda la tarjeta abre el producto.
-                        ExcludeSemantics(
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(color: colores.secondaryContainer, shape: BoxShape.circle),
-                            child: Icon(Icons.arrow_forward, size: 18, color: colores.onSecondaryContainer),
+                        // Un velo abajo de la foto, para que se funda con la tarjeta.
+                        const Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 48,
+                          child: IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Color(0x00000000), Color(0x33000000)],
+                                ),
+                              ),
+                            ),
                           ),
+                        ),
+                        // HU07: se nota de lejos que no se puede pedir.
+                        if (!producto.disponible)
+                          const Positioned(left: 8, top: 8, child: _NoDisponible())
+                        else if (producto.personalizable)
+                          const Positioned(left: 8, top: 8, child: _Personalizable()),
+                      ],
+                    ),
+                  ),
+                ),
+                // Si el texto no cabe (letra grande en el dispositivo), se acorta con «…» en vez de desbordar.
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 12, 2, 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(producto.nombre, style: textos.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Flexible(
+                          child: Text(
+                            producto.descripcion,
+                            style: textos.bodySmall,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                bolivianos(producto.precio),
+                                style: textos.titleLarge?.copyWith(color: colores.secondary),
+                                maxLines: 1,
+                              ),
+                            ),
+                            // Decoración: toda la tarjeta abre el producto.
+                            ExcludeSemantics(
+                              child: AnimatedContainer(
+                                duration: duracion,
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: elevada ? colores.primary : colores.secondaryContainer,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.arrow_forward,
+                                  size: 20,
+                                  color: elevada ? colores.onPrimary : colores.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

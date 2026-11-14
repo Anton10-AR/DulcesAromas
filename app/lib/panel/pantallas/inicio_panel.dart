@@ -250,7 +250,46 @@ class _Rejilla extends StatelessWidget {
   }
 }
 
-/// Un ícono sobre un cuadro de color suave, como en las etiquetas de estado.
+/// Una tarjeta con un degradado suave del color de su tono, de la esquina superior izquierda hacia el blanco de la
+/// tarjeta, y una franja del mismo color arriba. El texto queda sobre colores claros (u oscuros, en el tema oscuro),
+/// con el contraste de siempre.
+class _TarjetaTono extends StatelessWidget {
+  const _TarjetaTono({required this.tono, required this.child, this.alTocar});
+
+  final Tono tono;
+  final Widget child;
+  final VoidCallback? alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    final colores = Theme.of(context).colorScheme;
+    final tarjeta = Theme.of(context).cardTheme.color ?? colores.surface;
+    final relleno = (oscuro ? tono.rellenoOscuro : tono.relleno) ?? tarjeta;
+    final acento = (oscuro ? tono.textoOscuro : tono.texto) ?? colores.outlineVariant;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [relleno, tarjeta],
+            stops: const [0, 0.85],
+          ),
+          border: Border(top: BorderSide(color: acento, width: 3)),
+        ),
+        child: InkWell(
+          onTap: alTocar,
+          child: Padding(padding: const EdgeInsets.fromLTRB(16, 16, 12, 16), child: child),
+        ),
+      ),
+    );
+  }
+}
+
+/// Un ícono en un círculo, con el color del tono.
 class _Icono extends StatelessWidget {
   const _Icono(this.icono, this.tono);
 
@@ -261,12 +300,17 @@ class _Icono extends StatelessWidget {
   Widget build(BuildContext context) {
     final oscuro = Theme.of(context).brightness == Brightness.dark;
     final colores = Theme.of(context).colorScheme;
-    final relleno = (oscuro ? tono.rellenoOscuro : tono.relleno) ?? colores.secondaryContainer;
-    final color = (oscuro ? tono.textoOscuro : tono.texto) ?? colores.onSecondaryContainer;
+    // Sobre el degradado de la tarjeta, el ícono va en un círculo del color de la tarjeta, con el color del tono.
+    final fondo = Theme.of(context).cardTheme.color ?? colores.surface;
+    final color = (oscuro ? tono.textoOscuro : tono.texto) ?? colores.onSurfaceVariant;
     return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(color: relleno, borderRadius: BorderRadius.circular(10)),
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: fondo,
+        shape: BoxShape.circle,
+        border: Border.all(color: colores.outlineVariant),
+      ),
       child: Icon(icono, color: color),
     );
   }
@@ -281,30 +325,25 @@ class _TarjetaPendiente extends StatelessWidget {
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final hay = pendiente.cantidad > 0;
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.go(pendiente.destino),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              _Icono(pendiente.icono, hay ? pendiente.tono : Tono.neutro),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${pendiente.cantidad}', style: textos.headlineSmall),
-                    Text(pendiente.titulo, style: textos.bodyMedium),
-                    if (!hay) Text('Nada pendiente', style: textos.bodySmall),
-                  ],
-                ),
-              ),
-            ],
+    return _TarjetaTono(
+      tono: hay ? pendiente.tono : Tono.neutro,
+      alTocar: () => context.go(pendiente.destino),
+      child: Row(
+        children: [
+          _Icono(pendiente.icono, hay ? pendiente.tono : Tono.neutro),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${pendiente.cantidad}', style: textos.headlineMedium),
+                Text(pendiente.titulo, style: textos.bodyMedium),
+                if (!hay) Text('Nada pendiente', style: textos.bodySmall),
+              ],
+            ),
           ),
-        ),
+          if (hay) const Icon(Icons.chevron_right),
+        ],
       ),
     );
   }
@@ -357,25 +396,22 @@ class _Hoy extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
-    Widget cifra(String valor, String etiqueta, IconData icono, Tono tono) => Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            _Icono(icono, tono),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(valor, style: textos.headlineSmall),
-                  Text(etiqueta, style: textos.bodyMedium),
-                ],
-              ),
+    Widget cifra(String valor, String etiqueta, IconData icono, Tono tono) => _TarjetaTono(
+      tono: tono,
+      child: Row(
+        children: [
+          _Icono(icono, tono),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(valor, style: textos.headlineMedium),
+                Text(etiqueta, style: textos.bodyMedium),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
     return Cargador(

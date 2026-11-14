@@ -15,11 +15,11 @@ class FondoDecorado extends StatelessWidget {
 
   /// El brillo rosa de arriba a la derecha, en su centro, donde es más intenso.
   static Color brillo(bool oscuro) =>
-      oscuro ? Colores.rosa.withValues(alpha: 0.2) : Colores.rosaClaro.withValues(alpha: 0.45);
+      oscuro ? Colores.rosa.withValues(alpha: 0.24) : Colores.rosaMedio.withValues(alpha: 0.38);
 
   /// El tono cálido de abajo a la izquierda, en su centro.
   static Color calido(bool oscuro) =>
-      oscuro ? const Color(0xFF6E4B3E).withValues(alpha: 0.32) : const Color(0xFFF2D9C2).withValues(alpha: 0.6);
+      oscuro ? const Color(0xFF7A5241).withValues(alpha: 0.38) : const Color(0xFFE9B98F).withValues(alpha: 0.45);
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class FondoDecorado extends StatelessWidget {
     final base = FondoDecorado.base(oscuro);
     final brillo = FondoDecorado.brillo(oscuro);
     final calido = FondoDecorado.calido(oscuro);
-    final puntos = (oscuro ? Colores.textoOscuro : Colores.cafe).withValues(alpha: oscuro ? 0.045 : 0.05);
+    final puntos = (oscuro ? Colores.textoOscuro : Colores.cafe).withValues(alpha: oscuro ? 0.06 : 0.08);
     return DecoratedBox(
       decoration: BoxDecoration(color: base),
       child: Stack(
@@ -61,23 +61,34 @@ class _Decoracion extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final lado = size.shortestSide.clamp(320.0, 900.0);
+    final lado = size.longestSide.clamp(400.0, 1600.0);
+    // Cada mancha se mantiene intensa hasta la mitad del radio y después se desvanece: se ve como un brillo y no
+    // como una sombra difusa.
     void mancha(Offset centro, double radio, Color color) {
       final rect = Rect.fromCircle(center: centro, radius: radio);
       canvas.drawRect(
         Offset.zero & size,
-        Paint()..shader = RadialGradient(colors: [color, color.withValues(alpha: 0)]).createShader(rect),
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              color,
+              color.withValues(alpha: color.a * 0.6),
+              color.withValues(alpha: 0),
+            ],
+            stops: const [0, 0.5, 1],
+          ).createShader(rect),
       );
     }
 
-    mancha(Offset(size.width, 0), lado * 0.9, brillo);
-    mancha(Offset(0, size.height), lado * 0.8, calido);
+    // El centro del brillo, un poco más abajo de la esquina para que no quede tapado por la barra superior.
+    mancha(Offset(size.width, size.height * 0.12), lado * 0.55, brillo);
+    mancha(Offset(0, size.height), lado * 0.5, calido);
     final pincel = Paint()..color = puntos;
     for (var y = paso / 2; y < size.height; y += paso) {
       // Filas alternadas corridas medio paso: la trama se ve tejida y no como una cuadrícula.
       final corrimiento = ((y / paso).floor().isEven) ? 0.0 : paso / 2;
       for (var x = paso / 2 + corrimiento; x < size.width; x += paso) {
-        canvas.drawCircle(Offset(x, y), 1.1, pincel);
+        canvas.drawCircle(Offset(x, y), 1.3, pincel);
       }
     }
   }

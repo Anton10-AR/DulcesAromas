@@ -151,12 +151,16 @@ ThemeData _tema(ColorScheme esquema, TextTheme textos, {required Color tarjeta, 
       elevation: 0,
       scrolledUnderElevation: 1,
     ),
+    // Tarjetas con una sombra suave y cálida (café en el tema claro), para que se separen del fondo.
     cardTheme: CardThemeData(
       color: tarjeta,
       surfaceTintColor: Colors.transparent,
-      elevation: 0,
+      elevation: 3,
+      shadowColor: esquema.brightness == Brightness.dark
+          ? Colors.black.withValues(alpha: 0.55)
+          : Colores.cafe.withValues(alpha: 0.16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         side: BorderSide(color: borde),
       ),
     ),
