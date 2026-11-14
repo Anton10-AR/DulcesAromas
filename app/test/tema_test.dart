@@ -52,11 +52,15 @@ void main() {
             'café suave': Colores.cafeSuave,
             'error': Colores.error,
           };
-    for (final (zona, mancha) in [
-      ('el brillo rosa', FondoDecorado.brillo(oscuro)),
-      ('el tono cálido', FondoDecorado.calido(oscuro)),
+    final trazo = FondoDecorado.trazo(oscuro);
+    for (final (zona, mancha, conTrazo) in [
+      ('el brillo rosa', FondoDecorado.brillo(oscuro), false),
+      ('el tono cálido', FondoDecorado.calido(oscuro), false),
+      ('un dibujo sobre el brillo rosa', FondoDecorado.brillo(oscuro), true),
+      ('un dibujo sobre el tono cálido', FondoDecorado.calido(oscuro), true),
     ]) {
-      final fondo = Color.alphaBlend(mancha, FondoDecorado.base(oscuro));
+      final tenido = Color.alphaBlend(mancha, FondoDecorado.base(oscuro));
+      final fondo = conTrazo ? Color.alphaBlend(trazo, tenido) : tenido;
       for (final texto in textos.entries) {
         test('RNF20: ${texto.key} sobre $zona del fondo $tema llega a 4.5:1', () {
           expect(contraste(texto.value, fondo), greaterThanOrEqualTo(4.5));

@@ -154,7 +154,9 @@ class _AppPanelState extends State<AppPanel> {
                 // RNF20: marco visible alrededor del control con foco al usar el teclado.
                 // El fondo decorado va una sola vez, debajo de todas las pantallas: las páginas cambian sin animación, así que
                 // nunca se ve una a través de otra.
+                // En pantallas anchas, el menú lateral (220 px y su divisor) tapa la izquierda: los dibujos van en el resto.
                 builder: (context, hijo) => FondoDecorado(
+                  reservaIzquierda: MediaQuery.sizeOf(context).width >= 900 ? 221 : 0,
                   child: MenosMovimiento(child: IndicadorDeFoco(child: hijo!)),
                 ),
               ),
