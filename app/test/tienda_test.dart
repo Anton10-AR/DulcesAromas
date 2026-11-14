@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dulces_aromas/comun/api.dart';
+import 'package:dulces_aromas/comun/fondo.dart';
 import 'package:dulces_aromas/tienda/app_tienda.dart';
 import 'package:dulces_aromas/tienda/pantallas/pedido_pantalla.dart';
 import 'package:flutter/material.dart';
@@ -73,6 +74,12 @@ void main() {
     expect(find.text('Bs 120.00', skipOffstage: false), findsNWidgets(2));
     expect(find.text('No disponible', skipOffstage: false), findsOneWidget);
     expect(find.text('Ingresar'), findsOneWidget);
+  });
+
+  testWidgets('las pantallas van sobre el fondo decorado, no sobre un color plano', (tester) async {
+    await abrir(tester, apiFalsa());
+    expect(find.byType(FondoDecorado), findsOneWidget);
+    expect(Theme.of(tester.element(find.byType(Scaffold).first)).scaffoldBackgroundColor, Colors.transparent);
   });
 
   testWidgets('la portada muestra el logo y «Ver catálogo» baja a los productos', (tester) async {

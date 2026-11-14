@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:dulces_aromas/comun/fondo.dart';
 import 'package:dulces_aromas/comun/tema.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +38,31 @@ void main() {
     test('${par.key} llega a 4.5:1', () {
       expect(contraste(par.value.$1, par.value.$2), greaterThanOrEqualTo(4.5));
     });
+  }
+
+  // El fondo decorado tiñe el fondo; donde más lo hace, en el centro del brillo y del tono cálido, el texto sigue
+  // llegando a 4.5:1.
+  for (final oscuro in [false, true]) {
+    final tema = oscuro ? 'oscuro' : 'claro';
+    final textos = oscuro
+        ? {'texto': Colores.textoOscuro, 'texto suave': Colores.textoSuaveOscuro, 'error': Colores.errorOscuro}
+        : {
+            'texto': Colores.texto,
+            'rosa de texto': Colores.rosaTexto,
+            'café suave': Colores.cafeSuave,
+            'error': Colores.error,
+          };
+    for (final (zona, mancha) in [
+      ('el brillo rosa', FondoDecorado.brillo(oscuro)),
+      ('el tono cálido', FondoDecorado.calido(oscuro)),
+    ]) {
+      final fondo = Color.alphaBlend(mancha, FondoDecorado.base(oscuro));
+      for (final texto in textos.entries) {
+        test('RNF20: ${texto.key} sobre $zona del fondo $tema llega a 4.5:1', () {
+          expect(contraste(texto.value, fondo), greaterThanOrEqualTo(4.5));
+        });
+      }
+    }
   }
 
   test('el rosa y el café originales no alcanzan para texto pequeño, por eso se oscurecen', () {

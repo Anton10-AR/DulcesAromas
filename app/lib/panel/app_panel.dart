@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../comun/api.dart';
+import '../comun/fondo.dart';
 import '../comun/logo.dart';
 import '../comun/preferencia_tema.dart';
 import '../comun/perfil.dart';
@@ -151,7 +152,11 @@ class _AppPanelState extends State<AppPanel> {
                 themeMode: context.watch<PreferenciaTema>().modo,
                 routerConfig: _rutas,
                 // RNF20: marco visible alrededor del control con foco al usar el teclado.
-                builder: (context, hijo) => MenosMovimiento(child: IndicadorDeFoco(child: hijo!)),
+                // El fondo decorado va una sola vez, debajo de todas las pantallas: las páginas cambian sin animación, así que
+                // nunca se ve una a través de otra.
+                builder: (context, hijo) => FondoDecorado(
+                  child: MenosMovimiento(child: IndicadorDeFoco(child: hijo!)),
+                ),
               ),
       ),
     );

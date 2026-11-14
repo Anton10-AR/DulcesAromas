@@ -142,7 +142,8 @@ ThemeData _tema(ColorScheme esquema, TextTheme textos, {required Color tarjeta, 
     colorScheme: esquema,
     textTheme: textos,
     fontFamily: _fuenteTexto,
-    scaffoldBackgroundColor: esquema.surface,
+    // Transparente: debajo de todas las pantallas va el fondo decorado (FondoDecorado, en el builder de la app).
+    scaffoldBackgroundColor: Colors.transparent,
     appBarTheme: AppBarTheme(
       backgroundColor: esquema.surface,
       foregroundColor: esquema.onSurface,
