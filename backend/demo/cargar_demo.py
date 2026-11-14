@@ -14,6 +14,10 @@ Uso, desde backend/:
 Los productos que tienen foto en app/assets/postres/ la usan; los demás llevan una ilustración con su inicial. Para
 poner las fotos en una base que ya tiene el catálogo (por ejemplo, la de la nube), sin tocar nada más:
     python demo/cargar_demo.py --fotos --api https://...
+
+Para sumar a una base que ya tiene catálogo las categorías y los productos de este script que todavía no existen
+(por nombre), sin tocar los demás, los pedidos ni las cuentas:
+    python demo/cargar_demo.py --ampliar --api https://...
 """
 import argparse
 import io
@@ -199,6 +203,11 @@ CATALOGO = {
         ('Torta tres leches', 'Bizcocho bañado en tres leches con merengue suave y canela.', '110.00', True),
         ('Torta selva negra', 'Capas de chocolate, crema chantilly y cerezas.', '140.00', True),
         ('Torta de frutilla y crema', 'Bizcocho de vainilla con frutillas frescas y crema batida.', '130.00', True),
+        ('Torta moka', 'Bizcocho de café con crema de moka y virutas de chocolate.', '130.00', True),
+        ('Torta de zanahoria', 'Bizcocho de zanahoria y nuez con frosting de queso crema.', '115.00', True),
+        ('Torta red velvet', 'Bizcocho rojo aterciopelado con frosting de queso crema.', '140.00', True),
+        ('Torta helada de frutilla', 'Bizcocho, crema chantilly y gelatina de frutilla, servida fría.', '120.00', True),
+        ('Torta tres chocolates', 'Capas de mousse de chocolate amargo, con leche y blanco.', '150.00', True),
     ],
     'Postres': [
         ('Cheesecake de maracuyá', 'Base de galleta, crema de queso y salsa de maracuyá. Entero, para 10 porciones.',
@@ -206,16 +215,57 @@ CATALOGO = {
         ('Tiramisú en vaso', 'Porción individual con café, cacao y crema de mascarpone.', '18.00', False),
         ('Pie de limón', 'Masa quebrada, crema de limón y merengue tostado. Entero, para 8 porciones.', '75.00', False),
         ('Flan casero', 'Porción individual de flan de vainilla con caramelo.', '12.00', False),
+        ('Mousse de maracuyá', 'Porción individual de mousse de maracuyá con su salsa.', '15.00', False),
+        ('Brownie con nuez', 'Brownie húmedo de chocolate con nuez. La unidad.', '10.00', False),
+        ('Gelatina con crema', 'Vaso de gelatina de frutilla con crema batida.', '8.00', False),
+        ('Cheesecake de frutos rojos', 'Base de galleta, crema de queso y salsa de frutos rojos. Entero, para 10 porciones.',
+         '95.00', False),
+        ('Pie de manzana', 'Masa quebrada con manzana y canela. Entero, para 8 porciones.', '70.00', False),
     ],
     'Galletas y masitas': [
         ('Alfajores de maicena', 'Docena de alfajores rellenos de dulce de leche y coco rallado.', '30.00', False),
         ('Galletas de avena y chispas', 'Docena de galletas de avena con chispas de chocolate.', '25.00', False),
         ('Masitas de nata', 'Bolsa de 20 masitas de nata, como las de la abuela.', '20.00', False),
+        ('Cocadas', 'Bolsa de 12 cocadas doradas de coco rallado.', '18.00', False),
+        ('Galletas de chocolate y nuez', 'Docena de galletas de chocolate con trozos de nuez.', '28.00', False),
+        ('Empanaditas de manzana', 'Docena de empanaditas de masa hojaldrada rellenas de manzana.', '30.00', False),
+        ('Buñuelos con miel', 'Seis buñuelos recién fritos con miel de caña.', '15.00', False),
     ],
     'Panes dulces': [
         ('Rollos de canela', 'Caja de 4 rollos con glaseado de queso crema.', '28.00', False),
         ('Budín de naranja', 'Budín esponjoso con glaseado de naranja. Para 8 porciones.', '35.00', False),
         ('Panetón navideño', 'Panetón artesanal con frutas confitadas. Solo en temporada.', '65.00', False),
+        ('Pan de plátano', 'Budín de plátano maduro con nuez. Para 8 porciones.', '32.00', False),
+        ('Medialunas', 'Seis medialunas de manteca con almíbar.', '18.00', False),
+        ('Rosca de anís', 'Rosca de pan dulce con anís y azúcar. La unidad.', '25.00', False),
+    ],
+    'Cupcakes y porciones': [
+        ('Cupcakes de vainilla', 'Caja de 6 cupcakes de vainilla con crema de mantequilla.', '42.00', False),
+        ('Cupcakes red velvet', 'Caja de 6 cupcakes red velvet con frosting de queso crema.', '48.00', False),
+        ('Porción de torta de chocolate', 'Una porción de nuestra torta de chocolate con ganache.', '14.00', False),
+        ('Donas glaseadas', 'Caja de 6 donas con glaseado de azúcar y chispas de colores.', '36.00', False),
+    ],
+    'Bebidas': [
+        ('Café americano', 'Café de los Yungas, filtrado. Vaso de 12 onzas.', '10.00', False),
+        ('Capuchino', 'Espresso con leche espumada y un toque de canela.', '14.00', False),
+        ('Chocolate caliente', 'Chocolate espeso hecho con cacao boliviano.', '12.00', False),
+        ('Api morado', 'Api de maíz morado con canela y clavo, bien caliente.', '8.00', False),
+    ],
+    'Para eventos': [
+        ('Bocaditos dulces', 'Caja de 50 bocaditos surtidos: alfajores, trufas, tartaletas y masitas.', '180.00', False),
+        ('Mesa de postres', 'Selección de postres para unas 30 personas, con montaje en el lugar.', '650.00', False),
+        ('Torta de bodas por pisos', 'Torta por pisos decorada a pedido. Se coordina el diseño por teléfono.', '900.00',
+         True),
+    ],
+}
+
+# Opciones de los productos personalizables que no son una torta común.
+OPCIONES_ESPECIALES = {
+    'Torta de bodas por pisos': [
+        ('Tamaño', 'Dos pisos (40 porciones)', '0.00'),
+        ('Tamaño', 'Tres pisos (70 porciones)', '400.00'),
+        ('Relleno', 'Dulce de leche', '0.00'),
+        ('Relleno', 'Frutos rojos', '80.00'),
     ],
 }
 
@@ -235,6 +285,34 @@ FOTOS = {
     'Galletas de avena y chispas': 'galletas-chispas.jpg',
     'Rollos de canela': 'rollos-canela.jpg',
     'Budín de naranja': 'budin-naranja.jpg',
+    'Torta moka': 'torta-moka.jpg',
+    'Torta de zanahoria': 'torta-zanahoria.jpg',
+    'Torta red velvet': 'torta-red-velvet.jpg',
+    'Torta helada de frutilla': 'torta-helada.jpg',
+    'Torta tres chocolates': 'torta-tres-chocolates.jpg',
+    'Mousse de maracuyá': 'mousse-maracuya.jpg',
+    'Brownie con nuez': 'brownie-nuez.jpg',
+    'Gelatina con crema': 'gelatina-crema.jpg',
+    'Cheesecake de frutos rojos': 'cheesecake-frutos-rojos.jpg',
+    'Pie de manzana': 'pie-manzana.jpg',
+    'Cocadas': 'cocadas.jpg',
+    'Galletas de chocolate y nuez': 'galletas-chocolate-nuez.jpg',
+    'Empanaditas de manzana': 'empanaditas-manzana.jpg',
+    'Buñuelos con miel': 'bunuelos.jpg',
+    'Pan de plátano': 'pan-platano.jpg',
+    'Medialunas': 'medialunas.jpg',
+    'Rosca de anís': 'rosca-anis.jpg',
+    'Cupcakes de vainilla': 'cupcakes-vainilla.jpg',
+    'Cupcakes red velvet': 'cupcakes-red-velvet.jpg',
+    'Porción de torta de chocolate': 'porcion-torta-chocolate.jpg',
+    'Donas glaseadas': 'donas.jpg',
+    'Café americano': 'cafe-americano.jpg',
+    'Capuchino': 'capuchino.jpg',
+    'Chocolate caliente': 'chocolate-caliente.jpg',
+    'Api morado': 'api-morado.jpg',
+    'Bocaditos dulces': 'bocaditos.jpg',
+    'Mesa de postres': 'mesa-postres.jpg',
+    'Torta de bodas por pisos': 'torta-bodas.jpg',
 }
 
 INSUMOS = [  # nombre, unidad, mínimo, compra inicial, consumo
@@ -265,17 +343,56 @@ CLIENTES = [
 ]
 
 
+def opciones_de(nombre, personalizable):
+    if not personalizable:
+        return []
+    return [{'tipo': t, 'nombre': n, 'recargo': r} for t, n, r in OPCIONES_ESPECIALES.get(nombre, OPCIONES_TORTA)]
+
+
+def crear_producto(api, admin, categoria_id, producto, indice):
+    nombre, descripcion, precio, personalizable = producto
+    p = api.post('/api/productos', admin, {
+        'nombre': nombre, 'descripcion': descripcion, 'precio': precio, 'categoriaId': categoria_id,
+        'disponible': True, 'personalizable': personalizable, 'opciones': opciones_de(nombre, personalizable),
+    })
+    subir_imagen(api, admin, p, indice)
+    return p
+
+
+def ampliar(api, admin):
+    """Suma las categorías y los productos de CATALOGO que la base todavía no tiene, comparando por nombre."""
+    categorias = {c['nombre']: c['id'] for c in api.get('/api/categorias', admin)}
+    existentes = {p['nombre'] for p in api.get('/api/productos', admin)}
+    nuevas, nuevos = 0, 0
+    for categoria, lista in CATALOGO.items():
+        if categoria not in categorias:
+            categorias[categoria] = api.post('/api/categorias', admin, {'nombre': categoria})['id']
+            nuevas += 1
+        for indice, producto in enumerate(lista):
+            if producto[0] in existentes:
+                continue
+            crear_producto(api, admin, categorias[categoria], producto, indice)
+            print('  ' + producto[0])
+            nuevos += 1
+    print(f'Listo: {nuevas} categorías y {nuevos} productos nuevos.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--api', default='http://localhost:8080')
     parser.add_argument('--fotos', action='store_true',
                         help='solo pone las fotos a los productos que ya existen; no carga nada más')
+    parser.add_argument('--ampliar', action='store_true',
+                        help='suma las categorías y los productos que faltan; no toca los demás datos')
     args = parser.parse_args()
     var = leer_variables()
     clave = var['DEMO_CONTRASENA']
     api = Api(args.api)
 
     admin = api.login(var['ADMIN_CORREO'], var['ADMIN_CONTRASENA'])
+    if args.ampliar:
+        ampliar(api, admin)
+        return
     if args.fotos:
         con_foto = [p for p in api.get('/api/productos', admin) if p['nombre'] in FOTOS]
         for p in con_foto:
@@ -304,15 +421,9 @@ def main():
     indice = 0
     for categoria, lista in CATALOGO.items():
         categoria_id = api.post('/api/categorias', admin, {'nombre': categoria})['id']
-        for nombre, descripcion, precio, personalizable in lista:
-            p = api.post('/api/productos', admin, {
-                'nombre': nombre, 'descripcion': descripcion, 'precio': precio, 'categoriaId': categoria_id,
-                'disponible': True, 'personalizable': personalizable,
-                'opciones': [{'tipo': t, 'nombre': n, 'recargo': r} for t, n, r in OPCIONES_TORTA] if personalizable else [],
-            })
-            subir_imagen(api, admin, p, indice)
+        for producto in lista:
+            productos[producto[0]] = crear_producto(api, admin, categoria_id, producto, indice)
             indice += 1
-            productos[nombre] = p
     # RN08: un producto agotado hoy; D2: la disponibilidad es manual.
     api.put(f"/api/productos/{productos['Pie de limón']['id']}/disponibilidad", admin, {'disponible': False})
     # RN10: un producto de temporada desactivado; no se ve en la Tienda.

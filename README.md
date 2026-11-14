@@ -215,6 +215,12 @@ Los productos que tienen foto en `app/assets/postres/` la usan; los demás lleva
 python demo/cargar_demo.py --fotos --api https://dulces-aromas-api.onrender.com
 ```
 
+Para sumar a una base que ya tiene catálogo las categorías y los productos del script que todavía no existen (los compara por nombre), sin tocar los demás productos, los pedidos ni las cuentas, usen `--ampliar`. Los productos nuevos se crean con su foto:
+
+```powershell
+python demo/cargar_demo.py --ampliar --api https://dulces-aromas-api.onrender.com
+```
+
 ### Respaldo diario (RNF14)
 
 El workflow **Respaldo diario** (`.github/workflows/respaldo.yml`) corre cada noche a las 03:00 de La Paz:
