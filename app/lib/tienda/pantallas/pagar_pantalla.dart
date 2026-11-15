@@ -86,7 +86,7 @@ class _PagarPantallaState extends State<PagarPantalla> {
   }
 
   /// Solo en una compilación de demostración: dibuja el comprobante de este pago con el cliente, el monto del
-  /// servidor y el método elegido, lo adjunta y completa la referencia si falta.
+  /// servidor y el método elegido, lo adjunta, completa la referencia si falta y descarga la imagen.
   Future<void> _generarDemo(Pago vigente) async {
     if (_metodo == null) {
       setState(
@@ -107,12 +107,18 @@ class _PagarPantallaState extends State<PagarPantalla> {
       cuando: DateTime.now(),
     );
     if (!mounted) return;
+    final nombre = 'comprobante-pedido-${widget.pedidoId}.png';
     setState(() {
-      _nombreComprobante = 'comprobante-demostracion.png';
+      _nombreComprobante = nombre;
       _comprobante = imagen;
       _vistaPrevia = imagen;
       _error = null;
     });
+    // En la web se descarga directo; en Android, el sistema pregunta dónde guardarla. Ya quedó adjunta, así que si
+    // la descarga falla o se cancela, el pago se registra igual.
+    try {
+      await FilePicker.saveFile(fileName: nombre, bytes: imagen, mimeType: 'image/png');
+    } catch (_) {}
   }
 
   Future<void> _registrar() async {
