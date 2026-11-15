@@ -70,6 +70,7 @@ dart format lib test                                           # formato (ancho 
 flutter run -d chrome --web-port 8081                         # Tienda en el navegador
 flutter run -d chrome --web-port 8081 -t lib/main_panel.dart  # Panel
 flutter build apk --dart-define=API_URL=https://...           # Tienda para Android (requiere Android SDK)
+flutter build apk --dart-define=API_URL=https://... --dart-define=DEMO=true  # APK de demostración: genera comprobantes
 ```
 
 En la web, las rutas van sin `#` (`usePathUrlStrategy`), para que `…/recuperar?token=…` funcione igual en el navegador y como App Link en Android. GitHub Actions (`.github/workflows/web.yml`) publica la Tienda web en `/` y el Panel en `/panel/` en la rama `web`, que sirve Render. La APK final se firma con `app/android/key.properties` y `tienda.jks`, que no se versionan; su huella está en `app/web/.well-known/assetlinks.json`.

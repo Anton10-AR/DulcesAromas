@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +8,9 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
+import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
+import '../comprobante_demo.dart';
 
 /// Registrar el pago con su comprobante (CU06, HU11).
 class PagarPantalla extends StatefulWidget {
@@ -24,6 +28,9 @@ class _PagarPantallaState extends State<PagarPantalla> {
   final _referencia = TextEditingController();
   String? _nombreComprobante;
   List<int>? _comprobante;
+
+  /// El comprobante generado para una demostración, para mostrarlo antes de registrar el pago.
+  Uint8List? _vistaPrevia;
   ErrorApi? _error;
   bool _enviando = false;
 
@@ -71,6 +78,37 @@ class _PagarPantallaState extends State<PagarPantalla> {
     setState(() {
       _nombreComprobante = archivo.name;
       _comprobante = bytes;
+      _vistaPrevia = null;
+      _error = null;
+    });
+  }
+
+  /// Solo en una compilación de demostración: dibuja el comprobante de este pago con el cliente, el monto del
+  /// servidor y el método elegido, lo adjunta y completa la referencia si falta.
+  Future<void> _generarDemo(Pago vigente) async {
+    if (_metodo == null) {
+      setState(
+        () => _error = ErrorApi(400, 'DATOS_INVALIDOS', 'Revisa los campos marcados.', {
+          'metodoPagoId': 'Elige el método de pago.',
+        }),
+      );
+      return;
+    }
+    if (_referencia.text.trim().isEmpty) _referencia.text = referenciaDemo(widget.pedidoId);
+    final cliente = context.read<Sesion>().usuario?.nombre ?? 'Cliente';
+    final imagen = await comprobanteDemo(
+      cliente: cliente,
+      monto: vigente.monto,
+      pedidoId: widget.pedidoId,
+      metodo: _metodo!.nombre,
+      referencia: _referencia.text.trim(),
+      cuando: DateTime.now(),
+    );
+    if (!mounted) return;
+    setState(() {
+      _nombreComprobante = 'comprobante-demostracion.png';
+      _comprobante = imagen;
+      _vistaPrevia = imagen;
       _error = null;
     });
   }
@@ -216,6 +254,27 @@ class _PagarPantallaState extends State<PagarPantalla> {
                 icon: const Icon(Icons.attach_file),
                 label: Text(_nombreComprobante ?? 'Adjuntar comprobante (JPG, PNG o PDF, hasta 5 MB)'),
               ),
+              if (modoDemostracion) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _generarDemo(vigente),
+                  icon: const Icon(Icons.qr_code_2),
+                  label: const Text('Generar comprobante de demostración'),
+                ),
+              ],
+              if (_vistaPrevia != null) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.memory(
+                      _vistaPrevia!,
+                      height: 420,
+                      semanticLabel: 'Comprobante de demostración generado',
+                    ),
+                  ),
+                ),
+              ],
               if (_error?.campos['comprobante'] != null)
                 Text(_error!.campos['comprobante']!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               const SizedBox(height: 24),
