@@ -29,6 +29,12 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
     _cargar();
   }
 
+  /// Al volver de la pantalla de pago se recarga: el pago pudo pasar a En verificación (HU11).
+  Future<void> _pagar(int pedidoId) async {
+    await context.push('/pedidos/$pedidoId/pagar');
+    if (mounted) _cargar();
+  }
+
   void _cargar() {
     setState(() {
       _datos = (
@@ -105,8 +111,7 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
         _QueSigue(queSigue(pedido.estado, vigente?.estado, delivery: pedido.esDelivery)),
         const SizedBox(height: 16),
         if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
-        if (debePagar)
-          FilledButton(onPressed: () => context.push('/pedidos/${pedido.id}/pagar'), child: const Text('Pagar')),
+        if (debePagar) FilledButton(onPressed: () => _pagar(pedido.id), child: const Text('Pagar')),
         const SizedBox(height: 16),
         Text('Productos', style: textos.titleLarge),
         for (final l in pedido.lineas)

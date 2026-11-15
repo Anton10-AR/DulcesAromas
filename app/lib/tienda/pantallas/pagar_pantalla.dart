@@ -121,6 +121,16 @@ class _PagarPantallaState extends State<PagarPantalla> {
     } catch (_) {}
   }
 
+  /// Vuelve cerrando esta pantalla, para que el detalle del pedido sepa que debe recargarse. Si se entró por
+  /// enlace directo, no hay pantalla debajo y se va al pedido.
+  void _volverAlPedido() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/pedidos/${widget.pedidoId}');
+    }
+  }
+
   Future<void> _registrar() async {
     final campos = <String, String>{
       if (_metodo == null) 'metodoPagoId': 'Elige el método de pago.',
@@ -149,7 +159,7 @@ class _PagarPantallaState extends State<PagarPantalla> {
       );
       if (!mounted) return;
       avisar(context, 'Recibimos tu pago. Lo verificaremos pronto.');
-      context.go('/pedidos/${widget.pedidoId}');
+      _volverAlPedido();
     } on ErrorApi catch (e) {
       setState(() => _error = e);
     } finally {
@@ -174,10 +184,7 @@ class _PagarPantallaState extends State<PagarPantalla> {
                 children: [
                   Text('Este pedido ya no espera un pago: ${nombresEstadoPago[vigente.estado]}.'),
                   const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: () => context.go('/pedidos/${widget.pedidoId}'),
-                    child: const Text('Ver el pedido'),
-                  ),
+                  OutlinedButton(onPressed: _volverAlPedido, child: const Text('Ver el pedido')),
                 ],
               ),
             );
