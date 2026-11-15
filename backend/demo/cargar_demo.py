@@ -18,11 +18,19 @@ poner las fotos en una base que ya tiene el catálogo (por ejemplo, la de la nub
 Para sumar a una base que ya tiene catálogo las categorías y los productos de este script que todavía no existen
 (por nombre), sin tocar los demás, los pedidos ni las cuentas:
     python demo/cargar_demo.py --ampliar --api https://...
+
+Para activar el pago por QR con un QR de demostración (no escaneable: nadie puede pagar a él), sin tocar nada más:
+    python demo/cargar_demo.py --qr --api https://...
+
+Para una demostración en vivo: genera el comprobante de un pedido ya registrado, con su total real, y lo guarda en
+demo/comprobante-pedido-<número>.png para pasarlo al celular. Imprime la referencia que hay que escribir al pagar:
+    python demo/cargar_demo.py --comprobante 25 [--metodo Transferencia|Depósito|QR] --api https://...
 """
 import argparse
 import io
 import json
 import os
+import random
 import sys
 import urllib.error
 import urllib.request
@@ -165,18 +173,84 @@ def subir_imagen(api, admin, producto, indice):
     api.llamar('PUT', f"/api/productos/{producto['id']}/imagen", admin, archivos={'archivo': archivo})
 
 
-def comprobante(referencia, monto):
+def comprobante(referencia, monto, metodo='Transferencia'):
     img = Image.new('RGB', (600, 800), 'white')
     d = ImageDraw.Draw(img)
     d.rectangle((0, 0, 600, 110), fill=CAFE)
     d.text((300, 55), 'Comprobante de pago', font=fuente(40), fill='white', anchor='mm')
     texto = fuente(30)
-    for i, linea in enumerate(['DATOS DE DEMOSTRACIÓN', f'Referencia: {referencia}', f'Monto: Bs {monto}',
-                               'Destino: Dulces Aromas']):
+    # El monto con dos decimales, como lo muestra la app (RNF19).
+    for i, linea in enumerate(['DATOS DE DEMOSTRACIÓN', f'Método: {metodo}', f'Referencia: {referencia}',
+                               f'Monto: Bs {float(monto):.2f}', 'Destino: Dulces Aromas']):
         d.text((50, 180 + i * 70), linea, font=texto, fill=CAFE)
     salida = io.BytesIO()
     img.save(salida, 'PNG')
     return salida.getvalue()
+
+
+def qr_demostracion():
+    """Una imagen con forma de QR de pago, que no se puede escanear: los módulos salen de un generador fijo, no de un
+    código QR real. Así se ve el pago por QR en la demostración y nadie puede pagar a un código falso proyectado."""
+    modulos, lado, margen = 25, 16, 40
+    ancho = modulos * lado + 2 * margen
+    img = Image.new('RGB', (ancho, ancho + 170), 'white')
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, ancho, 70), fill=CAFE)
+    d.text((ancho / 2, 35), 'Dulces Aromas', font=fuente(34), fill='white', anchor='mm')
+    arriba = 70 + margen
+
+    def celda(x, y):
+        d.rectangle((margen + x * lado, arriba + y * lado, margen + (x + 1) * lado - 1, arriba + (y + 1) * lado - 1),
+                    fill=CAFE)
+
+    esquinas = [(0, 0), (modulos - 7, 0), (0, modulos - 7)]
+
+    def en_esquina(x, y):
+        return any(ex - 1 <= x <= ex + 7 and ey - 1 <= y <= ey + 7 for ex, ey in esquinas)
+
+    azar = random.Random(2026)
+    for y in range(modulos):
+        for x in range(modulos):
+            if not en_esquina(x, y) and azar.random() < 0.5:
+                celda(x, y)
+    # Los tres cuadros de las esquinas, como en un QR.
+    for ex, ey in esquinas:
+        for y in range(7):
+            for x in range(7):
+                if x in (0, 6) or y in (0, 6) or (2 <= x <= 4 and 2 <= y <= 4):
+                    celda(ex + x, ey + y)
+    abajo = arriba + modulos * lado + 30
+    d.text((ancho / 2, abajo), 'QR DE DEMOSTRACIÓN', font=fuente(30), fill=CAFE, anchor='mm')
+    d.text((ancho / 2, abajo + 44), 'No realiza pagos', font=fuente(24), fill='#8E4762', anchor='mm')
+    salida = io.BytesIO()
+    img.save(salida, 'PNG')
+    return salida.getvalue()
+
+
+INSTRUCCIONES_QR = 'Escanea el QR desde tu app bancaria. (QR de demostración: no realiza pagos.)'
+
+
+def configurar_qr(api, admin):
+    """Activa el método QR con el QR de demostración. Devuelve su id, o nulo si la base no tiene el método."""
+    for m in api.get('/api/metodos-pago/gestion', admin):
+        if m['nombre'] == 'QR':
+            api.put(f"/api/metodos-pago/{m['id']}", admin, {'nombre': m['nombre'], 'instrucciones': INSTRUCCIONES_QR})
+            api.llamar('PUT', f"/api/metodos-pago/{m['id']}/qr", admin,
+                       archivos={'archivo': ('qr-demostracion.png', qr_demostracion(), 'image/png')})
+            api.post(f"/api/metodos-pago/{m['id']}/activar", admin)
+            return m['id']
+    return None
+
+
+def comprobante_para(api, admin, pedido_id, metodo):
+    """Guarda el comprobante de un pedido ya registrado, con su total real, para subirlo desde el celular."""
+    p = api.get(f'/api/pedidos/{pedido_id}', admin)
+    referencia = f"DEMO-{pedido_id:05d}-{uuid.uuid4().hex[:4].upper()}"
+    destino = os.path.join(CARPETA, f'comprobante-pedido-{pedido_id}.png')
+    with open(destino, 'wb') as archivo:
+        archivo.write(comprobante(referencia, p['total'], metodo))
+    print(f'Comprobante del pedido #{pedido_id} (Bs {float(p["total"]):.2f}, {metodo}): {os.path.abspath(destino)}')
+    print(f'Al pagar, escribe la referencia {referencia}.')
 
 
 def horario(dias, hora, minuto=0):
@@ -384,12 +458,24 @@ def main():
                         help='solo pone las fotos a los productos que ya existen; no carga nada más')
     parser.add_argument('--ampliar', action='store_true',
                         help='suma las categorías y los productos que faltan; no toca los demás datos')
+    parser.add_argument('--qr', action='store_true',
+                        help='activa el pago por QR con un QR de demostración; no toca los demás datos')
+    parser.add_argument('--comprobante', type=int, metavar='PEDIDO',
+                        help='genera el comprobante de ese pedido, con su total real, para pagarlo en una demostración')
+    parser.add_argument('--metodo', default='Transferencia', choices=['Transferencia', 'Depósito', 'QR'],
+                        help='método que figura en el comprobante (con --comprobante)')
     args = parser.parse_args()
     var = leer_variables()
     clave = var['DEMO_CONTRASENA']
     api = Api(args.api)
 
     admin = api.login(var['ADMIN_CORREO'], var['ADMIN_CONTRASENA'])
+    if args.comprobante is not None:
+        comprobante_para(api, admin, args.comprobante, args.metodo)
+        return
+    if args.qr:
+        print('Pago por QR activado.' if configurar_qr(api, admin) else 'La base no tiene el método QR.')
+        return
     if args.ampliar:
         ampliar(api, admin)
         return
@@ -415,6 +501,9 @@ def main():
             api.put(f"/api/metodos-pago/{m['id']}", admin, {'nombre': m['nombre'], 'instrucciones': instrucciones[m['nombre']]})
             api.post(f"/api/metodos-pago/{m['id']}/activar", admin)
             metodos[m['nombre']] = m['id']
+    qr = configurar_qr(api, admin)
+    if qr:
+        metodos['QR'] = qr
 
     print('Catálogo…')
     productos = {}
@@ -468,7 +557,8 @@ def main():
         referencia = f"OP-{p['id']:05d}{uuid.uuid4().hex[:4].upper()}"
         return api.llamar('POST', '/api/pagos', token,
                           campos={'pedidoId': p['id'], 'metodoPagoId': metodos[metodo], 'referencia': referencia},
-                          archivos={'comprobante': ('comprobante.png', comprobante(referencia, p['total']), 'image/png')})
+                          archivos={'comprobante': ('comprobante.png', comprobante(referencia, p['total'], metodo),
+                                                    'image/png')})
 
     def pagado(cliente, p):
         api.post(f"/api/pagos/{pagar(cliente[0], p)['id']}/aprobar", admin)

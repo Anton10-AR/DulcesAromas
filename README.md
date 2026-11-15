@@ -221,6 +221,13 @@ Para sumar a una base que ya tiene catálogo las categorías y los productos del
 python demo/cargar_demo.py --ampliar --api https://dulces-aromas-api.onrender.com
 ```
 
+Para mostrar el pago por QR, `--qr` activa ese método con un QR de demostración. Tiene la forma de un QR pero no se puede escanear, para que nadie pueda pagar a un código falso proyectado. Para pagar en vivo un pedido recién registrado, `--comprobante` genera su comprobante con el total real, lo guarda en `backend/demo/` (no se versiona) e imprime la referencia que hay que escribir al pagar:
+
+```powershell
+python demo/cargar_demo.py --qr --api https://dulces-aromas-api.onrender.com
+python demo/cargar_demo.py --comprobante 25 --metodo Transferencia --api https://dulces-aromas-api.onrender.com
+```
+
 ### Respaldo diario (RNF14)
 
 El workflow **Respaldo diario** (`.github/workflows/respaldo.yml`) corre cada noche a las 03:00 de La Paz:

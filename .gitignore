@@ -4,3 +4,6 @@
 *.iml
 .DS_Store
 Thumbs.db
+
+# Comprobantes generados con cargar_demo.py --comprobante, para una demostración en vivo.
+backend/demo/comprobante-pedido-*.png
