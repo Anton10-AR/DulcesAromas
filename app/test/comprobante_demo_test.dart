@@ -10,7 +10,7 @@ void main() {
   });
 
   test('las compilaciones normales no ofrecen generar comprobantes', () {
-    // Las pruebas corren sin --dart-define=DEMO=true, como la Tienda publicada.
+    // Las pruebas corren sin --dart-define=DEMO=true, como una APK normal.
     expect(modoDemostracion, isFalse);
   });
 

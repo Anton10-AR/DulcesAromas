@@ -9,7 +9,7 @@ import '../comun/formato.dart';
 import '../comun/tema.dart';
 
 /// Si la app se compiló para una demostración (`--dart-define=DEMO=true`). Solo entonces la pantalla de pago ofrece
-/// generar un comprobante; la Tienda publicada y una APK normal no lo muestran.
+/// generar un comprobante. La Tienda web publicada y la APK de demostración se compilan así; una APK normal no.
 const modoDemostracion = bool.fromEnvironment('DEMO');
 
 /// Una referencia de demostración para el pedido, como la que daría un banco: `DEMO-00025-7F3A`.

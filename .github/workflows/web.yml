@@ -39,9 +39,10 @@ jobs:
       - name: Pruebas
         run: flutter test
 
+      # DEMO=true: la pantalla de pago ofrece «Generar comprobante de demostración», para las demostraciones en vivo.
       - name: Tienda web
         run: |
-          flutter build web --release --base-href / --dart-define=API_URL=${{ vars.API_URL }}
+          flutter build web --release --base-href / --dart-define=API_URL=${{ vars.API_URL }} --dart-define=DEMO=true
           mv build/web ../sitio
 
       - name: Panel

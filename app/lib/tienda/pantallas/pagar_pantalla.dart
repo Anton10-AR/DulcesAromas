@@ -39,6 +39,8 @@ class _PagarPantallaState extends State<PagarPantalla> {
   @override
   void initState() {
     super.initState();
+    // En una demostración la referencia ya viene escrita; el comprobante generado lleva la misma.
+    if (modoDemostracion) _referencia.text = referenciaDemo(widget.pedidoId);
     _cargar();
   }
 
