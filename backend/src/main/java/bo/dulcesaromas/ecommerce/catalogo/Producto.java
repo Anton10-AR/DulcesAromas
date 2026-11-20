@@ -50,10 +50,22 @@ class Producto {
 
 	private Instant imagenActualizada;
 
+	/** RN18: cuántas unidades se pueden pedir de una vez; nulo, el tope general de 99 por línea. */
+	private Integer maximoPorPedido;
+
+	/** Minutos de preparación por unidad, para estimar el tiempo de un pedido (D12). */
+	private Integer minutosPorUnidad;
+
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	@JoinColumn(name = "producto_id", nullable = false)
 	@OrderColumn(name = "orden")
 	private List<OpcionPersonalizacion> opciones = new ArrayList<>();
+
+	/** La receta aproximada: se lee solo al estimar un pedido, así que no se carga con el producto. */
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@JoinColumn(name = "producto_id", nullable = false)
+	@OrderColumn(name = "orden")
+	private List<IngredienteReceta> receta = new ArrayList<>();
 
 	protected Producto() {
 	}
@@ -75,6 +87,16 @@ class Producto {
 		this.personalizable = personalizable;
 		this.opciones.clear();
 		this.opciones.addAll(opciones);
+	}
+
+	/**
+	 * El máximo por pedido y la receta con su tiempo se editan aparte de los datos que ve el cliente.
+	 */
+	void definirProduccion(Integer maximoPorPedido, Integer minutosPorUnidad, List<IngredienteReceta> receta) {
+		this.maximoPorPedido = maximoPorPedido;
+		this.minutosPorUnidad = minutosPorUnidad;
+		this.receta.clear();
+		this.receta.addAll(receta);
 	}
 
 	void cambiarDisponibilidad(boolean disponible) {
@@ -138,6 +160,18 @@ class Producto {
 
 	public List<OpcionPersonalizacion> getOpciones() {
 		return opciones;
+	}
+
+	public Integer getMaximoPorPedido() {
+		return maximoPorPedido;
+	}
+
+	public Integer getMinutosPorUnidad() {
+		return minutosPorUnidad;
+	}
+
+	public List<IngredienteReceta> getReceta() {
+		return receta;
 	}
 
 }

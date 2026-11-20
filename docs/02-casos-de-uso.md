@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.5 · 13/11/2026
+Versión 1.6 · 20/11/2026
 
 ## 1. Introducción y actores
 
@@ -74,6 +74,7 @@ El pedido y el pago tienen cada uno su propio estado. El pedido pasa a Confirmad
 | RN15 | El catálogo se consulta sin iniciar sesión; hacer un pedido exige cuenta | CU04, CU05 |
 | RN16 | Un cliente no puede obtener un rol de personal; esas cuentas las crea un administrador | CU09, CU11 |
 | RN17 | El mensaje escrito sobre una torta tiene hasta 24 caracteres y no tiene recargo | CU05, CU17 |
+| RN18 | Un pedido no supera el máximo de unidades por pedido de cada producto; las líneas del mismo producto se suman | CU05, CU17 |
 
 ## 3. Resumen de casos de uso
 
@@ -209,14 +210,14 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- |
 | ID / versión | CU02 / 1.0 |
 | Actor principal | Administrador |
-| Fuente | RF16, RF17, RF18 |
+| Fuente | RF16, RF17, RF18, RF44, RF45 |
 | Prioridad | Alta |
 | Objetivo | Mantener el catálogo de productos actualizado |
-| Descripción | El administrador registra, edita y desactiva productos. Cada producto tiene nombre, descripción, precio, imagen, categoría (CU14), indicador Activo, disponibilidad, si es personalizable y sus opciones con su recargo fijo (D9) |
+| Descripción | El administrador registra, edita y desactiva productos. Cada producto tiene nombre, descripción, precio, imagen, categoría (CU14), indicador Activo, disponibilidad, si es personalizable y sus opciones con su recargo fijo (D9). Opcionalmente tiene un máximo de unidades por pedido (RN18) y una receta aproximada: los insumos por unidad y los minutos de preparación, con un factor por cada opción de tamaño (D12) |
 | Precondición | El administrador tiene sesión iniciada y existe al menos una categoría |
 | Postcondición | El catálogo refleja el cambio |
-| Secuencia normal | 1. El administrador abre Catálogo. 2. Elige Nuevo producto o selecciona uno existente. 3. Completa o modifica los datos, la imagen, la disponibilidad y las opciones de personalización con su recargo. 4. El sistema valida y guarda. 5. El producto aparece en la Tienda si está activo |
-| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada o mide más de 1200 px, la recorta al centro y la reduce. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos. Se puede borrar solo si nunca se pidió; si tiene pedidos asociados, el sistema lo impide y solo se desactiva (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto |
+| Secuencia normal | 1. El administrador abre Catálogo. 2. Elige Nuevo producto o selecciona uno existente. 3. Completa o modifica los datos, la imagen, la disponibilidad, el máximo por pedido, la receta y las opciones de personalización con su recargo y su factor. 4. El sistema valida y guarda. 5. El producto aparece en la Tienda si está activo |
+| Secuencia opcional | Alt. 1: faltan datos obligatorios o el precio no es válido. El sistema marca el campo. Alt. 2: la imagen no cumple el formato o tamaño (RNF10). El sistema la rechaza. Si es JPG o PNG y no es cuadrada o mide más de 1200 px, la recorta al centro y la reduce. Alt. 3: se desactiva un producto. Deja de verse en la Tienda y conserva sus pedidos. Se puede borrar solo si nunca se pidió; si tiene pedidos asociados, el sistema lo impide y solo se desactiva (RN10). Alt. 4: el Vendedor solo cambia la disponibilidad, sin editar el resto. Alt. 5: la receta repite un insumo o tiene una cantidad no positiva. El sistema la rechaza y marca el campo |
 | Rendimiento | 2 s o menos por operación |
 | Frecuencia | Semanal |
 | Importancia | Alta |
@@ -289,14 +290,14 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- |
 | ID / versión | CU05 / 1.0 |
 | Actor principal | Cliente |
-| Fuente | RF09 a RF13, RF32, RF35 |
+| Fuente | RF09 a RF13, RF32, RF35, RF44 |
 | Prioridad | Alta |
 | Objetivo | Armar un carrito y confirmar un pedido |
 | Descripción | El cliente agrega productos, elige sus opciones de personalización, revisa el total y confirma el pedido con recojo o delivery. El pedido nace en estado Pendiente y continúa en CU06 |
 | Precondición | El cliente tiene sesión iniciada |
 | Postcondición | Existe un pedido Pendiente con su pago Pendiente de pago |
 | Secuencia normal | 1. El cliente agrega un producto al carrito, eligiendo las opciones si las tiene. 2. Cambia cantidades o quita productos. 3. El sistema calcula el total (RN11). 4. El cliente elige recojo o delivery e ingresa teléfono y horario; si es delivery, también la dirección. 5. El sistema valida la disponibilidad (RN08). 6. El cliente confirma. 7. El sistema crea el pedido y pasa a CU06 |
-| Secuencia opcional | Alt. 1: un producto dejó de estar disponible. El sistema avisa y no permite confirmar hasta quitarlo (RN08). Alt. 2: el cliente sin sesión intenta confirmar. El sistema le pide iniciar sesión o registrarse y conserva el carrito (RN15). Alt. 3: faltan datos de entrega. El sistema pide completarlos: dirección, teléfono y horario para el delivery; teléfono y horario para el recojo (RN12). Alt. 3a: el horario está fuera de la atención (lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00) o tiene menos de 24 horas de anticipación. El sistema pide otro. Alt. 3b: el mensaje para la torta supera los 24 caracteres. El sistema no lo acepta (RN17). Alt. 4: el cliente abandona. El carrito se conserva en su sesión |
+| Secuencia opcional | Alt. 1: un producto dejó de estar disponible. El sistema avisa y no permite confirmar hasta quitarlo (RN08). Alt. 2: el cliente sin sesión intenta confirmar. El sistema le pide iniciar sesión o registrarse y conserva el carrito (RN15). Alt. 3: faltan datos de entrega. El sistema pide completarlos: dirección, teléfono y horario para el delivery; teléfono y horario para el recojo (RN12). Alt. 3a: el horario está fuera de la atención (lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00) o tiene menos de 24 horas de anticipación. El sistema pide otro. Alt. 3b: el mensaje para la torta supera los 24 caracteres. El sistema no lo acepta (RN17). Alt. 4: el cliente abandona. El carrito se conserva en su sesión. Alt. 5: la cantidad de un producto, sumando sus líneas, supera su máximo por pedido. La Tienda no deja pasar de ese número y el sistema rechaza el pedido; para más unidades, el cliente consulta a la pastelería (RN18) |
 | Rendimiento | Carrito y total en 1 s o menos (RNF02) |
 | Frecuencia | Alta |
 | Importancia | Alta |
@@ -309,14 +310,14 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- |
 | ID / versión | CU17 / 1.0 |
 | Actor principal | Vendedor |
-| Fuente | RF34 |
+| Fuente | RF34, RF44 |
 | Prioridad | Media |
 | Objetivo | Cargar un pedido que el cliente hizo por teléfono o en mostrador |
 | Descripción | El vendedor registra el pedido a nombre de un cliente, con las mismas reglas que CU05 (D7) |
 | Precondición | El vendedor tiene sesión y permiso de pedidos |
 | Postcondición | Existe un pedido Pendiente a nombre del cliente, marcado como asistido y con el nombre de quien lo registró |
 | Secuencia normal | 1. El vendedor abre Pedidos y elige Nuevo pedido asistido. 2. Busca al cliente por correo o teléfono, o lo registra. 3. Agrega productos, opciones, cantidades y tipo de entrega. 4. El sistema calcula el total y valida la disponibilidad. 5. El vendedor confirma y el sistema crea el pedido |
-| Secuencia opcional | Alt. 1: el cliente no existe. El vendedor crea la cuenta con sus datos y el cliente define su contraseña por CU12. Alt. 2: el vendedor registra el pago recibido. El pago queda En verificación y otra persona con permiso lo verifica (RN06) |
+| Secuencia opcional | Alt. 1: el cliente no existe. El vendedor crea la cuenta con sus datos y el cliente define su contraseña por CU12. Alt. 2: el vendedor registra el pago recibido. El pago queda En verificación y otra persona con permiso lo verifica (RN06). Alt. 3: la cantidad supera el máximo por pedido del producto. El sistema la rechaza igual que en CU05 (RN18) |
 | Rendimiento | 2 s o menos por paso |
 | Frecuencia | Media |
 | Importancia | Media |
@@ -411,13 +412,13 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- |
 | ID / versión | CU07 / 1.0 |
 | Actor principal | Administrador, o Vendedor con el permiso «Verificar pagos» |
-| Fuente | RF37, RF38, RF39 |
+| Fuente | RF37, RF38, RF39, RF46 |
 | Prioridad | Alta |
 | Objetivo | Aprobar o rechazar un pago comparando el comprobante con el pedido |
 | Descripción | El verificador revisa el comprobante y decide. Aprobar lleva el pago a Pagado y el pedido a Confirmado. Rechazar exige una observación |
 | Precondición | El pago está En verificación y el usuario tiene el permiso |
 | Postcondición | El pago queda Pagado o Rechazado, el historial lo registra y, si se aprobó, el pedido queda Confirmado |
-| Secuencia normal | 1. El verificador abre Cobranza y ve los pagos En verificación. 2. Abre uno y revisa monto, referencia y comprobante. 3. Elige Aprobar. 4. El sistema pasa el pago a Pagado, el pedido a Confirmado y guarda quién verificó y cuándo |
+| Secuencia normal | 1. El verificador abre Cobranza y ve los pagos En verificación. 2. Abre uno y revisa monto, referencia y comprobante, junto con la estimación del pedido: los insumos y el tiempo que requiere, sumados a los pedidos Confirmados y En preparación, comparados con el stock y con el horario de entrega (RF46). La estimación solo informa (D12). 3. Elige Aprobar. 4. El sistema pasa el pago a Pagado, el pedido a Confirmado y guarda quién verificó y cuándo |
 | Secuencia opcional | Alt. 1: no coincide el monto o el comprobante. El verificador elige Rechazar. Alt. 2: el rechazo sin observación. El sistema la exige (RN07) y luego reabre el cobro como Pendiente de pago. Alt. 3: el pedido fue asistido y lo registró el mismo usuario. El sistema no le permite verificar ese pago (RN06). Alt. 4: otra persona ya decidió ese pago. El sistema muestra el resultado y no aplica una segunda decisión (RNF15) |
 | Rendimiento | 2 s o menos por decisión |
 | Frecuencia | Diaria |
@@ -455,7 +456,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- | --- | --- | --- | --- |
 | Inicio con montos de ventas | Sí | No | No | No | CU10 |
 | Inicio con pedidos y pagos pendientes | Sí | Sí | No | Sí, los pedidos por preparar | CU10 |
-| Catálogo: crear, editar, desactivar | Sí | No | No | No | CU02, CU14 |
+| Catálogo: crear, editar, desactivar, con máximo por pedido y receta | Sí | No | No | No | CU02, CU14 |
 | Catálogo: consultar y cambiar disponibilidad | Sí | Sí | No | No | CU02 |
 | Inventario: consultar y ver alertas | Sí | Sí | No | Sí | CU03 |
 | Inventario: registrar movimientos | Sí | No | No | No | CU03 |
@@ -479,12 +480,12 @@ El Vendedor que registró un pedido asistido no puede verificar el pago de ese m
 | Caso de uso | Requisitos que cubre |
 | --- | --- |
 | CU01 | RF02, RF03, RF26, RF27 |
-| CU02 | RF16, RF17, RF18 |
+| CU02 | RF16, RF17, RF18, RF44, RF45 |
 | CU03 | RF29, RF30, RF31 |
 | CU04 | RF05, RF06, RF07, RF08 |
-| CU05 | RF09, RF10, RF11, RF12, RF13, RF32, RF35 |
+| CU05 | RF09, RF10, RF11, RF12, RF13, RF32, RF35, RF44 |
 | CU06 | RF36 |
-| CU07 | RF37, RF38, RF39 |
+| CU07 | RF37, RF38, RF39, RF46 |
 | CU08 | RF21, RF40, RF41, RF42, RF43 |
 | CU09 | RF22, RF25, RF26, RF28 |
 | CU10 | RF20, RF23 |
@@ -494,9 +495,9 @@ El Vendedor que registró un pedido asistido no puede verificar el pago de ese m
 | CU14 | RF19 |
 | CU15 | RF14, RF15 |
 | CU16 | RF33 |
-| CU17 | RF34 |
+| CU17 | RF34, RF44 |
 
-Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos un caso de uso.
+Los 46 requisitos de la Visión v1 (RF01 a RF46) quedan cubiertos por al menos un caso de uso.
 
 ### 9.2 Cambios respecto a los Casos de Uso v0
 
@@ -526,6 +527,7 @@ Los 43 requisitos de la Visión v1 (RF01 a RF43) quedan cubiertos por al menos u
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 | RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
 | CU05, CU17 (v1.3) | Si el producto ofrece tamaños, elegir uno es obligatorio; sin él, el pedido de una torta queda incompleto |
+| RN18, CU02, CU05, CU07, CU17 (v1.6) | Máximo de unidades por pedido para cada producto, y recetas aproximadas que estiman insumos y tiempo al verificar un pago | Un pedido de 30 tortas se aceptaba sin aviso. Lo pidió el equipo el 20/11/2026 |
 | Actores, tabla 2.2, CU08, matriz (v1.5) | Nuevo rol fijo Repostero, que prepara los pedidos desde Cocina | Con tres roles, quien prepara necesitaba una cuenta de Vendedor, que también cobra y cancela. Lo observó el docente |
 | Tabla 2.2, CU07 (v1.4) | Un pago rechazado no vuelve a Pendiente de pago: queda Rechazado y el sistema abre un pago nuevo. Las verificaciones se guardan en su propia tabla, no en la auditoría de cuentas | Así lo hace el sistema: conserva cada comprobante y su motivo de rechazo |
 
@@ -562,4 +564,6 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. El equ
 | Cliente de un pedido asistido | Su cuenta nace sin contraseña conocida; la define con «¿Olvidó su contraseña?» (CU17) |
 | Cancelación de un pedido pagado | Su pago sale de la cola de verificación y ya no se puede decidir (CU16) |
 | Reporte de ventas | «Vendido» suma los pedidos pagados y no cancelados; el rango es de hasta 12 meses (RNF02) |
+| Máximo por pedido (RN18) | Opcional por producto; sin máximo rige el tope general de 99 unidades por línea. Se cuenta la suma de las líneas del producto. Valores iniciales: tortas 3, postres individuales 12, masitas y galletas 50, bebidas 20 |
+| Recetas (D12, 20/11/2026) | Son aproximadas y solo estiman: no descuentan stock ni bloquean la aprobación. El tiempo se cuenta por unidad y cada opción de tamaño multiplica insumos y tiempo por su factor. La estimación suma los pedidos Confirmados y En preparación |
 | Estado del cobro en Mis pedidos | La Tienda combina dos consultas (pedidos y pagos), para que E-commerce no dependa de Cobros |

@@ -25,13 +25,17 @@ class OpcionElegida {
 
 	private BigDecimal recargo;
 
+	/** Copia del factor de la opción, para estimar la receta (D12). */
+	private BigDecimal factor;
+
 	protected OpcionElegida() {
 	}
 
-	OpcionElegida(String tipo, String nombre, BigDecimal recargo) {
+	OpcionElegida(String tipo, String nombre, BigDecimal recargo, BigDecimal factor) {
 		this.tipo = tipo;
 		this.nombre = nombre;
 		this.recargo = recargo;
+		this.factor = factor;
 	}
 
 	String getTipo() {
@@ -44,6 +48,10 @@ class OpcionElegida {
 
 	BigDecimal getRecargo() {
 		return recargo;
+	}
+
+	BigDecimal getFactor() {
+		return factor;
 	}
 
 }

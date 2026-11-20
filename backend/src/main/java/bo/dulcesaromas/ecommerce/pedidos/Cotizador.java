@@ -3,6 +3,7 @@ package bo.dulcesaromas.ecommerce.pedidos;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -44,6 +45,7 @@ class Cotizador {
 		Set<Long> ids = solicitud.lineas().stream().map(SolicitudPedido.LineaSolicitud::productoId).collect(Collectors.toSet());
 		Map<Long, ProductoParaPedido> porId = productos.paraPedido(ids, bloquear).stream()
 			.collect(Collectors.toMap(ProductoParaPedido::id, Function.identity()));
+		exigirMaximos(solicitud, porId);
 		List<LineaCotizada> lineas = new ArrayList<>();
 		for (var linea : solicitud.lineas()) {
 			ProductoParaPedido producto = porId.get(linea.productoId());
@@ -59,6 +61,23 @@ class Cotizador {
 		BigDecimal envio = tipo == TipoEntrega.DELIVERY ? configuracion.actual().getTarifaEnvio() : CERO;
 		BigDecimal total = lineas.stream().map(l -> l.linea().getSubtotal()).reduce(envio, BigDecimal::add);
 		return new Cotizacion(lineas, envio, total);
+	}
+
+	/**
+	 * RN18: las unidades de un producto, sumando todas sus líneas (una torta con mensaje y otra sin él), no superan su
+	 * máximo por pedido. Así la cocina no recibe pedidos que no puede cumplir.
+	 */
+	private static void exigirMaximos(SolicitudPedido solicitud, Map<Long, ProductoParaPedido> porId) {
+		Map<Long, Integer> unidades = new LinkedHashMap<>();
+		solicitud.lineas().forEach(l -> unidades.merge(l.productoId(), l.cantidad(), Integer::sum));
+		unidades.forEach((id, cantidad) -> {
+			ProductoParaPedido producto = porId.get(id);
+			if (producto != null && producto.maximoPorPedido() != null && cantidad > producto.maximoPorPedido()) {
+				throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "MAXIMO_POR_PEDIDO",
+						"Puedes pedir hasta " + producto.maximoPorPedido() + " de «" + producto.nombre()
+								+ "» por pedido. Para más, consúltanos.");
+			}
+		});
 	}
 
 	/**
@@ -81,7 +100,7 @@ class Cotizador {
 				throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "OPCION_REPETIDA",
 						"Elige solo una opción de " + opcion.tipo() + " para «" + producto.nombre() + "».");
 			}
-			resultado.add(new OpcionElegida(opcion.tipo(), opcion.nombre(), opcion.recargo()));
+			resultado.add(new OpcionElegida(opcion.tipo(), opcion.nombre(), opcion.recargo(), opcion.factor()));
 		}
 		boolean tieneTamanos = delProducto.stream().anyMatch(o -> esTamano(o.tipo()));
 		if (tieneTamanos && tipos.stream().noneMatch(Cotizador::esTamano)) {

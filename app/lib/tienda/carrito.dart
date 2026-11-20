@@ -13,6 +13,7 @@ class LineaCarrito {
     this.opciones = const [],
     this.nombresOpciones = const [],
     this.mensaje,
+    this.maximo,
   });
 
   factory LineaCarrito.deJson(Map<String, dynamic> j) => LineaCarrito(
@@ -22,6 +23,7 @@ class LineaCarrito {
     opciones: List<int>.from(j['opciones'] as List),
     nombresOpciones: List<String>.from(j['nombresOpciones'] as List),
     mensaje: j['mensaje'] as String?,
+    maximo: j['maximo'] as int?,
   );
 
   final int productoId;
@@ -30,6 +32,9 @@ class LineaCarrito {
   final List<int> opciones;
   final List<String> nombresOpciones;
   final String? mensaje;
+
+  /// RN18: el máximo por pedido del producto al agregarlo. El servidor lo vuelve a revisar con el valor actual.
+  final int? maximo;
 
   /// Dos líneas con el mismo producto, opciones y mensaje se juntan en una.
   bool esIgualA(LineaCarrito otra) =>
@@ -44,6 +49,7 @@ class LineaCarrito {
     'opciones': opciones,
     'nombresOpciones': nombresOpciones,
     'mensaje': mensaje,
+    'maximo': maximo,
   };
 
   /// La línea como la espera la API.
@@ -68,6 +74,18 @@ class Carrito extends ChangeNotifier {
 
   bool get vacio => lineas.isEmpty;
 
+  /// Las unidades de un producto en el carrito, sumando sus líneas (RN18).
+  int unidadesDe(int productoId) =>
+      lineas.where((l) => l.productoId == productoId).fold(0, (suma, l) => suma + l.cantidad);
+
+  /// Cuántas unidades más admite la línea [indice] sin pasar el máximo del producto ni el tope de la línea.
+  int maximoDeLinea(int indice) {
+    final linea = lineas[indice];
+    final otras = unidadesDe(linea.productoId) - linea.cantidad;
+    final maximo = linea.maximo == null ? cantidadMaxima : linea.maximo! - otras;
+    return maximo.clamp(1, cantidadMaxima);
+  }
+
   Future<void> cargar() async {
     final preferencias = await SharedPreferences.getInstance();
     final guardado = preferencias.getString(_clave);
@@ -82,8 +100,12 @@ class Carrito extends ChangeNotifier {
   void agregar(LineaCarrito nueva) {
     final igual = lineas.where((l) => l.esIgualA(nueva)).firstOrNull;
     if (igual != null) {
-      igual.cantidad = (igual.cantidad + nueva.cantidad).clamp(1, cantidadMaxima);
+      igual.cantidad = (igual.cantidad + nueva.cantidad).clamp(1, maximoDeLinea(lineas.indexOf(igual)));
     } else {
+      // RN18: una línea nueva solo suma lo que queda hasta el máximo del producto.
+      final quedan = (nueva.maximo ?? cantidadMaxima) - unidadesDe(nueva.productoId);
+      if (quedan < 1) return;
+      nueva.cantidad = nueva.cantidad.clamp(1, quedan.clamp(1, cantidadMaxima));
       lineas.add(nueva);
     }
     _cambio();
@@ -93,7 +115,7 @@ class Carrito extends ChangeNotifier {
     if (cantidad < 1) {
       lineas.removeAt(indice);
     } else {
-      lineas[indice].cantidad = cantidad.clamp(1, cantidadMaxima);
+      lineas[indice].cantidad = cantidad.clamp(1, maximoDeLinea(indice));
     }
     _cambio();
   }

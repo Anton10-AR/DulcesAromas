@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -31,7 +32,15 @@ record DatosProducto(
 			@NotBlank(message = "Escribe el tipo, por ejemplo Tamaño o Sabor.") @Size(max = 40, message = "Usa como máximo 40 caracteres.") String tipo,
 			@NotBlank(message = "Escribe el nombre de la opción.") @Size(max = 60, message = "Usa como máximo 60 caracteres.") String nombre,
 			@NotNull(message = "Escribe el recargo; puede ser 0.") @DecimalMin(value = "0.00", message = "El recargo no puede ser negativo.")
-			@Digits(integer = 8, fraction = 2, message = "Usa un recargo con hasta 2 decimales.") BigDecimal recargo) {
+			@Digits(integer = 8, fraction = 2, message = "Usa un recargo con hasta 2 decimales.") BigDecimal recargo,
+			@DecimalMin(value = "0.1", message = "El factor va de 0.1 a 10.") @DecimalMax(value = "10", message = "El factor va de 0.1 a 10.")
+			@Digits(integer = 2, fraction = 2, message = "Usa un factor con hasta 2 decimales.") BigDecimal factor) {
+
+		/** Cuánto multiplica la receta y el tiempo (D12); sin indicar, 1. */
+		BigDecimal factorOUno() {
+			return factor == null ? BigDecimal.ONE : factor;
+		}
+
 	}
 
 }

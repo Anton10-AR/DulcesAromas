@@ -67,6 +67,7 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
         opciones: opciones.map((o) => o.id!).toList(),
         nombresOpciones: opciones.map((o) => o.nombre).toList(),
         mensaje: _mensaje.text.trim().isEmpty ? null : _mensaje.text.trim(),
+        maximo: p.maximoPorPedido,
       ),
     );
     final detalle = [
@@ -93,6 +94,8 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
 
   @override
   Widget build(BuildContext context) {
+    // Al cambiar el carrito cambia cuánto más se puede agregar (RN18).
+    context.watch<Carrito>();
     return Scaffold(
       appBar: AppBar(actions: accionesTienda(context)),
       bottomNavigationBar: _barraAgregar(),
@@ -186,11 +189,16 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
                   ),
                   IconButton.outlined(
                     tooltip: 'Agregar uno',
-                    onPressed: _cantidad < Carrito.cantidadMaxima ? () => setState(() => _cantidad++) : null,
+                    onPressed: _cantidad < _quedan(p) ? () => setState(() => _cantidad++) : null,
                     icon: const Icon(Icons.add),
                   ),
                 ],
               ),
+              if (p.maximoPorPedido != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('Hasta ${p.maximoPorPedido} por pedido. Para más, consúltanos.', style: textos.bodySmall),
+                ),
               const SizedBox(height: 24),
               // En el teléfono, el botón va fijo abajo (bottomNavigationBar).
               if (ancha) ...[_botonAgregar(p), const SizedBox(height: 24)],
@@ -232,6 +240,9 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
 
   bool _ancha(BuildContext context) => MediaQuery.sizeOf(context).width >= 720;
 
+  /// RN18: cuántas unidades más se pueden agregar, descontando las que ya están en el carrito.
+  int _quedan(Producto p) => p.tope - context.read<Carrito>().unidadesDe(p.id);
+
   /// El aviso de no disponible o de falta el tamaño, y el botón para agregar.
   Widget _botonAgregar(Producto p) {
     final textos = Theme.of(context).textTheme;
@@ -241,13 +252,23 @@ class _ProductoPantallaState extends State<ProductoPantalla> {
       children: [
         // HU07: un producto no disponible no se puede agregar al carrito.
         if (!p.disponible) const AvisoError('Este producto no está disponible por ahora.'),
+        if (p.disponible && _quedan(p) < _cantidad)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              _quedan(p) <= 0
+                  ? 'Ya tienes en el carrito el máximo de ${p.tope} por pedido.'
+                  : 'Puedes agregar ${_quedan(p)} más: el máximo es ${p.tope} por pedido.',
+              style: textos.bodyMedium,
+            ),
+          ),
         if (p.disponible && p.faltaTamano(_elegidas))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text('Elige un tamaño para agregarlo al carrito.', style: textos.bodyMedium),
           ),
         FilledButton.icon(
-          onPressed: p.disponible && !p.faltaTamano(_elegidas) ? () => _agregar(p) : null,
+          onPressed: p.disponible && !p.faltaTamano(_elegidas) && _cantidad <= _quedan(p) ? () => _agregar(p) : null,
           icon: const Icon(Icons.add_shopping_cart),
           label: const Text('Agregar al carrito'),
         ),

@@ -8,6 +8,20 @@ void main() {
   LineaCarrito torta({int cantidad = 1, List<int> opciones = const [], String? mensaje}) =>
       LineaCarrito(productoId: 1, nombre: 'Torta', cantidad: cantidad, opciones: opciones, mensaje: mensaje);
 
+  test('RN18: el máximo por pedido cuenta todas las líneas del producto', () {
+    LineaCarrito conMaximo(int cantidad, List<int> opciones) =>
+        LineaCarrito(productoId: 1, nombre: 'Torta', cantidad: cantidad, opciones: opciones, maximo: 3);
+    final carrito = Carrito()
+      ..agregar(conMaximo(2, [1]))
+      ..agregar(conMaximo(2, [2]));
+
+    expect(carrito.unidadesDe(1), 3, reason: 'la segunda línea solo suma la unidad que quedaba');
+    carrito.cambiarCantidad(0, 5);
+    expect(carrito.lineas[0].cantidad, 2);
+    carrito.agregar(conMaximo(1, [3]));
+    expect(carrito.lineas, hasLength(2), reason: 'sin unidades disponibles, no se agrega otra línea');
+  });
+
   test('el mismo producto con las mismas opciones se junta en una línea', () {
     final carrito = Carrito()
       ..agregar(torta(opciones: [2, 3]))

@@ -238,6 +238,39 @@ void main() {
     expect(boton.onPressed, isNull);
   });
 
+  testWidgets('HU22: la ficha no deja pedir más que el máximo por pedido del producto', (tester) async {
+    final api = apiFalsa(
+      respuestas: {
+        '/api/catalogo/productos/1': (_) => http.Response(
+          jsonEncode({
+            'id': 1,
+            'nombre': 'Torta de chocolate',
+            'descripcion': 'Hecha en casa',
+            'precio': 120.0,
+            'categoria': {'id': 1, 'nombre': 'Tortas'},
+            'activo': true,
+            'disponible': true,
+            'personalizable': false,
+            'imagen': null,
+            'maximoPorPedido': 2,
+            'opciones': [],
+          }),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      },
+    );
+    await abrir(tester, api);
+    await tocar(tester, find.text('Torta de chocolate', skipOffstage: false));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hasta 2 por pedido. Para más, consúltanos.'), findsOneWidget);
+    await tocar(tester, find.byTooltip('Agregar uno'));
+    await tester.pumpAndSettle();
+    final mas = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.add));
+    expect(mas.onPressed, isNull, reason: 'con 2 unidades llegó al máximo');
+  });
+
   testWidgets('agregar un producto suma al carrito', (tester) async {
     await abrir(tester, apiFalsa());
 

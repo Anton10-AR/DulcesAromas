@@ -234,6 +234,12 @@ python demo/cargar_demo.py --qr --api https://dulces-aromas-api.onrender.com
 python demo/cargar_demo.py --comprobante 25 --metodo Transferencia --api https://dulces-aromas-api.onrender.com
 ```
 
+Cada producto puede tener un máximo de unidades por pedido (RN18) y una receta aproximada con sus minutos por unidad, que el Panel usa para estimar los insumos y el tiempo de un pedido al verificar su pago (D12). Una base nueva ya los trae; para ponerlos en una base que ya tiene catálogo, como la de la nube, `--recetas` carga los máximos (tortas 3, postres individuales 12, masitas y galletas 50, bebidas 20), el factor de cada tamaño y las recetas de 26 productos, sin tocar nada más. Se puede repetir:
+
+```powershell
+python demo/cargar_demo.py --recetas --api https://dulces-aromas-api.onrender.com
+```
+
 ### Respaldo diario (RNF14)
 
 El workflow **Respaldo diario** (`.github/workflows/respaldo.yml`) corre cada noche a las 03:00 de La Paz:

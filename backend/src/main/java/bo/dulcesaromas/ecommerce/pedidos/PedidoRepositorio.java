@@ -1,8 +1,10 @@
 package bo.dulcesaromas.ecommerce.pedidos;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import bo.dulcesaromas.ecommerce.EstadoPedido;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -12,6 +14,8 @@ import org.springframework.data.jpa.repository.Query;
 interface PedidoRepositorio extends JpaRepository<Pedido, Long>, JpaSpecificationExecutor<Pedido> {
 
 	List<Pedido> findByClienteIdOrderByFechaCreacionDescIdDesc(Long clienteId);
+
+	List<Pedido> findByEstadoIn(Collection<EstadoPedido> estados);
 
 	@Query("select count(l) > 0 from LineaPedido l where l.productoId = :productoId")
 	boolean existeLineaConProducto(Long productoId);

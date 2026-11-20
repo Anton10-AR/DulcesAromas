@@ -2,12 +2,18 @@ package bo.dulcesaromas.ecommerce.catalogo;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import bo.dulcesaromas.compartido.ReglaNegocioException;
 import bo.dulcesaromas.compartido.Textos;
 import bo.dulcesaromas.ecommerce.IPedidos;
+import bo.dulcesaromas.ecommerce.IStock;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,14 +36,17 @@ class ProductoServicio {
 
 	private final IPedidos pedidos;
 
+	private final IStock stock;
+
 	private final Clock reloj;
 
 	ProductoServicio(ProductoRepositorio productos, CategoriaRepositorio categorias, ImagenProductoRepositorio imagenes,
-			IPedidos pedidos, Clock reloj) {
+			IPedidos pedidos, IStock stock, Clock reloj) {
 		this.productos = productos;
 		this.categorias = categorias;
 		this.imagenes = imagenes;
 		this.pedidos = pedidos;
+		this.stock = stock;
 		this.reloj = reloj;
 	}
 
@@ -91,6 +100,46 @@ class ProductoServicio {
 		producto.editar(categoriaPara(datos, producto), datos.nombre(), datos.descripcion(), datos.precio(),
 				datos.disponible(), datos.personalizable(), opciones(datos));
 		return producto;
+	}
+
+	@Transactional(readOnly = true)
+	ProduccionVista produccion(Long id) {
+		return vistaProduccion(obtener(id));
+	}
+
+	/**
+	 * El máximo por pedido (RN18) y la receta aproximada con su tiempo (RF45, D12). Cada insumo debe existir en el
+	 * inventario y aparecer una sola vez.
+	 */
+	@Transactional
+	ProduccionVista definirProduccion(Long id, DatosProduccion datos) {
+		Producto producto = obtener(id);
+		Set<Long> existentes = stock.insumos().stream().map(IStock.Insumo::id).collect(Collectors.toSet());
+		Set<Long> vistos = new HashSet<>();
+		List<IngredienteReceta> receta = new ArrayList<>();
+		for (var ingrediente : datos.recetaOVacia()) {
+			if (!existentes.contains(ingrediente.insumoId())) {
+				throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "INSUMO_NO_ENCONTRADO",
+						"Uno de los insumos de la receta ya no existe en el inventario.", Map.of("receta", "Revisa los insumos."));
+			}
+			if (!vistos.add(ingrediente.insumoId())) {
+				throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "INSUMO_REPETIDO",
+						"Cada insumo va una sola vez en la receta.", Map.of("receta", "Quita el insumo repetido."));
+			}
+			receta.add(new IngredienteReceta(ingrediente.insumoId(), ingrediente.cantidad()));
+		}
+		// Hibernate inserta las filas nuevas antes de borrar las quitadas: se borra la receta anterior primero, para no
+		// chocar con la regla de un insumo por producto.
+		producto.definirProduccion(datos.maximoPorPedido(), datos.minutosPorUnidad(), List.of());
+		productos.flush();
+		producto.definirProduccion(datos.maximoPorPedido(), datos.minutosPorUnidad(), receta);
+		return vistaProduccion(producto);
+	}
+
+	private ProduccionVista vistaProduccion(Producto producto) {
+		Map<Long, IStock.Insumo> insumos = stock.insumos().stream()
+			.collect(Collectors.toMap(IStock.Insumo::id, Function.identity()));
+		return ProduccionVista.de(producto, insumos);
 	}
 
 	@Transactional
@@ -173,7 +222,7 @@ class ProductoServicio {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "PRODUCTO_NO_PERSONALIZABLE",
 					"Marca el producto como personalizable para agregarle opciones.");
 		}
-		return opciones.stream().map(o -> new OpcionPersonalizacion(o.tipo(), o.nombre(), o.recargo())).toList();
+		return opciones.stream().map(o -> new OpcionPersonalizacion(o.tipo(), o.nombre(), o.recargo(), o.factorOUno())).toList();
 	}
 
 	private static String escaparComodines(String texto) {

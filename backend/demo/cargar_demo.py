@@ -25,6 +25,10 @@ Para activar el pago por QR con un QR de demostración (no escaneable: nadie pue
 Para una demostración en vivo: genera el comprobante de un pedido ya registrado, con su total real, y lo guarda en
 demo/comprobante-pedido-<número>.png para pasarlo al celular. Imprime la referencia que hay que escribir al pagar:
     python demo/cargar_demo.py --comprobante 25 [--metodo Transferencia|Depósito|QR] --api https://...
+
+Para poner en una base que ya tiene catálogo los máximos por pedido (RN18), el factor de cada tamaño y las recetas
+aproximadas (D12), sin tocar nada más. Las recetas usan los insumos de este script, comparados por nombre:
+    python demo/cargar_demo.py --recetas --api https://...
 """
 import argparse
 import io
@@ -417,10 +421,86 @@ CLIENTES = [
 ]
 
 
+# RN18: cuántas unidades acepta un pedido. Los productos que no están aquí siguen con el tope general de 99.
+MAXIMO_POR_CATEGORIA = {'Tortas': 3, 'Galletas y masitas': 50, 'Bebidas': 20}
+MAXIMO_POR_PRODUCTO = {
+    # Postres individuales: 12. Los enteros (cheesecakes y pies) se tratan como las tortas.
+    'Tiramisú en vaso': 12, 'Flan casero': 12, 'Mousse de maracuyá': 12, 'Brownie con nuez': 12,
+    'Gelatina con crema': 12, 'Cheesecake de maracuyá': 3, 'Cheesecake de frutos rojos': 3, 'Pie de limón': 3,
+    'Pie de manzana': 3,
+}
+
+# D12: cuánto multiplica cada tamaño la receta y el tiempo, por las porciones (12, 20, 40 y 70).
+FACTORES = {'Grande (20 porciones)': '1.65', 'Tres pisos (70 porciones)': '1.75'}
+
+# Recetas aproximadas, solo para la demostración: cantidad de cada insumo por unidad (una torta Mediana, una docena,
+# una caja), en la unidad del insumo, y los minutos de preparación de una unidad. No son recetas reales.
+H, A, U, M, L, C, CR, F = ('Harina de trigo', 'Azúcar', 'Huevos', 'Mantequilla', 'Leche', 'Chocolate de cobertura',
+                           'Crema de leche', 'Frutillas')
+RECETAS = {
+    'Torta de chocolate': (150, {H: '0.35', A: '0.3', U: '6', M: '0.2', L: '0.25', C: '0.4', CR: '0.3'}),
+    'Torta tres leches': (120, {H: '0.3', A: '0.35', U: '8', L: '1', CR: '0.4'}),
+    'Torta selva negra': (180, {H: '0.3', A: '0.3', U: '6', M: '0.15', C: '0.3', CR: '0.6'}),
+    'Torta de frutilla y crema': (150, {H: '0.3', A: '0.3', U: '6', M: '0.15', CR: '0.5', F: '0.6'}),
+    'Torta moka': (150, {H: '0.3', A: '0.3', U: '6', M: '0.25', C: '0.15', CR: '0.4'}),
+    'Torta de zanahoria': (140, {H: '0.35', A: '0.3', U: '5', M: '0.2'}),
+    'Torta red velvet': (150, {H: '0.35', A: '0.35', U: '5', M: '0.25', L: '0.25'}),
+    'Torta helada de frutilla': (240, {H: '0.25', A: '0.3', U: '5', CR: '0.5', F: '0.5'}),
+    'Torta tres chocolates': (240, {A: '0.3', U: '8', C: '0.7', CR: '0.8', L: '0.3'}),
+    'Cheesecake de maracuyá': (180, {A: '0.25', U: '4', M: '0.15', CR: '0.4'}),
+    'Cheesecake de frutos rojos': (180, {A: '0.25', U: '4', M: '0.15', CR: '0.4'}),
+    'Pie de limón': (120, {H: '0.25', A: '0.3', U: '5', M: '0.15', L: '0.2'}),
+    'Pie de manzana': (120, {H: '0.3', A: '0.2', M: '0.2'}),
+    'Brownie con nuez': (5, {H: '0.03', A: '0.04', U: '0.5', M: '0.03', C: '0.04'}),
+    'Flan casero': (10, {A: '0.04', U: '1', L: '0.12'}),
+    'Alfajores de maicena': (60, {H: '0.2', A: '0.1', U: '2', M: '0.12'}),
+    'Galletas de avena y chispas': (45, {H: '0.2', A: '0.15', U: '1', M: '0.12', C: '0.08'}),
+    'Galletas de chocolate y nuez': (45, {H: '0.2', A: '0.15', U: '1', M: '0.12', C: '0.12'}),
+    'Cupcakes de vainilla': (60, {H: '0.2', A: '0.2', U: '3', M: '0.15', L: '0.1'}),
+    'Cupcakes red velvet': (70, {H: '0.2', A: '0.2', U: '3', M: '0.15', L: '0.1'}),
+    'Porción de torta de chocolate': (10, {H: '0.03', A: '0.025', U: '0.5', C: '0.035', CR: '0.025'}),
+    'Donas glaseadas': (60, {H: '0.3', A: '0.12', U: '2', M: '0.06', L: '0.15'}),
+    'Rollos de canela': (90, {H: '0.3', A: '0.1', U: '1', M: '0.1', L: '0.12'}),
+    'Budín de naranja': (75, {H: '0.25', A: '0.2', U: '4', M: '0.15'}),
+    'Chocolate caliente': (5, {L: '0.25', C: '0.04', A: '0.02'}),
+    'Torta de bodas por pisos': (480, {H: '1.2', A: '1', U: '20', M: '0.8', L: '0.8', CR: '1.5'}),
+}
+
+
 def opciones_de(nombre, personalizable):
     if not personalizable:
         return []
-    return [{'tipo': t, 'nombre': n, 'recargo': r} for t, n, r in OPCIONES_ESPECIALES.get(nombre, OPCIONES_TORTA)]
+    return [{'tipo': t, 'nombre': n, 'recargo': r, 'factor': FACTORES.get(n, '1')}
+            for t, n, r in OPCIONES_ESPECIALES.get(nombre, OPCIONES_TORTA)]
+
+
+def aplicar_produccion(api, admin):
+    """Pone los máximos por pedido, el factor de cada tamaño y las recetas aproximadas en el catálogo que ya existe."""
+    insumos = {i['nombre']: i['id'] for i in api.get('/api/inventario', admin)}
+    categoria_de = {producto[0]: categoria for categoria, lista in CATALOGO.items() for producto in lista}
+    con_receta, sin_insumo = 0, set()
+    for p in api.get('/api/productos', admin):
+        nombre = p['nombre']
+        # El factor va en las opciones, que se editan con el producto.
+        if p['personalizable'] and any(o['nombre'] in FACTORES and float(o.get('factor') or 1) != float(FACTORES[o['nombre']])
+                                       for o in p['opciones']):
+            api.put(f"/api/productos/{p['id']}", admin, {
+                'nombre': nombre, 'descripcion': p['descripcion'], 'precio': p['precio'],
+                'categoriaId': p['categoria']['id'], 'disponible': p['disponible'], 'personalizable': True,
+                'opciones': [{'tipo': o['tipo'], 'nombre': o['nombre'], 'recargo': o['recargo'],
+                              'factor': FACTORES.get(o['nombre'], o.get('factor') or '1')} for o in p['opciones']],
+            })
+        maximo = MAXIMO_POR_PRODUCTO.get(nombre, MAXIMO_POR_CATEGORIA.get(categoria_de.get(nombre)))
+        minutos, receta = RECETAS.get(nombre, (None, {}))
+        sin_insumo.update(i for i in receta if i not in insumos)
+        api.put(f"/api/productos/{p['id']}/produccion", admin, {
+            'maximoPorPedido': maximo, 'minutosPorUnidad': minutos,
+            'receta': [{'insumoId': insumos[i], 'cantidad': c} for i, c in receta.items() if i in insumos],
+        })
+        con_receta += 1 if receta else 0
+    print(f'Listo: máximos y factores puestos, {con_receta} productos con receta.')
+    if sin_insumo:
+        print('Insumos que no están en el inventario y se omitieron: ' + ', '.join(sorted(sin_insumo)))
 
 
 def crear_producto(api, admin, categoria_id, producto, indice):
@@ -464,6 +544,8 @@ def main():
                         help='genera el comprobante de ese pedido, con su total real, para pagarlo en una demostración')
     parser.add_argument('--metodo', default='Transferencia', choices=['Transferencia', 'Depósito', 'QR'],
                         help='método que figura en el comprobante (con --comprobante)')
+    parser.add_argument('--recetas', action='store_true',
+                        help='pone los máximos por pedido, los factores y las recetas aproximadas; no toca lo demás')
     args = parser.parse_args()
     var = leer_variables()
     clave = var['DEMO_CONTRASENA']
@@ -475,6 +557,9 @@ def main():
         return
     if args.qr:
         print('Pago por QR activado.' if configurar_qr(api, admin) else 'La base no tiene el método QR.')
+        return
+    if args.recetas:
+        aplicar_produccion(api, admin)
         return
     if args.ampliar:
         ampliar(api, admin)
@@ -525,6 +610,9 @@ def main():
                  {'tipo': 'ENTRADA', 'cantidad': compra, 'motivo': 'Compra inicial al proveedor'})
         api.post(f"/api/inventario/{item['id']}/movimientos", admin,
                  {'tipo': 'SALIDA', 'cantidad': consumo, 'motivo': 'Producción de la semana'})
+
+    print('Máximos y recetas…')
+    aplicar_produccion(api, admin)
 
     print('Personal…')
     for nombre, correo, telefono, rol in PERSONAL:

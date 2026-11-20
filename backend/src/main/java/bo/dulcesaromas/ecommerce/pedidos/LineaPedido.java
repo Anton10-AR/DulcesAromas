@@ -90,4 +90,12 @@ class LineaPedido {
 		return opciones;
 	}
 
+	/**
+	 * Las unidades que cuenta la receta: la cantidad por el factor de cada opción elegida, por ejemplo 2 tortas Grandes
+	 * (factor 1.5) cuentan como 3 (D12).
+	 */
+	BigDecimal unidadesDeReceta() {
+		return opciones.stream().map(OpcionElegida::getFactor).reduce(BigDecimal.valueOf(cantidad), BigDecimal::multiply);
+	}
+
 }

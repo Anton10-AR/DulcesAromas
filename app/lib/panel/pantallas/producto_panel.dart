@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
+import 'produccion_panel.dart';
 
 /// Registrar o editar un producto con sus opciones e imagen (CU02, HU08).
 class ProductoPanel extends StatefulWidget {
@@ -22,16 +23,21 @@ class _FilaOpcion {
   _FilaOpcion([Opcion? o])
     : tipo = TextEditingController(text: o?.tipo),
       nombre = TextEditingController(text: o?.nombre),
-      recargo = TextEditingController(text: o?.recargo.toString() ?? '0');
+      recargo = TextEditingController(text: o?.recargo.toString() ?? '0'),
+      factor = TextEditingController(text: o?.factor.toString() ?? '1');
 
   final TextEditingController tipo;
   final TextEditingController nombre;
   final TextEditingController recargo;
 
+  /// Cuánto multiplica la receta y el tiempo (D12): Grande 1.5, Mediana 1.
+  final TextEditingController factor;
+
   void dispose() {
     tipo.dispose();
     nombre.dispose();
     recargo.dispose();
+    factor.dispose();
   }
 }
 
@@ -111,6 +117,7 @@ class _ProductoPanelState extends State<ProductoPanel> {
                 'tipo': o.tipo.text.trim(),
                 'nombre': o.nombre.text.trim(),
                 'recargo': o.recargo.text.trim().replaceAll(',', '.'),
+                'factor': o.factor.text.trim().isEmpty ? null : o.factor.text.trim().replaceAll(',', '.'),
               },
           ]
         : [],
@@ -251,6 +258,8 @@ class _ProductoPanelState extends State<ProductoPanel> {
             FilledButton(onPressed: _enviando ? null : _guardar, child: const Text('Guardar')),
             if (_producto != null) ...[
               const Divider(height: 32),
+              ProduccionPanel(productoId: _producto!.id),
+              const Divider(height: 32),
               Text('Imagen', style: textos.titleLarge),
               const SizedBox(height: 8),
               if (_producto!.imagen != null)
@@ -290,6 +299,10 @@ class _ProductoPanelState extends State<ProductoPanel> {
   List<Widget> _filasOpciones(Map<String, String>? errores) {
     return [
       Text('Opciones de personalización', style: Theme.of(context).textTheme.titleMedium),
+      Text(
+        'El factor multiplica la receta y el tiempo: por ejemplo Grande 1.5 y Mediana 1. Déjalo en 1 si no cambia.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
       const SizedBox(height: 8),
       for (var i = 0; i < _opciones.length; i++)
         Padding(
@@ -301,6 +314,10 @@ class _ProductoPanelState extends State<ProductoPanel> {
               final recargo = SizedBox(
                 width: 110,
                 child: _campoOpcion(_opciones[i].recargo, 'Recargo', 'opciones[$i].recargo', errores),
+              );
+              final factor = SizedBox(
+                width: 90,
+                child: _campoOpcion(_opciones[i].factor, 'Factor', 'opciones[$i].factor', errores),
               );
               final quitar = IconButton(
                 tooltip: 'Quitar opción',
@@ -317,6 +334,8 @@ class _ProductoPanelState extends State<ProductoPanel> {
                         Expanded(child: tipo),
                         const SizedBox(width: 8),
                         recargo,
+                        const SizedBox(width: 8),
+                        factor,
                         quitar,
                       ],
                     ),
@@ -333,6 +352,8 @@ class _ProductoPanelState extends State<ProductoPanel> {
                   Expanded(child: nombre),
                   const SizedBox(width: 8),
                   recargo,
+                  const SizedBox(width: 8),
+                  factor,
                   quitar,
                 ],
               );

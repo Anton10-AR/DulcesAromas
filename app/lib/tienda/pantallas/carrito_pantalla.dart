@@ -153,11 +153,14 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
                 Text('${linea.cantidad}', style: textos.titleMedium),
                 IconButton(
                   tooltip: 'Agregar uno',
-                  onPressed: linea.cantidad < Carrito.cantidadMaxima
+                  // RN18: no pasa del máximo por pedido del producto, contando sus otras líneas.
+                  onPressed: linea.cantidad < context.read<Carrito>().maximoDeLinea(indice)
                       ? () => _cambiar(indice, linea.cantidad + 1)
                       : null,
                   icon: const Icon(Icons.add),
                 ),
+                if (linea.maximo != null && linea.cantidad >= context.read<Carrito>().maximoDeLinea(indice))
+                  Flexible(child: Text('Máximo ${linea.maximo} por pedido', style: textos.bodySmall)),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () {

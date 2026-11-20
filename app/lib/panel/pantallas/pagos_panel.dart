@@ -11,6 +11,7 @@ import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
 import 'dialogos.dart';
+import 'estimacion_panel.dart';
 
 /// Pagos en verificación: comparar el comprobante con el pedido y decidir (CU07, HU12).
 class PagosPanel extends StatefulWidget {
@@ -132,6 +133,9 @@ class _PagosPanelState extends State<PagosPanel> {
                         Text('${p.metodo} · Referencia: ${p.referencia}'),
                         if (p.registrado != null)
                           Text('Registrado: ${fechaHora(p.registrado!)}', style: textos.bodySmall),
+                        const SizedBox(height: 12),
+                        // HU23: si la cocina puede cumplir el pedido, antes de aprobar (solo informa, D12).
+                        EstimacionPedido(key: ValueKey(p.pedidoId), pedidoId: p.pedidoId),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,

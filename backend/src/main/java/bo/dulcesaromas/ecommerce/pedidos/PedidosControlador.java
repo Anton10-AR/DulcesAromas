@@ -29,10 +29,13 @@ class PedidosControlador {
 
 	private final PedidoServicio servicio;
 
+	private final Estimador estimador;
+
 	private final IAutenticacion autenticacion;
 
-	PedidosControlador(PedidoServicio servicio, IAutenticacion autenticacion) {
+	PedidosControlador(PedidoServicio servicio, Estimador estimador, IAutenticacion autenticacion) {
 		this.servicio = servicio;
+		this.estimador = estimador;
 		this.autenticacion = autenticacion;
 	}
 
@@ -92,6 +95,16 @@ class PedidosControlador {
 	@GetMapping("/{id}")
 	PedidoVista obtener(@PathVariable Long id) {
 		return servicio.obtener(id, autenticacion.usuarioActual());
+	}
+
+	/**
+	 * Los insumos y el tiempo que requiere el pedido, sumados a la cola de la cocina (RF46). Lo ve quien verifica pagos
+	 * o consulta pedidos; solo informa (D12).
+	 */
+	@GetMapping("/{id}/estimacion")
+	@PreAuthorize("hasAnyAuthority('COBRANZA_VERIFICAR', 'PEDIDOS_CONSULTAR')")
+	Estimador.Estimacion estimacion(@PathVariable Long id) {
+		return estimador.estimar(id);
 	}
 
 	/**

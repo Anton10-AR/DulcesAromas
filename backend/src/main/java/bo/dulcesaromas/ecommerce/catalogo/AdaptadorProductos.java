@@ -30,12 +30,21 @@ class AdaptadorProductos implements IProductos {
 		return lista.stream().map(AdaptadorProductos::paraPedido).toList();
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public List<Receta> recetas(Collection<Long> ids) {
+		return productos.findAllById(ids).stream()
+			.map(p -> new Receta(p.getId(), p.getNombre(), p.getMinutosPorUnidad(),
+					p.getReceta().stream().map(i -> new Ingrediente(i.getInsumoId(), i.getCantidad())).toList()))
+			.toList();
+	}
+
 	private static ProductoParaPedido paraPedido(Producto p) {
 		List<Opcion> opciones = p.getOpciones().stream()
-			.map(o -> new Opcion(o.getId(), o.getTipo(), o.getNombre(), o.getRecargo()))
+			.map(o -> new Opcion(o.getId(), o.getTipo(), o.getNombre(), o.getRecargo(), o.getFactor()))
 			.toList();
 		return new ProductoParaPedido(p.getId(), p.getNombre(), p.getPrecio(), p.isPersonalizable(),
-				p.esVisible() && p.isDisponible(), opciones);
+				p.esVisible() && p.isDisponible(), p.getMaximoPorPedido(), opciones);
 	}
 
 }

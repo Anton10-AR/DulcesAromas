@@ -20,15 +20,23 @@ class Categoria {
 }
 
 class Opcion {
-  Opcion(this.id, this.tipo, this.nombre, this.recargo);
+  Opcion(this.id, this.tipo, this.nombre, this.recargo, [Decimal? factor]) : factor = factor ?? Decimal.one;
 
-  factory Opcion.deJson(Json j) =>
-      Opcion(j['id'] as int?, j['tipo'] as String, j['nombre'] as String, decimalDe(j['recargo']));
+  factory Opcion.deJson(Json j) => Opcion(
+    j['id'] as int?,
+    j['tipo'] as String,
+    j['nombre'] as String,
+    decimalDe(j['recargo']),
+    j['factor'] == null ? null : decimalDe(j['factor']),
+  );
 
   final int? id;
   final String tipo;
   final String nombre;
   final Decimal recargo;
+
+  /// Cuánto multiplica la receta y el tiempo del producto (D12): una torta Grande lleva más que una Mediana.
+  final Decimal factor;
 }
 
 class Producto {
@@ -42,6 +50,7 @@ class Producto {
     required this.disponible,
     required this.personalizable,
     this.imagen,
+    this.maximoPorPedido,
     required this.opciones,
   });
 
@@ -55,6 +64,7 @@ class Producto {
     disponible: j['disponible'] as bool,
     personalizable: j['personalizable'] as bool,
     imagen: j['imagen'] as String?,
+    maximoPorPedido: j['maximoPorPedido'] as int?,
     opciones: lista(j['opciones'], Opcion.deJson),
   );
 
@@ -67,7 +77,13 @@ class Producto {
   final bool disponible;
   final bool personalizable;
   final String? imagen;
+
+  /// RN18: cuántas unidades se pueden pedir de una vez, sumando las del carrito; nulo, el tope general de 99.
+  final int? maximoPorPedido;
   final List<Opcion> opciones;
+
+  /// Las unidades que acepta un pedido de este producto.
+  int get tope => maximoPorPedido ?? 99;
 
   /// Las opciones agrupadas por tipo, en el orden en que las definió el administrador.
   Map<String, List<Opcion>> get opcionesPorTipo {

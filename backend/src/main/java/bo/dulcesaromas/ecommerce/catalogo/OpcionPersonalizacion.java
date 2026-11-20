@@ -11,7 +11,8 @@ import jakarta.persistence.Table;
 
 /**
  * Tamaño, sabor, relleno o decoración de un producto, con su recargo fijo (D9). Un pedido guarda una copia
- * del nombre y del recargo, así que cambiar o quitar una opción no altera pedidos anteriores.
+ * del nombre y del recargo, así que cambiar o quitar una opción no altera pedidos anteriores. El factor multiplica la
+ * receta y el tiempo del producto: una torta Grande lleva más que una Mediana (D12).
  */
 @Entity
 @Table(name = "opcion_personalizacion")
@@ -27,13 +28,16 @@ class OpcionPersonalizacion {
 
 	private BigDecimal recargo;
 
+	private BigDecimal factor;
+
 	protected OpcionPersonalizacion() {
 	}
 
-	OpcionPersonalizacion(String tipo, String nombre, BigDecimal recargo) {
+	OpcionPersonalizacion(String tipo, String nombre, BigDecimal recargo, BigDecimal factor) {
 		this.tipo = Textos.limpio(tipo);
 		this.nombre = Textos.limpio(nombre);
 		this.recargo = recargo;
+		this.factor = factor;
 	}
 
 	public Long getId() {
@@ -50,6 +54,10 @@ class OpcionPersonalizacion {
 
 	public BigDecimal getRecargo() {
 		return recargo;
+	}
+
+	public BigDecimal getFactor() {
+		return factor;
 	}
 
 }

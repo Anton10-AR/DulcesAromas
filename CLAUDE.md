@@ -8,9 +8,9 @@ Los requisitos están en `docs/`. Si el código y un documento no coinciden, **p
 
 | Archivo | Contenido |
 | --- | --- |
-| `docs/01-vision.md` | Alcance, roles, RF01–RF43, RNF01–RNF21, restricciones, paleta |
-| `docs/02-casos-de-uso.md` | CU01–CU17, estados y transiciones, reglas RN01–RN17, matriz de permisos |
-| `docs/03-historias-y-backlog.md` | HU01–HU21 con criterios de aceptación, backlog por etapas |
+| `docs/01-vision.md` | Alcance, roles, RF01–RF46, RNF01–RNF21, restricciones, paleta |
+| `docs/02-casos-de-uso.md` | CU01–CU17, estados y transiciones, reglas RN01–RN18, matriz de permisos |
+| `docs/03-historias-y-backlog.md` | HU01–HU23 con criterios de aceptación, backlog por etapas |
 | `docs/04-modelos-uml.md` | Casos de uso, clases, componentes y estados (Mermaid) |
 
 Cuando implementes una historia, lee sus criterios de aceptación y el caso de uso que cita. Cita el ID (HU, CU, RN) en el mensaje del commit.
@@ -60,7 +60,7 @@ CREATE DATABASE dulces_aromas OWNER dulces_aromas;
 
 Las variables son `DB_URL`, `DB_USER` y `DB_PASSWORD`. También se pueden definir como variables de entorno, que tienen prioridad sobre `.env`. Para crear el primer administrador, define también `ADMIN_CORREO` y `ADMIN_CONTRASENA`: se crea al arrancar solo si no hay ningún administrador activo. Para que la recuperación de contraseña envíe correos, define `MAIL_HOST`, `MAIL_PUERTO`, `MAIL_USUARIO`, `MAIL_CONTRASENA` y `MAIL_REMITENTE`; en la nube, donde SMTP suele estar bloqueado, define `BREVO_CLAVE` y el correo sale por la API de Brevo (`ConfiguracionCorreo` elige). Sin ninguno, el correo se escribe en el registro de la API, lo que solo sirve en desarrollo. `RECUPERACION_URL` es la pantalla de la app que recibe el enlace.
 
-**Datos de demostración:** con la API corriendo sobre una base recién creada, `python demo/cargar_demo.py` (desde `backend/`, requiere Pillow) carga catálogo, inventario, personal, clientes y pedidos en todos los estados. Todas las cuentas usan la contraseña de `DEMO_CONTRASENA`. Se niega a correr si ya hay catálogo. Los productos con foto en `app/assets/postres/` la usan; con `--fotos` solo se suben esas fotos a un catálogo que ya existe. Con `--ampliar` se suman las categorías y los productos que faltan, comparados por nombre, sin tocar lo demás. `--qr` activa el pago por QR con un QR de demostración que no se puede escanear, y `--comprobante <pedido>` genera el comprobante de un pedido con su total real, para pagarlo en una demostración en vivo.
+**Datos de demostración:** con la API corriendo sobre una base recién creada, `python demo/cargar_demo.py` (desde `backend/`, requiere Pillow) carga catálogo, inventario, personal, clientes y pedidos en todos los estados. Todas las cuentas usan la contraseña de `DEMO_CONTRASENA`. Se niega a correr si ya hay catálogo. Los productos con foto en `app/assets/postres/` la usan; con `--fotos` solo se suben esas fotos a un catálogo que ya existe. Con `--ampliar` se suman las categorías y los productos que faltan, comparados por nombre, sin tocar lo demás. `--qr` activa el pago por QR con un QR de demostración que no se puede escanear, y `--comprobante <pedido>` genera el comprobante de un pedido con su total real, para pagarlo en una demostración en vivo. `--recetas` pone en un catálogo que ya existe los máximos por pedido, el factor de cada tamaño y recetas aproximadas, solo para la demostración (RN18, D12).
 
 **App Flutter** (desde `app/`). Un solo proyecto con dos puntos de entrada que comparten `lib/comun/`: la Tienda (`lib/main.dart`, código en `lib/tienda/`) y el Panel (`lib/main_panel.dart`, código en `lib/panel/`).
 
@@ -125,6 +125,7 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 - **RN15:** el catálogo se ve sin sesión; para pedir hace falta cuenta.
 - **RN16:** un cliente no obtiene un rol de personal.
 - **RN17:** el mensaje sobre la torta tiene hasta 24 caracteres y no tiene recargo.
+- **RN18:** un pedido no supera el máximo de unidades por pedido de cada producto, sumando sus líneas.
 
 ### Decisiones ya tomadas (no reabrir sin preguntar)
 
@@ -141,13 +142,14 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 - **D9:** cada opción de personalización tiene un recargo fijo que define el negocio.
 - **D10:** catálogo e inventario están dentro del módulo E-commerce.
 - **D11:** el rol se llama «Vendedor», no «Empleado».
+- **D12:** las recetas son aproximadas y solo estiman los insumos y el tiempo de un pedido al verificar su pago (tiempo por unidad, factor por opción de tamaño, sumando la cola Confirmado y En preparación). No descuentan stock ni bloquean la aprobación. Agregada el 20/11/2026.
 
 ## Convenciones
 
 - **Nombres del dominio en español**, como en el modelo de clases: `Pedido`, `LineaPedido`, `OpcionElegida`, `Pago`, `Verificacion`, `Entrega`, `HistorialEstado`, `ItemInventario`.
 - **Dinero:** usa tipos decimales, nunca `float` o `double`. Se muestra en bolivianos con 2 decimales («Bs 120.00»).
 - **Fechas y hora:** formato dd/mm/aaaa, zona horaria America/La_Paz.
-- **Copias en el pedido:** las opciones elegidas guardan una copia del nombre y del recargo, para que un cambio en el producto no altere pedidos anteriores.
+- **Copias en el pedido:** las opciones elegidas guardan una copia del nombre, del recargo y del factor, para que un cambio en el producto no altere pedidos anteriores.
 - **Transacciones:** confirmar un pedido es una sola transacción. Dos usuarios no pueden decidir el mismo pago a la vez (RNF14, RNF15).
 
 ### Convenciones de la API
@@ -179,13 +181,13 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 
 ## Orden de trabajo
 
-Sigue el backlog por etapas. **A a D** forman el núcleo (73 de 101 puntos); **E** se hace solo si sobra tiempo.
+Sigue el backlog por etapas. **A a D** forman el núcleo (73 de 112 puntos); **E** se hace solo si sobra tiempo.
 
 1. **A. Cuentas y acceso:** HU01–HU06, HU15.
 2. **B. Catálogo:** HU08, HU18, HU07.
 3. **C. Pedido y cobro:** HU10, HU11, HU12.
 4. **D. Entrega y seguimiento:** HU13, HU19.
-5. **E. Complementos:** HU09, HU20, HU21, HU14, HU16, HU17.
+5. **E. Complementos:** HU09, HU20, HU21, HU14, HU16, HU17, HU22, HU23.
 
 Una historia está terminada cuando:
 
@@ -201,7 +203,7 @@ No implementes nada de esto sin que el equipo lo pida:
 - Pasarelas de pago o QR dinámico. El pago se verifica a mano.
 - Notificaciones automáticas.
 - Varias sucursales.
-- Recetas y descuento automático de insumos.
+- Descuento automático de insumos por receta. Las recetas solo estiman (D12).
 - Roles personalizados.
 - Publicación de la app en tiendas.
 - Rastreo de entregas en mapa.

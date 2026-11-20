@@ -1,6 +1,6 @@
 # Dulces Aromas — Modelos UML v1
 
-Versión 1.4 · 13/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
+Versión 1.5 · 20/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
 
 ## 1. Introducción
 
@@ -215,13 +215,20 @@ classDiagram
     -activo: Lógico
     -disponible: Lógico
     -personalizable: Lógico
+    -maximoPorPedido: Entero
+    -minutosPorUnidad: Entero
     +cambiarDisponibilidad()
+    +definirProduccion()
     +desactivar()
   }
   class OpcionPersonalizacion {
     -tipo: Texto
     -nombre: Texto
     -recargo: Decimal
+    -factor: Decimal
+  }
+  class IngredienteReceta {
+    -cantidad: Decimal
   }
   class ImagenProducto {
     -tipoContenido: Texto
@@ -247,9 +254,11 @@ classDiagram
   Producto "1" -- "*" OpcionPersonalizacion : ofrece
   Producto "1" -- "0..1" ImagenProducto : se muestra con
   ItemInventario "1" -- "*" MovimientoInventario : registra
+  Producto "1" -- "*" IngredienteReceta : se prepara con
+  IngredienteReceta "*" --> "1" ItemInventario : usa
   MovimientoInventario "*" --> "1" Personal : hecho por
 ```
-La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos. La imagen va en su propia clase, ImagenProducto, para no cargar los bytes cada vez que se lee un producto; el producto solo guarda cuándo cambió, para que la app no muestre una copia vieja.
+La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos. La receta (IngredienteReceta, con los minutos por unidad del producto y el factor de cada opción) es aproximada y solo estima los insumos y el tiempo de un pedido al verificar su pago; no descuenta stock (D12). El máximo por pedido limita cuántas unidades del producto acepta un pedido (RN18). La imagen va en su propia clase, ImagenProducto, para no cargar los bytes cada vez que se lee un producto; el producto solo guarda cuándo cambió, para que la app no muestre una copia vieja.
 
 Una categoría agrupa productos y un producto ofrece opciones de personalización, cada una con su recargo fijo (D9). El inventario controla insumos y sus movimientos, y cada movimiento lo registra una persona del personal (RN09, CU03). Una entrada suma, una salida resta y un ajuste fija el stock al valor contado.
 
@@ -284,6 +293,7 @@ classDiagram
     -tipo: Texto
     -nombre: Texto
     -recargo: Decimal
+    -factor: Decimal
   }
   class HistorialEstado {
     -estadoAnterior: EstadoPedido
@@ -401,7 +411,8 @@ Un pedido puede tener varios pagos porque un comprobante rechazado obliga a regi
 | RecuperacionContrasena | Seguridad | Enlace de un solo uso para definir una contraseña nueva |
 | Categoría | E-commerce | Agrupa productos para el filtro del catálogo |
 | Producto | E-commerce | Lo que se vende, con precio y disponibilidad |
-| OpcionPersonalizacion | E-commerce | Tamaño, sabor, relleno o decoración con su recargo |
+| OpcionPersonalizacion | E-commerce | Tamaño, sabor, relleno o decoración con su recargo y el factor que aplica a la receta |
+| IngredienteReceta | E-commerce | Cantidad aproximada de un insumo por unidad de producto, para estimar (D12) |
 | ImagenProducto | E-commerce | La foto del producto, cuadrada y de 1200 px como máximo (RNF10) |
 | ItemInventario | E-commerce | Insumo con stock y mínimo |
 | MovimientoInventario | E-commerce | Entrada, salida o ajuste de un insumo |
@@ -607,11 +618,13 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 | Total y envío | CU05 | Pedido.calcularTotal(), Configuracion.tarifaEnvio, OpcionElegida | E-commerce | — | RN11, D4, D9 |
 | Mensaje de la torta | CU05 alt. 3b | LineaPedido.mensaje (hasta 24 caracteres, límite fijo) | E-commerce | — | RN17 |
 | Disponibilidad manual | CU02, CU04 | Producto.disponible (sin relación con ItemInventario) | IProductos, IStock separadas | — | RN08, D2 |
+| Máximo por pedido | CU02, CU05, CU17 | Producto.maximoPorPedido | IProductos | — | RN18 |
+| Estimación de insumos y tiempo | CU02, CU07 | IngredienteReceta, Producto.minutosPorUnidad, OpcionPersonalizacion.factor, OpcionElegida.factor | E-commerce usa IProductos e IStock | Cola: Confirmado y En preparación | RF46, D12 |
 | Auditoría | CU07, CU09 | Auditoría (usuarios y permisos), Verificacion (pagos) | Seguridad, Cobros | — | RF28, RNF08 |
 
 Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pagos (uno por intento) y la entrega es una clase aparte que solo existe para pedidos con delivery.
 
-## 7. Cambios en las versiones 1.1 a 1.4
+## 7. Cambios en las versiones 1.1 a 1.5
 
 | Elemento | Cambio | Motivo |
 | --- | --- | --- |
@@ -628,4 +641,5 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | Estado del pago (v1.4) | Rechazado es un estado final; el sistema abre un pago nuevo | El diagrama decía que el mismo pago volvía a Pendiente de pago, y el de clases ya mostraba varios pagos por pedido |
 | ImagenProducto, Comprobante, QrMetodoPago (v1.4) | Clases nuevas en el diagrama, en lugar de los atributos imagen, comprobante y qr | Ya eran clases en el código: separan los archivos para no cargarlos en cada lectura |
 | LineaPedido, OpcionElegida, Pedido, Pago (v1.4) | Se agregan nombreProducto (copia), tipo, creado; esAsistido pasa a método | El diagrama no mostraba datos que el código ya guardaba |
+| Producto, OpcionPersonalizacion, OpcionElegida, IngredienteReceta (v1.5) | Máximo por pedido, minutos por unidad, factor por opción (con su copia en el pedido) y la receta aproximada | RN18 y estimación de insumos y tiempo al verificar (RF44–RF46, D12), pedidos por el equipo el 20/11/2026 |
 | Despliegue (v1.3) | Sección 4.1 nueva: nodos de Render, Neon, Brevo y GitHub Actions | Documentar dónde corre cada componente al publicar el sistema en la nube (RNF21) |

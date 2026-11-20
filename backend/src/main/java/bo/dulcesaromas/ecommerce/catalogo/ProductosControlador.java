@@ -63,6 +63,21 @@ class ProductosControlador {
 		return ProductoVista.de(servicio.editar(id, datos));
 	}
 
+	/**
+	 * El máximo por pedido y la receta aproximada (RN18, RF45). No se publican en el catálogo.
+	 */
+	@GetMapping("/{id}/produccion")
+	@PreAuthorize("hasAuthority('CATALOGO_GESTIONAR')")
+	ProduccionVista produccion(@PathVariable Long id) {
+		return servicio.produccion(id);
+	}
+
+	@PutMapping("/{id}/produccion")
+	@PreAuthorize("hasAuthority('CATALOGO_GESTIONAR')")
+	ProduccionVista definirProduccion(@PathVariable Long id, @Valid @RequestBody DatosProduccion datos) {
+		return servicio.definirProduccion(id, datos);
+	}
+
 	@PutMapping("/{id}/disponibilidad")
 	@PreAuthorize("hasAuthority('CATALOGO_DISPONIBILIDAD')")
 	ProductoVista cambiarDisponibilidad(@PathVariable Long id, @Valid @RequestBody Disponibilidad cambio) {

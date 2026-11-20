@@ -10,6 +10,7 @@ import '../../comun/tema.dart';
 import '../../comun/widgets.dart';
 import 'dialogos.dart';
 import 'formulario.dart';
+import 'estimacion_panel.dart';
 
 /// Detalle de un pedido en el Panel con las acciones que permite el rol (CU08, CU10, CU16).
 class PedidoPanel extends StatefulWidget {
@@ -130,6 +131,11 @@ class _PedidoPanelState extends State<PedidoPanel> {
                     ),
                   const Divider(height: 32),
                   _productos(pedido),
+                  // HU23: antes de prepararlo, si la cocina puede cumplirlo (solo informa, D12).
+                  if (['PENDIENTE', 'CONFIRMADO'].contains(pedido.estado)) ...[
+                    const SizedBox(height: 16),
+                    EstimacionPedido(pedidoId: pedido.id),
+                  ],
                   const Divider(height: 32),
                   _historial(pedido),
                   // Cancelar no se deshace: va al final, separado de las acciones del día a día.
