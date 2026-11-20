@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -18,8 +19,11 @@ class PedidoPantalla extends StatefulWidget {
   State<PedidoPantalla> createState() => _PedidoPantallaState();
 }
 
-class _PedidoPantallaState extends State<PedidoPantalla> {
+class _PedidoPantallaState extends State<PedidoPantalla> with ActualizacionPeriodica {
   late Future<(Pedido, List<Pago>)> _datos;
+
+  /// Entregado o Cancelado: ya no cambia, así que deja de consultar.
+  bool _terminado = false;
 
   Api get _api => context.read<Api>();
 
@@ -35,13 +39,32 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
     if (mounted) _cargar();
   }
 
+  Future<(Pedido, List<Pago>)> _consultar() => (
+    _api.get('/api/pedidos/${widget.id}').then((j) => Pedido.deJson(j as Json)),
+    _api.get('/api/pagos', {'pedido': '${widget.id}'}).then((j) => lista(j, Pago.deJson)),
+  ).wait;
+
   void _cargar() {
     setState(() {
-      _datos = (
-        _api.get('/api/pedidos/${widget.id}').then((j) => Pedido.deJson(j as Json)),
-        _api.get('/api/pagos', {'pedido': '${widget.id}'}).then((j) => lista(j, Pago.deJson)),
-      ).wait;
+      _datos = _consultar();
     });
+  }
+
+  @override
+  bool get siguePorCambiar => !_terminado;
+
+  /// CU15: el estado del pedido y del pago se ve cambiar sin deslizar para actualizar.
+  @override
+  Future<void> actualizarEnSilencio() async {
+    try {
+      final nuevos = await _consultar();
+      if (!mounted) return;
+      setState(() {
+        _datos = Future.value(nuevos);
+      });
+    } catch (_) {
+      // Sin conexión o con la API despertando: se intenta en la próxima vuelta y queda lo que ya se ve.
+    }
   }
 
   /// HU20: pide el motivo y confirmación. Si ya estaba pagado, avisa que el reembolso es fuera del sistema.
@@ -83,6 +106,7 @@ class _PedidoPantallaState extends State<PedidoPantalla> {
         reintentar: _cargar,
         constructor: (context, datos) {
           final (pedido, pagos) = datos;
+          _terminado = const ['ENTREGADO', 'CANCELADO'].contains(pedido.estado);
           return RefreshIndicator(
             onRefresh: () async => _cargar(),
             child: ListView(

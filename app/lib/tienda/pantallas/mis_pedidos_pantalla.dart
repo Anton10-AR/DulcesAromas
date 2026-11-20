@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -15,7 +16,7 @@ class MisPedidosPantalla extends StatefulWidget {
   State<MisPedidosPantalla> createState() => _MisPedidosPantallaState();
 }
 
-class _MisPedidosPantallaState extends State<MisPedidosPantalla> {
+class _MisPedidosPantallaState extends State<MisPedidosPantalla> with ActualizacionPeriodica {
   late Future<(List<PedidoResumen>, List<Cobro>)> _datos;
 
   @override
@@ -24,14 +25,32 @@ class _MisPedidosPantallaState extends State<MisPedidosPantalla> {
     _cargar();
   }
 
-  void _cargar() {
+  Future<(List<PedidoResumen>, List<Cobro>)> _consultar() {
     final api = context.read<Api>();
+    return (
+      api.get('/api/pedidos/mios').then((j) => lista(j, PedidoResumen.deJson)),
+      api.get('/api/pagos/mios').then((j) => lista(j, Cobro.deJson)),
+    ).wait;
+  }
+
+  void _cargar() {
     setState(() {
-      _datos = (
-        api.get('/api/pedidos/mios').then((j) => lista(j, PedidoResumen.deJson)),
-        api.get('/api/pagos/mios').then((j) => lista(j, Cobro.deJson)),
-      ).wait;
+      _datos = _consultar();
     });
+  }
+
+  /// CU15: los estados de la lista cambian solos mientras está abierta.
+  @override
+  Future<void> actualizarEnSilencio() async {
+    try {
+      final nuevos = await _consultar();
+      if (!mounted) return;
+      setState(() {
+        _datos = Future.value(nuevos);
+      });
+    } catch (_) {
+      // Se intenta en la próxima vuelta; queda lo que ya se ve.
+    }
   }
 
   @override
