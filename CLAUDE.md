@@ -154,7 +154,7 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 
 ### Convenciones de la API
 
-- **Sesión:** `POST /api/auth/login` devuelve un token opaco; la app lo manda en `Authorization: Bearer <token>`. La sesión vive en la tabla `sesion`, así que cerrarla, desactivar la cuenta o cambiar permisos rige en la siguiente solicitud.
+- **Sesión:** `POST /api/auth/login` devuelve un token opaco; la app lo manda en `Authorization: Bearer <token>`. La sesión vive en la tabla `sesion`, así que cerrarla, desactivar la cuenta o cambiar permisos rige en la siguiente solicitud. Las pantallas que se actualizan solas (`ActualizacionPeriodica` en `lib/comun/actualizacion.dart`) mandan `X-Actualizacion-Automatica: 1`: el servidor las responde pero no las cuenta como uso, así que la sesión del Panel vence igual a los 30 minutos sin actividad real (RNF06).
 - **Autorización:** cada controlador nuevo declara su permiso con `@PreAuthorize("hasAuthority('PERMISO')")`, usando los nombres del enum `seguridad.Permiso`. Las rutas de la Tienda usan `hasAuthority('CLIENTE')`. Las rutas públicas (como el catálogo, RN15) se abren en `ConfiguracionSeguridad`.
 - **Usuario actual:** los otros módulos lo obtienen con `IAutenticacion.usuarioActual()`; nunca leen las tablas de Seguridad.
 - **Datos de entrada:** usa `Boolean`, `Integer`, etc. con `@NotNull` en los records de las solicitudes, no tipos primitivos. Jackson 3 rechaza un primitivo ausente con un error genérico y el usuario no sabe qué campo falta.

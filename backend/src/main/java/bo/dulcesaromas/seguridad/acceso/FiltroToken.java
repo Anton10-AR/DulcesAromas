@@ -21,6 +21,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 class FiltroToken extends OncePerRequestFilter {
 
+	/** La pone la app en las consultas que hace sola para actualizar una pantalla: no cuentan como uso (RNF06). */
+	static final String ACTUALIZACION_AUTOMATICA = "X-Actualizacion-Automatica";
+
 	private final ServicioSesiones sesiones;
 
 	FiltroToken(ServicioSesiones sesiones) {
@@ -30,7 +33,8 @@ class FiltroToken extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest solicitud, HttpServletResponse respuesta, FilterChain cadena)
 			throws ServletException, IOException {
-		Tokens.deSolicitud(solicitud).flatMap(sesiones::autenticar).ifPresent(usuario -> {
+		boolean esUso = !"1".equals(solicitud.getHeader(ACTUALIZACION_AUTOMATICA));
+		Tokens.deSolicitud(solicitud).flatMap(token -> sesiones.autenticar(token, esUso)).ifPresent(usuario -> {
 			var autenticacion = new UsernamePasswordAuthenticationToken(usuario, null, autoridades(usuario));
 			SecurityContextHolder.getContext().setAuthentication(autenticacion);
 		});

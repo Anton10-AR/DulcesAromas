@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/marca.dart';
@@ -72,7 +73,7 @@ class InicioPanel extends StatefulWidget {
   State<InicioPanel> createState() => _InicioPanelState();
 }
 
-class _InicioPanelState extends State<InicioPanel> {
+class _InicioPanelState extends State<InicioPanel> with ActualizacionPeriodica {
   late Future<List<Pendiente>> _pendientes;
 
   /// Pedidos y ventas de hoy; solo con el permiso de reportes, porque muestra montos (HU14).
@@ -91,6 +92,32 @@ class _InicioPanelState extends State<InicioPanel> {
   }
 
   void _cargar() {
+    final c = _consultar();
+    setState(() {
+      _pendientes = c.pendientes;
+      _ultimos = c.ultimos;
+      _hoy = c.hoy;
+    });
+  }
+
+  /// Los contadores y los últimos pedidos cambian solos cuando otro usuario mueve un pedido.
+  @override
+  Future<void> actualizarEnSilencio() async {
+    final c = _consultar();
+    try {
+      await Future.wait<Object?>([c.pendientes, ?c.ultimos, ?c.hoy]);
+    } catch (_) {
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _pendientes = c.pendientes;
+      _ultimos = c.ultimos;
+      _hoy = c.hoy;
+    });
+  }
+
+  ({Future<List<Pendiente>> pendientes, Future<List<PedidoResumen>>? ultimos, Future<Reporte>? hoy}) _consultar() {
     final api = context.read<Api>();
     final usuario = context.read<Sesion>().usuario!;
     Future<Pendiente> contar(
@@ -105,8 +132,8 @@ class _InicioPanelState extends State<InicioPanel> {
     final hoy = DateFormat('yyyy-MM-dd').format(ahora);
     final haceUnMes = DateFormat('yyyy-MM-dd').format(ahora.subtract(const Duration(days: 30)));
     final vePedidos = ['PEDIDOS_CONSULTAR', 'DISTRIBUCION_ASIGNAR'].any(usuario.puede);
-    setState(() {
-      _pendientes = [
+    return (
+      pendientes: [
         if (usuario.puede('COBRANZA_VERIFICAR'))
           contar('Pagos por verificar', '/api/pagos/en-verificacion', '/pagos', Icons.fact_check_outlined, Tono.ambar),
         // Cocina trae los Confirmados y los En preparación; por preparar son los que nadie empezó.
@@ -135,19 +162,19 @@ class _InicioPanelState extends State<InicioPanel> {
             Icons.delivery_dining_outlined,
             Tono.azul,
           ),
-      ].wait;
+      ].wait,
       // La lista del Panel viene ordenada por horario de entrega; aquí importan los recién registrados.
-      _ultimos = vePedidos
+      ultimos: vePedidos
           ? api.get('/api/pedidos', {'desde': haceUnMes, 'hasta': hoy}).then((j) {
               final pedidos = lista(j, PedidoResumen.deJson)
                 ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
               return pedidos.take(cantidadUltimos).toList();
             })
-          : null;
-      _hoy = usuario.puede('REPORTES')
+          : null,
+      hoy: usuario.puede('REPORTES')
           ? api.get('/api/reportes/ventas', {'desde': hoy, 'hasta': hoy}).then((j) => Reporte.deJson(j as Json))
-          : null;
-    });
+          : null,
+    );
   }
 
   @override

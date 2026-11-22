@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -44,9 +45,17 @@ class Api {
   /// Ruta absoluta de un recurso que la API devuelve como ruta relativa, como una imagen.
   String absoluta(String ruta) => '$base$ruta';
 
+  /// Marca de las consultas que una pantalla hace sola para actualizarse ([enSegundoPlano]).
+  static const _automatica = #actualizacionAutomatica;
+
+  /// Hace las consultas de [accion] como actualización automática: el servidor las responde, pero no las cuenta como
+  /// uso de la sesión, que así vence igual tras 30 minutos sin actividad en el Panel (RNF06).
+  static Future<T> enSegundoPlano<T>(Future<T> Function() accion) => runZoned(accion, zoneValues: {_automatica: true});
+
   Map<String, String> get _cabeceras => {
     'Content-Type': 'application/json',
     if (token != null) 'Authorization': 'Bearer $token',
+    if (Zone.current[_automatica] == true) 'X-Actualizacion-Automatica': '1',
   };
 
   Future<dynamic> get(String ruta, [Map<String, String?>? parametros]) =>

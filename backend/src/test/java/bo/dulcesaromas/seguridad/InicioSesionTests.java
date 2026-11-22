@@ -115,6 +115,25 @@ class InicioSesionTests extends PruebaIntegracion {
 		mvc.perform(con(token, get("/api/auth/yo"))).andExpect(status().isUnauthorized());
 	}
 
+	/**
+	 * Las pantallas del Panel se actualizan solas cada pocos segundos. Esas consultas responden, pero no cuentan como
+	 * uso: si no, la sesión de una pantalla abierta nunca vencería (RNF06).
+	 */
+	@Test
+	void lasActualizacionesAutomaticasNoMantienenAbiertaLaSesionDelPanel() throws Exception {
+		crearPersonal("vendedor@dulces.bo", "VENDEDOR");
+		String token = iniciarSesion("vendedor@dulces.bo");
+
+		reloj.adelantar(Duration.ofMinutes(20));
+		mvc.perform(con(token, get("/api/auth/yo")).header("X-Actualizacion-Automatica", "1"))
+			.andExpect(status().isOk());
+
+		// Pasaron 30 minutos desde el último uso real: la consulta automática de los 20 no reinició el plazo.
+		reloj.adelantar(Duration.ofMinutes(10));
+		mvc.perform(con(token, get("/api/auth/yo")).header("X-Actualizacion-Automatica", "1"))
+			.andExpect(status().isUnauthorized());
+	}
+
 	@Test
 	void laSesionDeLaTiendaNoSeCierraALos30Minutos() throws Exception {
 		crearCliente("cliente@correo.bo");

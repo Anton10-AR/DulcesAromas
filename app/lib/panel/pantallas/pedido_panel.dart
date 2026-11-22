@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -22,8 +23,11 @@ class PedidoPanel extends StatefulWidget {
   State<PedidoPanel> createState() => _PedidoPanelState();
 }
 
-class _PedidoPanelState extends State<PedidoPanel> {
+class _PedidoPanelState extends State<PedidoPanel> with ActualizacionPeriodica {
   late Future<(Pedido, List<Pago>, Entrega?)> _datos;
+
+  /// Entregado o Cancelado: ya no cambia, así que deja de consultar.
+  bool _terminado = false;
   List<Persona>? _repartidores;
   bool _ocupado = false;
 
@@ -37,13 +41,22 @@ class _PedidoPanelState extends State<PedidoPanel> {
     _cargar();
   }
 
+  Future<(Pedido, List<Pago>, Entrega?)> _consultar() => (
+    _api.get('/api/pedidos/${widget.id}').then((j) => Pedido.deJson(j as Json)),
+    _api.get('/api/pagos', {'pedido': '${widget.id}'}).then((j) => lista(j, Pago.deJson)),
+    _entrega(),
+  ).wait;
+
+  @override
+  bool get siguePorCambiar => !_terminado;
+
+  /// El estado cambia solo cuando Cocina, el repartidor o quien verifica mueve el pedido.
+  @override
+  Future<void> actualizarEnSilencio() => reemplazarSiResponde(_consultar(), (f) => _datos = f);
+
   void _cargar() {
     setState(() {
-      _datos = (
-        _api.get('/api/pedidos/${widget.id}').then((j) => Pedido.deJson(j as Json)),
-        _api.get('/api/pagos', {'pedido': '${widget.id}'}).then((j) => lista(j, Pago.deJson)),
-        _entrega(),
-      ).wait;
+      _datos = _consultar();
     });
     if (_usuario.puede('DISTRIBUCION_ASIGNAR') && _repartidores == null) {
       _api.get('/api/entregas/repartidores').then((j) => setState(() => _repartidores = lista(j, Persona.deJson)));
@@ -96,6 +109,7 @@ class _PedidoPanelState extends State<PedidoPanel> {
       reintentar: _cargar,
       constructor: (context, datos) {
         final (pedido, pagos, entrega) = datos;
+        _terminado = const ['ENTREGADO', 'CANCELADO'].contains(pedido.estado);
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [

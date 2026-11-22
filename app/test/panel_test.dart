@@ -15,18 +15,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 http.Response json(Object cuerpo, [int estado = 200]) =>
     http.Response(jsonEncode(cuerpo), estado, headers: {'content-type': 'application/json; charset=utf-8'});
 
-/// Una API falsa en la que ingresa una cuenta con el tipo, el rol y los permisos indicados.
+/// Una API falsa en la que ingresa una cuenta con el tipo, el rol y los permisos indicados. Una respuesta puede ser
+/// una función, para que cambie entre una consulta y otra; [alPedir] ve cada solicitud.
 Api apiCon({
   required String tipo,
   String? rol,
   List<String> permisos = const [],
   bool sesionVencida = false,
   Map<String, Object> respuestas = const {},
+  void Function(http.Request)? alPedir,
 }) {
   return Api(
     base: 'http://api',
     cliente: MockClient((solicitud) async {
       final ruta = solicitud.url.path;
+      alPedir?.call(solicitud);
       if (ruta == '/api/auth/login') {
         return json({
           'token': 't',
@@ -43,7 +46,8 @@ Api apiCon({
       }
       if (sesionVencida) return json({'codigo': 'SIN_SESION', 'mensaje': 'Inicia sesión para continuar.'}, 401);
       if (respuestas.containsKey(ruta)) {
-        final respuesta = respuestas[ruta]!;
+        final dato = respuestas[ruta]!;
+        final respuesta = dato is Object Function() ? dato() : dato;
         return respuesta is http.Response ? respuesta : json(respuesta);
       }
       return switch (ruta) {
@@ -428,5 +432,38 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/pedidos');
+  });
+
+  testWidgets('Verificar pagos muestra solo el pago nuevo, y esa consulta no cuenta como uso de la sesión', (
+    tester,
+  ) async {
+    var pagos = <Object>[];
+    final automaticas = <String?>[];
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'ADMINISTRADOR',
+        permisos: ['COBRANZA_VERIFICAR'],
+        respuestas: {'/api/pagos/en-verificacion': () => pagos},
+        alPedir: (s) {
+          if (s.url.path == '/api/pagos/en-verificacion') automaticas.add(s.headers['X-Actualizacion-Automatica']);
+        },
+      ),
+    );
+    await tester.tap(enMenu('Verificar pagos'));
+    await tester.pumpAndSettle();
+    expect(find.text('No hay pagos por verificar.'), findsOneWidget);
+
+    // Un cliente registra su pago; nadie recarga la página.
+    pagos = [
+      {'id': 3, 'pedidoId': 7, 'monto': 120, 'estado': 'EN_VERIFICACION', 'metodo': 'QR', 'referencia': 'OP-7'},
+    ];
+    await tester.pump(const Duration(seconds: 21));
+    await tester.pumpAndSettle();
+    expect(find.text('Pedido #7'), findsOneWidget);
+    // La carga al abrir es uso de la sesión; la actualización automática lleva la marca (RNF06).
+    expect(automaticas.first, isNull);
+    expect(automaticas.last, '1');
   });
 }

@@ -22,6 +22,16 @@ class CorsTests extends PruebaIntegracion {
 			.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:8081"));
 	}
 
+	/** La cabecera de las actualizaciones automáticas de las pantallas, que no cuentan como uso de la sesión. */
+	@Test
+	void elPanelPuedeMarcarSusActualizacionesAutomaticas() throws Exception {
+		mvc.perform(options("/api/pedidos").header(HttpHeaders.ORIGIN, "http://localhost:8081")
+			.header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+			.header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "authorization,x-actualizacion-automatica"))
+			.andExpect(status().isOk())
+			.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, org.hamcrest.Matchers.containsStringIgnoringCase("x-actualizacion-automatica")));
+	}
+
 	@Test
 	void otroOrigenNoPuede() throws Exception {
 		mvc.perform(options("/api/personal").header(HttpHeaders.ORIGIN, "https://sitio-malicioso.com")

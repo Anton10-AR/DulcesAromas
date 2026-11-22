@@ -99,6 +99,15 @@ public class ServicioSesiones {
 	 */
 	@Transactional
 	public Optional<UsuarioActual> autenticar(String token) {
+		return autenticar(token, true);
+	}
+
+	/**
+	 * @param esUso falso para las consultas que una pantalla hace sola para actualizarse: responden, pero no
+	 * reinician el plazo de inactividad, para que una pantalla abierta no mantenga viva la sesión (RNF06)
+	 */
+	@Transactional
+	public Optional<UsuarioActual> autenticar(String token, boolean esUso) {
 		Optional<Sesion> encontrada = sesiones.findByTokenHash(Tokens.hash(token));
 		if (encontrada.isEmpty()) {
 			return Optional.empty();
@@ -110,7 +119,7 @@ public class ServicioSesiones {
 			sesiones.delete(sesion);
 			return Optional.empty();
 		}
-		if (!ahora.isBefore(sesion.getUltimoUso().plus(PRECISION_USO))) {
+		if (esUso && !ahora.isBefore(sesion.getUltimoUso().plus(PRECISION_USO))) {
 			sesion.registrarUso(ahora);
 		}
 		return Optional.of(usuario.comoUsuarioActual());

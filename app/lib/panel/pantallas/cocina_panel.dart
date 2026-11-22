@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -56,7 +57,7 @@ class CocinaPanel extends StatefulWidget {
   State<CocinaPanel> createState() => _CocinaPanelState();
 }
 
-class _CocinaPanelState extends State<CocinaPanel> {
+class _CocinaPanelState extends State<CocinaPanel> with ActualizacionPeriodica {
   late Future<List<PedidoCocina>> _pedidos;
 
   Api get _api => context.read<Api>();
@@ -67,11 +68,17 @@ class _CocinaPanelState extends State<CocinaPanel> {
     _cargar();
   }
 
+  Future<List<PedidoCocina>> _consultar() => _api.get('/api/cocina').then((j) => lista(j, PedidoCocina.deJson));
+
   void _cargar() {
     setState(() {
-      _pedidos = _api.get('/api/cocina').then((j) => lista(j, PedidoCocina.deJson));
+      _pedidos = _consultar();
     });
   }
+
+  /// La lista cambia sola cuando otro usuario mueve un pedido, sin recargar la página.
+  @override
+  Future<void> actualizarEnSilencio() => reemplazarSiResponde(_consultar(), (f) => _pedidos = f);
 
   Future<void> _avanzar(PedidoCocina p, String paso, String hecho) async {
     try {

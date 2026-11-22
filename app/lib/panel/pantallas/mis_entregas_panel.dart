@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -15,7 +16,7 @@ class MisEntregasPanel extends StatefulWidget {
   State<MisEntregasPanel> createState() => _MisEntregasPanelState();
 }
 
-class _MisEntregasPanelState extends State<MisEntregasPanel> {
+class _MisEntregasPanelState extends State<MisEntregasPanel> with ActualizacionPeriodica {
   late Future<List<Entrega>> _entregas;
 
   Api get _api => context.read<Api>();
@@ -26,11 +27,17 @@ class _MisEntregasPanelState extends State<MisEntregasPanel> {
     _cargar();
   }
 
+  Future<List<Entrega>> _consultar() => _api.get('/api/entregas/mias').then((j) => lista(j, Entrega.deJson));
+
   void _cargar() {
     setState(() {
-      _entregas = _api.get('/api/entregas/mias').then((j) => lista(j, Entrega.deJson));
+      _entregas = _consultar();
     });
   }
+
+  /// La lista cambia sola cuando otro usuario mueve un pedido, sin recargar la página.
+  @override
+  Future<void> actualizarEnSilencio() => reemplazarSiResponde(_consultar(), (f) => _entregas = f);
 
   Future<void> _accion(Future<dynamic> Function() llamada, String hecho) async {
     try {

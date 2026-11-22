@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -21,7 +22,7 @@ class PagosPanel extends StatefulWidget {
   State<PagosPanel> createState() => _PagosPanelState();
 }
 
-class _PagosPanelState extends State<PagosPanel> {
+class _PagosPanelState extends State<PagosPanel> with ActualizacionPeriodica {
   late Future<List<Pago>> _pagos;
 
   Api get _api => context.read<Api>();
@@ -32,11 +33,17 @@ class _PagosPanelState extends State<PagosPanel> {
     _cargar();
   }
 
+  Future<List<Pago>> _consultar() => _api.get('/api/pagos/en-verificacion').then((j) => lista(j, Pago.deJson));
+
   void _cargar() {
     setState(() {
-      _pagos = _api.get('/api/pagos/en-verificacion').then((j) => lista(j, Pago.deJson));
+      _pagos = _consultar();
     });
   }
+
+  /// La lista cambia sola cuando otro usuario mueve un pedido, sin recargar la página.
+  @override
+  Future<void> actualizarEnSilencio() => reemplazarSiResponde(_consultar(), (f) => _pagos = f);
 
   /// Si otra persona ya decidió el pago, el servidor lo rechaza y la lista se actualiza (RNF15).
   Future<void> _decidir(Pago pago, {required bool aprobar}) async {

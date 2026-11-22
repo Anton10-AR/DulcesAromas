@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
@@ -16,7 +17,7 @@ class PedidosPanel extends StatefulWidget {
   State<PedidosPanel> createState() => _PedidosPanelState();
 }
 
-class _PedidosPanelState extends State<PedidosPanel> {
+class _PedidosPanelState extends State<PedidosPanel> with ActualizacionPeriodica {
   /// Nulo: todos los que siguen en curso.
   String? _estado;
   late Future<List<PedidoResumen>> _pedidos;
@@ -27,14 +28,18 @@ class _PedidosPanelState extends State<PedidosPanel> {
     _cargar();
   }
 
+  Future<List<PedidoResumen>> _consultar() =>
+      context.read<Api>().get('/api/pedidos', {'estado': _estado}).then((j) => lista(j, PedidoResumen.deJson));
+
   void _cargar() {
     setState(() {
-      _pedidos = context
-          .read<Api>()
-          .get('/api/pedidos', {'estado': _estado})
-          .then((j) => lista(j, PedidoResumen.deJson));
+      _pedidos = _consultar();
     });
   }
+
+  /// La lista cambia sola cuando otro usuario mueve un pedido, sin recargar la página.
+  @override
+  Future<void> actualizarEnSilencio() => reemplazarSiResponde(_consultar(), (f) => _pedidos = f);
 
   @override
   Widget build(BuildContext context) {

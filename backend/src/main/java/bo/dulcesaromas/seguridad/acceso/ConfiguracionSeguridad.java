@@ -62,7 +62,8 @@ class ConfiguracionSeguridad {
 		var configuracion = new CorsConfiguration();
 		configuracion.setAllowedOrigins(origenes);
 		configuracion.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-		configuracion.setAllowedHeaders(List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE));
+		configuracion.setAllowedHeaders(
+				List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE, FiltroToken.ACTUALIZACION_AUTOMATICA));
 		var fuente = new UrlBasedCorsConfigurationSource();
 		fuente.registerCorsConfiguration("/api/**", configuracion);
 		return fuente;
