@@ -2,9 +2,12 @@ import 'dart:convert';
 
 import 'package:dulces_aromas/comun/api.dart';
 import 'package:dulces_aromas/comun/fondo.dart';
+import 'package:dulces_aromas/comun/preferencia_tema.dart';
+import 'package:dulces_aromas/comun/widgets.dart';
 import 'package:dulces_aromas/tienda/pantallas/comunes.dart';
 import 'package:dulces_aromas/tienda/app_tienda.dart';
 import 'package:dulces_aromas/tienda/pantallas/pedido_pantalla.dart';
+import 'package:dulces_aromas/tienda/pantallas/progreso_pedido.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -557,14 +560,21 @@ void main() {
     final router = tester.widget<MaterialApp>(find.byType(MaterialApp)).routerConfig! as GoRouter;
     router.go('/pedidos/5');
     await tester.pumpAndSettle();
-    expect(find.text('Confirmado'), findsOneWidget);
+    // La etiqueta de estado; la barra de progreso también nombra cada paso.
+    Finder etiqueta(String texto) => find.widgetWithText(EtiquetaEstado, texto);
+    expect(etiqueta('Confirmado'), findsOneWidget);
+    String paso() => tester.widget<SeguimientoPedido>(find.byType(SeguimientoPedido)).estado;
+    expect(paso(), 'CONFIRMADO');
+    // La barra de arriba, como en el catálogo: el tema a mano también en el seguimiento.
+    expect(find.descendant(of: find.byType(AppBar), matching: find.byType(BotonTema)), findsOneWidget);
 
     // La pastelería empieza a prepararlo; el cliente no toca nada.
     estado = 'EN_PREPARACION';
     await tester.pump(const Duration(seconds: 21));
     await tester.pumpAndSettle();
-    expect(find.text('En preparación'), findsOneWidget);
-    expect(find.text('Confirmado'), findsNothing);
+    expect(etiqueta('En preparación'), findsOneWidget);
+    expect(etiqueta('Confirmado'), findsNothing);
+    expect(paso(), 'EN_PREPARACION');
   });
 
   testWidgets('el catálogo se actualiza al deslizar hacia abajo y al volver de un producto', (tester) async {

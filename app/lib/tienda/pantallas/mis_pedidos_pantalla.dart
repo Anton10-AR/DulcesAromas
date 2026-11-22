@@ -7,6 +7,8 @@ import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
+import 'comunes.dart';
+import 'progreso_pedido.dart';
 
 /// Mis pedidos, del más reciente al más antiguo, con el estado del pedido y del pago (CU15, HU19).
 class MisPedidosPantalla extends StatefulWidget {
@@ -56,7 +58,7 @@ class _MisPedidosPantallaState extends State<MisPedidosPantalla> with Actualizac
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis pedidos')),
+      appBar: AppBar(title: const Text('Mis pedidos'), actions: accionesTienda(context)),
       body: RefreshIndicator(
         onRefresh: () async => _cargar(),
         child: Cargador(
@@ -116,7 +118,26 @@ class _TarjetaPedido extends StatelessWidget {
                 ],
               ),
               Text('${fecha(pedido.fechaCreacion)} · ${cantidadProductos(pedido.productos)}', style: textos.bodySmall),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    pedido.tipoEntrega == 'DELIVERY' ? Icons.delivery_dining_outlined : Icons.storefront_outlined,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${pedido.tipoEntrega == 'DELIVERY' ? 'Delivery' : 'Recojo'} · ${fechaHora(pedido.horarioEntrega)}',
+                      style: textos.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              BarraProgreso(estado: pedido.estado, delivery: pedido.tipoEntrega == 'DELIVERY'),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,

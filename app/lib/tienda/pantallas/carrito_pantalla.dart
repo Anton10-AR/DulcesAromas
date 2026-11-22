@@ -7,6 +7,7 @@ import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
 import '../carrito.dart';
+import 'comunes.dart';
 
 /// Carrito con el total calculado por el servidor (CU05, RN08, RN11).
 class CarritoPantalla extends StatefulWidget {
@@ -63,6 +64,7 @@ class _CarritoPantallaState extends State<CarritoPantalla> {
         actions: [
           // Si un producto del carrito se eliminó del catálogo, la cotización falla; así se puede empezar de nuevo.
           if (!carrito.vacio) TextButton(onPressed: () => _vaciar(carrito), child: const Text('Vaciar')),
+          ...accionesTienda(context),
         ],
       ),
       body: carrito.vacio

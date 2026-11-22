@@ -7,6 +7,8 @@ import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
+import 'comunes.dart';
+import 'progreso_pedido.dart';
 
 /// Detalle de un pedido del cliente: productos, entrega, pago e historial (CU15). Desde aquí se paga o se
 /// cancela (CU16).
@@ -100,7 +102,7 @@ class _PedidoPantallaState extends State<PedidoPantalla> with ActualizacionPerio
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Pedido #${widget.id}')),
+      appBar: AppBar(title: Text('Pedido #${widget.id}'), actions: accionesTienda(context)),
       body: Cargador(
         futuro: _datos,
         reintentar: _cargar,
@@ -121,63 +123,158 @@ class _PedidoPantallaState extends State<PedidoPantalla> with ActualizacionPerio
 
   Widget _detalle(Pedido pedido, List<Pago> pagos) {
     final textos = Theme.of(context).textTheme;
+    final colores = Theme.of(context).colorScheme;
     final vigente = pagos.lastOrNull;
     final debePagar = pedido.estado == 'PENDIENTE' && vigente?.estado == 'PENDIENTE_DE_PAGO';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [EtiquetaEstado(pedido.estado), if (vigente != null) EtiquetaPago(vigente.estado)],
-        ),
-        const SizedBox(height: 12),
-        _QueSigue(queSigue(pedido.estado, vigente?.estado, delivery: pedido.esDelivery)),
-        const SizedBox(height: 16),
-        if (pedido.motivoCancelacion != null) Text('Motivo de la cancelación: ${pedido.motivoCancelacion}'),
-        if (debePagar) FilledButton(onPressed: () => _pagar(pedido.id), child: const Text('Pagar')),
-        const SizedBox(height: 16),
-        Text('Productos', style: textos.titleLarge),
-        for (final l in pedido.lineas)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('${l.cantidad} × ${l.nombre}'),
-            subtitle: l.opciones.isEmpty && l.mensaje == null
-                ? null
-                : Text(
-                    [...l.opciones.map((o) => o.nombre), if (l.mensaje != null) 'Mensaje: «${l.mensaje}»'].join(' · '),
-                  ),
-            // El precio de la línea, del mismo tamaño que el envío y el total.
-            trailing: Text(bolivianos(l.subtotal), style: textos.bodyLarge),
-          ),
-        if (pedido.esDelivery)
-          Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
+        // Resumen: estados, total y cuándo se pidió.
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Total', style: textos.titleMedium),
-            const Spacer(),
-            Text(bolivianos(pedido.total), style: textos.titleMedium),
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [EtiquetaEstado(pedido.estado), if (vigente != null) EtiquetaPago(vigente.estado)],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(bolivianos(pedido.total), style: textos.headlineSmall),
           ],
         ),
-        const Divider(height: 32),
-        Text(pedido.esDelivery ? 'Delivery' : 'Recojo en tienda', style: textos.titleLarge),
-        if (pedido.direccion != null) Text(pedido.direccion!),
-        Text('Teléfono: ${pedido.telefono}'),
-        Text('Horario: ${fechaHora(pedido.horarioEntrega)}'),
-        const Divider(height: 32),
-        Text('Historial', style: textos.titleLarge),
-        for (final c in pedido.historial)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.circle, size: 12),
-            title: Text(nombresEstadoPedido[c.nuevo]!),
-            subtitle: Text([fechaHora(c.fecha), if (c.observacion != null) c.observacion!].join(' · ')),
-          ),
+        const SizedBox(height: 4),
+        Text('Pedido el ${fechaHora(pedido.fechaCreacion)}', style: textos.bodySmall),
+        const SizedBox(height: 16),
+        _Seccion(
+          titulo: 'Seguimiento',
+          children: [
+            SeguimientoPedido(
+              estado: pedido.estado,
+              delivery: pedido.esDelivery,
+              historial: pedido.historial,
+              horarioEntrega: pedido.horarioEntrega,
+              mensaje: queSigue(pedido.estado, vigente?.estado, delivery: pedido.esDelivery),
+              motivoCancelacion: pedido.motivoCancelacion,
+            ),
+            if (debePagar) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => _pagar(pedido.id),
+                icon: const Icon(Icons.payments_outlined),
+                label: const Text('Pagar'),
+              ),
+            ],
+          ],
+        ),
+        _Seccion(
+          titulo: 'Productos',
+          children: [
+            for (final l in pedido.lineas)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: colores.secondaryContainer,
+                  foregroundColor: colores.onSecondaryContainer,
+                  child: Text('${l.cantidad}'),
+                ),
+                title: Text(l.nombre),
+                subtitle: l.opciones.isEmpty && l.mensaje == null
+                    ? null
+                    : Text(
+                        [
+                          ...l.opciones.map((o) => o.nombre),
+                          if (l.mensaje != null) 'Mensaje: «${l.mensaje}»',
+                        ].join(' · '),
+                      ),
+                // El precio de la línea, del mismo tamaño que el envío y el total.
+                trailing: Text(bolivianos(l.subtotal), style: textos.bodyLarge),
+              ),
+            const Divider(),
+            if (pedido.esDelivery)
+              Row(children: [const Text('Envío'), const Spacer(), Text(bolivianos(pedido.costoEnvio))]),
+            Row(
+              children: [
+                Text('Total', style: textos.titleMedium),
+                const Spacer(),
+                Text(bolivianos(pedido.total), style: textos.titleMedium),
+              ],
+            ),
+          ],
+        ),
+        _Seccion(
+          titulo: pedido.esDelivery ? 'Delivery' : 'Recojo en tienda',
+          children: [
+            _Dato(
+              icono: pedido.esDelivery ? Icons.place_outlined : Icons.storefront_outlined,
+              texto: pedido.direccion ?? 'Sucursal centro',
+            ),
+            _Dato(icono: Icons.phone_outlined, texto: pedido.telefono),
+            _Dato(icono: Icons.schedule_outlined, texto: fechaHora(pedido.horarioEntrega)),
+          ],
+        ),
         if (pedido.cancelable) ...[
-          const SizedBox(height: 16),
-          OutlinedButton(onPressed: _cancelar, child: const Text('Cancelar pedido')),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _cancelar,
+              icon: const Icon(Icons.close),
+              label: const Text('Cancelar pedido'),
+            ),
+          ),
         ],
       ],
+    );
+  }
+}
+
+/// Una tarjeta con título, para cada parte del pedido.
+class _Seccion extends StatelessWidget {
+  const _Seccion({required this.titulo, required this.children});
+
+  final String titulo;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Un dato de la entrega con su ícono.
+class _Dato extends StatelessWidget {
+  const _Dato({required this.icono, required this.texto});
+
+  final IconData icono;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: 12),
+          Expanded(child: Text(texto, style: Theme.of(context).textTheme.bodyLarge)),
+        ],
+      ),
     );
   }
 }
@@ -196,32 +293,3 @@ String queSigue(String estado, String? pago, {required bool delivery}) => switch
   'CANCELADO' => 'Este pedido se canceló.',
   _ => '',
 };
-
-class _QueSigue extends StatelessWidget {
-  const _QueSigue(this.texto);
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    if (texto.isEmpty) return const SizedBox.shrink();
-    final colores = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: colores.secondaryContainer, borderRadius: BorderRadius.circular(12)),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline, color: colores.onSecondaryContainer),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              texto,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: colores.onSecondaryContainer),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

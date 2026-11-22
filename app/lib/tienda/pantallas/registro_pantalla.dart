@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
+import '../../comun/preferencia_tema.dart';
 
 /// Registrarse como cliente (CU11, HU15). Al terminar queda con la sesión iniciada.
 class RegistroPantalla extends StatefulWidget {
@@ -50,7 +51,7 @@ class _RegistroPantallaState extends State<RegistroPantalla> {
   Widget build(BuildContext context) {
     final correoRegistrado = _error?.codigo == 'CORREO_REGISTRADO';
     return Scaffold(
-      appBar: AppBar(title: const Text('Crear una cuenta')),
+      appBar: AppBar(title: const Text('Crear una cuenta'), actions: const [BotonTema()]),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Contenido(

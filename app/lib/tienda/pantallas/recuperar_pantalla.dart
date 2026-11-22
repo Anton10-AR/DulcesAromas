@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../comun/api.dart';
 import '../../comun/widgets.dart';
+import '../../comun/preferencia_tema.dart';
 
 /// Recuperar la contraseña (CU12, HU16). Sin token, pide el correo; con el token del enlace, pide la nueva.
 class RecuperarPantalla extends StatefulWidget {
@@ -53,7 +54,10 @@ class _RecuperarPantallaState extends State<RecuperarPantalla> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_definiendo ? 'Contraseña nueva' : 'Recuperar contraseña')),
+      appBar: AppBar(
+        title: Text(_definiendo ? 'Contraseña nueva' : 'Recuperar contraseña'),
+        actions: const [BotonTema()],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Contenido(

@@ -7,6 +7,7 @@ import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
 import '../carrito.dart';
+import 'comunes.dart';
 
 /// Confirmar el pedido con recojo o delivery (CU05, HU10, RN12).
 class ConfirmarPantalla extends StatefulWidget {
@@ -116,7 +117,7 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
     final textos = Theme.of(context).textTheme;
     final localizaciones = MaterialLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirmar pedido')),
+      appBar: AppBar(title: const Text('Confirmar pedido'), actions: accionesTienda(context)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Contenido(

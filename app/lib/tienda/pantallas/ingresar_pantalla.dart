@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../comun/api.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
+import '../../comun/preferencia_tema.dart';
 
 /// Iniciar sesión en la Tienda (CU01, HU01). Al entrar vuelve a donde estaba, con el carrito intacto (HU10).
 class IngresarPantalla extends StatefulWidget {
@@ -61,7 +62,7 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
   Widget build(BuildContext context) {
     final volver = widget.volver == null ? '' : '?volver=${Uri.encodeQueryComponent(widget.volver!)}';
     return Scaffold(
-      appBar: AppBar(title: const Text('Ingresar')),
+      appBar: AppBar(title: const Text('Ingresar'), actions: const [BotonTema()]),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Contenido(

@@ -11,6 +11,7 @@ import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
 import '../comprobante_demo.dart';
+import 'comunes.dart';
 
 /// Registrar el pago con su comprobante (CU06, HU11).
 class PagarPantalla extends StatefulWidget {
@@ -170,7 +171,7 @@ class _PagarPantallaState extends State<PagarPantalla> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Pagar el pedido #${widget.pedidoId}')),
+      appBar: AppBar(title: Text('Pagar el pedido #${widget.pedidoId}'), actions: accionesTienda(context)),
       body: Cargador(
         futuro: _datos,
         reintentar: _cargar,
