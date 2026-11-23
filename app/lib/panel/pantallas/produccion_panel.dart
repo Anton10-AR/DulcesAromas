@@ -119,8 +119,8 @@ class _ProduccionPanelState extends State<ProduccionPanel> {
         Text('Producción', style: textos.titleLarge),
         const SizedBox(height: 4),
         Text(
-          'El máximo limita cuántas unidades acepta un pedido. La receta es aproximada: solo sirve para estimar insumos '
-          'y tiempo al verificar un pago, y no descuenta stock.',
+          'El máximo limita cuántas unidades acepta un pedido. La receta es aproximada: estima insumos y tiempo al '
+          'verificar un pago y, al empezar a preparar el pedido, descuenta sus insumos del inventario.',
           style: textos.bodyMedium,
         ),
         const SizedBox(height: 12),

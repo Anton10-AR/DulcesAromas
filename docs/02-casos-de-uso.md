@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.7 · 23/11/2026
+Versión 1.8 · 23/11/2026
 
 ## 1. Introducción y actores
 
@@ -75,6 +75,7 @@ El pedido y el pago tienen cada uno su propio estado. El pedido pasa a Confirmad
 | RN16 | Un cliente no puede obtener un rol de personal; esas cuentas las crea un administrador | CU09, CU11 |
 | RN17 | El mensaje escrito sobre una torta tiene hasta 24 caracteres y no tiene recargo | CU05, CU17 |
 | RN18 | Un pedido no supera el máximo de unidades por pedido de cada producto; las líneas del mismo producto se suman | CU05, CU17 |
+| RN19 | Pasar un pedido a En preparación descuenta del inventario los insumos de su receta, por cantidad y tamaño; si alguno no alcanza, el pedido no avanza y no se descuenta nada | CU03, CU08 |
 
 ## 3. Resumen de casos de uso
 
@@ -250,10 +251,10 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- |
 | ID / versión | CU03 / 1.0 |
 | Actor principal | Administrador (el Vendedor solo consulta) |
-| Fuente | RF29, RF30, RF31 |
+| Fuente | RF29, RF30, RF31, RF47 |
 | Prioridad | Media |
 | Objetivo | Controlar las existencias de insumos y materiales |
-| Descripción | El administrador registra entradas, salidas y ajustes de cada ítem con cantidad y motivo. El inventario controla insumos; la disponibilidad de los productos terminados es un indicador aparte (D2). Cada ítem tiene un mínimo obligatorio |
+| Descripción | El administrador registra entradas, salidas y ajustes de cada ítem con cantidad y motivo. El inventario controla insumos; la disponibilidad de los productos terminados es un indicador aparte (D2). Cada ítem tiene un mínimo obligatorio. Además, el sistema registra una salida automática por cada insumo de la receta cuando un pedido pasa a En preparación, con el motivo «Pedido #N» y quien lo marcó (RN19) |
 | Precondición | El usuario tiene sesión y permiso de inventario |
 | Postcondición | El stock queda actualizado y el movimiento guardado en el historial |
 | Secuencia normal | 1. El administrador abre Inventario. 2. Selecciona el ítem o crea uno nuevo con su mínimo. 3. Elige Entrada, Salida o Ajuste e ingresa cantidad y motivo. 4. El sistema valida y actualiza el stock. 5. Si el stock llega al mínimo, el sistema muestra una alerta |
@@ -418,7 +419,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Descripción | El verificador revisa el comprobante y decide. Aprobar lleva el pago a Pagado y el pedido a Confirmado. Rechazar exige una observación |
 | Precondición | El pago está En verificación y el usuario tiene el permiso |
 | Postcondición | El pago queda Pagado o Rechazado, el historial lo registra y, si se aprobó, el pedido queda Confirmado |
-| Secuencia normal | 1. El verificador abre Cobranza y ve los pagos En verificación. 2. Abre uno y revisa monto, referencia y comprobante, junto con la estimación del pedido: los insumos y el tiempo que requiere, sumados a los pedidos Confirmados y En preparación, comparados con el stock y con el horario de entrega (RF46). La estimación solo informa (D12). 3. Elige Aprobar. 4. El sistema pasa el pago a Pagado, el pedido a Confirmado y guarda quién verificó y cuándo |
+| Secuencia normal | 1. El verificador abre Cobranza y ve los pagos En verificación. 2. Abre uno y revisa monto, referencia y comprobante, junto con la estimación del pedido: los insumos y el tiempo que requiere, sumados a lo comprometido por los pedidos Confirmados (los En preparación ya descontaron sus insumos) y al tiempo de la cola, comparados con el stock y con el horario de entrega (RF46). La estimación solo informa (D12). 3. Elige Aprobar. 4. El sistema pasa el pago a Pagado, el pedido a Confirmado y guarda quién verificó y cuándo |
 | Secuencia opcional | Alt. 1: no coincide el monto o el comprobante. El verificador elige Rechazar. Alt. 2: el rechazo sin observación. El sistema la exige (RN07) y luego reabre el cobro como Pendiente de pago. Alt. 3: el pedido fue asistido y lo registró el mismo usuario. El sistema no le permite verificar ese pago (RN06). Alt. 4: otra persona ya decidió ese pago. El sistema muestra el resultado y no aplica una segunda decisión (RNF15) |
 | Rendimiento | 2 s o menos por decisión |
 | Frecuencia | Diaria |
@@ -434,10 +435,10 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | --- | --- |
 | ID / versión | CU08 / 1.0 |
 | Actor principal | Repostero (prepara), Administrador o Vendedor (asignan; preparan con permiso), Repartidor (sus entregas) |
-| Fuente | RF21, RF40, RF41, RF42, RF43 |
+| Fuente | RF21, RF40, RF41, RF42, RF43, RF47 |
 | Prioridad | Alta |
 | Objetivo | Llevar el pedido confirmado hasta su entrega |
-| Descripción | El personal marca la preparación, asigna un repartidor a los pedidos con delivery y el Repartidor marca En camino y Entregado. El recojo en tienda lo cierra el Vendedor. Quien prepara y tiene el permiso de consultar recetas ve en Cocina la receta aproximada del pedido: los insumos y el tiempo de cada línea, multiplicados por su cantidad y su tamaño (D12) |
+| Descripción | El personal marca la preparación, asigna un repartidor a los pedidos con delivery y el Repartidor marca En camino y Entregado. El recojo en tienda lo cierra el Vendedor. Pasar el pedido a En preparación descuenta del inventario los insumos de su receta; si alguno no alcanza, el sistema dice cuáles faltan y el pedido sigue Confirmado hasta que se registre la compra o se ajuste el inventario (RN19). Quien prepara y tiene el permiso de consultar recetas ve en Cocina la receta aproximada del pedido: los insumos y el tiempo de cada línea, multiplicados por su cantidad y su tamaño (D12) |
 | Precondición | El pedido está Confirmado (pago Pagado) |
 | Postcondición | El pedido queda Entregado, o vuelve a Listo si la entrega falló. Cada cambio queda en el historial |
 | Secuencia normal | 1. El Repostero, desde Cocina, ve los pedidos Confirmados por horario de entrega y marca En preparación y luego Listo; también puede hacerlo el Administrador, o el Vendedor con permiso. 2. Si es delivery, el Vendedor o el Administrador asigna un repartidor. 3. El Repartidor ve el pedido con dirección y teléfono y marca En camino. 4. Entrega y marca Entregado. 5. El sistema guarda cada cambio con usuario y fecha. Si es recojo: el Vendedor marca Entregado cuando el cliente retira |
@@ -482,12 +483,12 @@ El Vendedor que registró un pedido asistido no puede verificar el pago de ese m
 | --- | --- |
 | CU01 | RF02, RF03, RF26, RF27 |
 | CU02 | RF16, RF17, RF18, RF44, RF45 |
-| CU03 | RF29, RF30, RF31 |
+| CU03 | RF29, RF30, RF31, RF47 |
 | CU04 | RF05, RF06, RF07, RF08 |
 | CU05 | RF09, RF10, RF11, RF12, RF13, RF32, RF35, RF44 |
 | CU06 | RF36 |
 | CU07 | RF37, RF38, RF39, RF46 |
-| CU08 | RF21, RF40, RF41, RF42, RF43 |
+| CU08 | RF21, RF40, RF41, RF42, RF43, RF47 |
 | CU09 | RF22, RF25, RF26, RF28 |
 | CU10 | RF20, RF23 |
 | CU11 | RF01 |
@@ -498,7 +499,7 @@ El Vendedor que registró un pedido asistido no puede verificar el pago de ese m
 | CU16 | RF33 |
 | CU17 | RF34, RF44 |
 
-Los 46 requisitos de la Visión v1 (RF01 a RF46) quedan cubiertos por al menos un caso de uso.
+Los 47 requisitos de la Visión v1 (RF01 a RF47) quedan cubiertos por al menos un caso de uso.
 
 ### 9.2 Cambios respecto a los Casos de Uso v0
 
@@ -528,6 +529,7 @@ Los 46 requisitos de la Visión v1 (RF01 a RF46) quedan cubiertos por al menos u
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 | RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
 | CU05, CU17 (v1.3) | Si el producto ofrece tamaños, elegir uno es obligatorio; sin él, el pedido de una torta queda incompleto |
+| RN19, CU03, CU08, D12 (v1.8) | Descuento automático de insumos por receta al pasar un pedido a En preparación; sin stock suficiente, el pedido no avanza | Lo pidió el equipo el 23/11/2026. Se descuenta al preparar porque desde ahí el pedido ya no se cancela (RN14) y nunca hay que devolver stock |
 | Matriz, CU08 (v1.7) | Permiso nuevo «Catálogo: consultar las recetas aproximadas», del administrador y del Repostero, que ve la receta de cada pedido en Cocina | Quien prepara necesitaba las recetas, y el permiso de gestionar el catálogo le habría dado precios y productos. Lo pidió el equipo el 23/11/2026 |
 | RN18, CU02, CU05, CU07, CU17 (v1.6) | Máximo de unidades por pedido para cada producto, y recetas aproximadas que estiman insumos y tiempo al verificar un pago | Un pedido de 30 tortas se aceptaba sin aviso. Lo pidió el equipo el 20/11/2026 |
 | Actores, tabla 2.2, CU08, matriz (v1.5) | Nuevo rol fijo Repostero, que prepara los pedidos desde Cocina | Con tres roles, quien prepara necesitaba una cuenta de Vendedor, que también cobra y cancela. Lo observó el docente |
@@ -567,5 +569,5 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. El equ
 | Cancelación de un pedido pagado | Su pago sale de la cola de verificación y ya no se puede decidir (CU16) |
 | Reporte de ventas | «Vendido» suma los pedidos pagados y no cancelados; el rango es de hasta 12 meses (RNF02) |
 | Máximo por pedido (RN18) | Opcional por producto; sin máximo rige el tope general de 99 unidades por línea. Se cuenta la suma de las líneas del producto. Valores iniciales: tortas 3, postres individuales 12, masitas y galletas 50, bebidas 20 |
-| Recetas (D12, 20/11/2026) | Son aproximadas y solo estiman: no descuentan stock ni bloquean la aprobación. Las consulta quien tiene el permiso de recetas (el Repostero, en Cocina) y las edita quien gestiona el catálogo. El tiempo se cuenta por unidad y cada opción de tamaño multiplica insumos y tiempo por su factor. La estimación suma los pedidos Confirmados y En preparación |
+| Recetas (D12, 20/11/2026, revisada el 23/11/2026) | Son aproximadas. Al verificar un pago solo informan, sin bloquear la aprobación. Al pasar el pedido a En preparación descuentan sus insumos del inventario, y si alguno no alcanza el pedido no avanza (RN19). Las consulta quien tiene el permiso de recetas (el Repostero, en Cocina) y las edita quien gestiona el catálogo. El tiempo se cuenta por unidad y cada opción de tamaño multiplica insumos y tiempo por su factor. La estimación cuenta como comprometidos los insumos de los pedidos Confirmados y como cola de tiempo los Confirmados y En preparación |
 | Estado del cobro en Mis pedidos | La Tienda combina dos consultas (pedidos y pagos), para que E-commerce no dependa de Cobros |

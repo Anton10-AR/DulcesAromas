@@ -1,6 +1,6 @@
 # Dulces Aromas — Visión del Proyecto v1
 
-Versión 1.2 · 20/11/2026
+Versión 1.3 · 23/11/2026
 
 Versión 1.0 del documento que reemplaza a la Visión v0. Universidad Mayor Real y Pontíficia San Francisco Xavier de Chuquisaca, Facultad de Ciencias y Tecnología, Sucre, Bolivia, 2026. Estudiantes: Avendaño Retamozo Juan Antonio, Dávalos Nuñez Gabriela y Morejon Morales Luz Yumara. Docente: Ing. Ramiro Duran.
 
@@ -40,7 +40,7 @@ El personal podrá, según su rol:
 
 - Publicación de la aplicación en Google Play o App Store.
 - Gestión de múltiples sucursales: hay un solo punto de recojo, «Sucursal centro».
-- Automatización de la producción y descuento automático de insumos por receta. Las recetas solo sirven para estimar los insumos y el tiempo de un pedido (RF45, RF46; D12).
+- Automatización de la producción (planificar la cocina, órdenes de compra). Las recetas aproximadas estiman los insumos y el tiempo de un pedido y, al empezar a prepararlo, descuentan sus insumos del inventario (RF45 a RF47; D12).
 - Pasarela de pago o QR dinámico con confirmación automática; el pago se verifica a mano.
 - Roles personalizados creados por el administrador.
 - Notificaciones automáticas de estado, reportes exportables, gráficos, rutas y mapas.
@@ -167,13 +167,13 @@ En el recojo en tienda, el pedido pasa de Listo a Entregado sin pasar por En cam
 ### 4.4 Características por módulo
 
 - **Seguridad:** registro de clientes, inicio y cierre de sesión, recuperación de contraseña (correo para clientes; el administrador la restablece al personal), bloqueo tras intentos fallidos, roles fijos con permisos editables y registro de cambios.
-- **E-commerce:** catálogo con búsqueda y filtro, personalización con recargo fijo por opción, carrito, pedido con recojo o delivery (tarifa fija), disponibilidad manual y máximo por pedido por producto, recetas aproximadas para estimar insumos y tiempo, inventario de insumos con alertas, cancelación y pedido asistido por el Vendedor.
+- **E-commerce:** catálogo con búsqueda y filtro, personalización con recargo fijo por opción, carrito, pedido con recojo o delivery (tarifa fija), disponibilidad manual y máximo por pedido por producto, recetas aproximadas que estiman insumos y tiempo y descuentan los insumos al preparar, inventario de insumos con alertas, cancelación y pedido asistido por el Vendedor.
 - **Cobros:** pago por QR, transferencia o depósito con comprobante, verificación manual por personal con permiso, rechazo con observación e historial.
 - **Distribución:** asignación de repartidor, vista propia del Repartidor, marcas En camino y Entregado, entrega fallida con observación e historial de estados.
 
 ## 5. Requisitos funcionales por módulo
 
-Son 46 requisitos. Cada uno se detalla en un caso de uso del documento de Casos de Uso. Los IDs se conservan de la Visión v0 (RF01 a RF23) y se agregan RF24 a RF43; RF44 a RF46 se agregaron el 20/11/2026 (máximo por pedido y recetas aproximadas).
+Son 47 requisitos. Cada uno se detalla en un caso de uso del documento de Casos de Uso. Los IDs se conservan de la Visión v0 (RF01 a RF23) y se agregan RF24 a RF43; RF44 a RF46 se agregaron el 20/11/2026 (máximo por pedido y recetas aproximadas) y RF47 el 23/11/2026 (descuento automático de insumos).
 
 ### 5.1 Seguridad
 
@@ -231,6 +231,7 @@ Son 46 requisitos. Cada uno se detalla en un caso de uso del documento de Casos 
 | RF38 | El sistema actualiza el estado del pago y del pedido según la decisión | CU07 |
 | RF39 | El sistema guarda el historial de verificaciones | CU07 |
 | RF46 | Al verificar un pago, el personal ve los insumos y el tiempo que requiere el pedido, sumados a los pedidos ya confirmados, comparados con el stock y con el horario de entrega | CU07 |
+| RF47 | Al pasar un pedido a En preparación, el sistema descuenta del inventario los insumos de su receta; si alguno no alcanza, el pedido no avanza | CU03, CU08 |
 
 ### 5.4 Distribución
 
@@ -328,7 +329,7 @@ Dulces Aromas reemplaza la gestión dispersa de pedidos por un solo sistema con 
 | Módulos | Catálogo e inventario por separado | 4 módulos: Seguridad, E-commerce, Cobros, Distribución |
 | Roles | Varios catálogos distintos entre documentos | Cliente, Administrador, Vendedor, Repartidor y Repostero (desde el 13/11/2026) |
 | Estados | Pedido y pago mezclados | Dos ciclos separados, con el pago aprobado antes de preparar |
-| Requisitos funcionales | RF01–RF23 | RF01–RF46, agrupados por módulo |
+| Requisitos funcionales | RF01–RF23 | RF01–RF47, agrupados por módulo |
 | Requisitos no funcionales | Enunciados generales | RNF01–RNF21 con valor y forma de verificación |
 | Pago | Sin definir | QR, transferencia o depósito con comprobante y verificación manual |
 | Cliente en el sistema | Sin interfaz propia | Tienda con registro, pedido y seguimiento |

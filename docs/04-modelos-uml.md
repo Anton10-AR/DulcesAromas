@@ -1,6 +1,6 @@
 # Dulces Aromas — Modelos UML v1
 
-Versión 1.5 · 20/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
+Versión 1.6 · 23/11/2026. Los diagramas originales están en el documento de Claude; aquí se reproducen en Mermaid para que GitHub los muestre.
 
 ## 1. Introducción
 
@@ -258,7 +258,7 @@ classDiagram
   IngredienteReceta "*" --> "1" ItemInventario : usa
   MovimientoInventario "*" --> "1" Personal : hecho por
 ```
-La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos. La receta (IngredienteReceta, con los minutos por unidad del producto y el factor de cada opción) es aproximada y solo estima los insumos y el tiempo de un pedido al verificar su pago; no descuenta stock (D12). El máximo por pedido limita cuántas unidades del producto acepta un pedido (RN18). La imagen va en su propia clase, ImagenProducto, para no cargar los bytes cada vez que se lee un producto; el producto solo guarda cuándo cambió, para que la app no muestre una copia vieja.
+La disponibilidad es un indicador manual del producto (D2); no se calcula con el stock de insumos. La receta (IngredienteReceta, con los minutos por unidad del producto y el factor de cada opción) es aproximada: estima los insumos y el tiempo de un pedido al verificar su pago y, al pasarlo a En preparación, descuenta sus insumos con un MovimientoInventario de salida por insumo (RN19, D12). El máximo por pedido limita cuántas unidades del producto acepta un pedido (RN18). La imagen va en su propia clase, ImagenProducto, para no cargar los bytes cada vez que se lee un producto; el producto solo guarda cuándo cambió, para que la app no muestre una copia vieja.
 
 Una categoría agrupa productos y un producto ofrece opciones de personalización, cada una con su recargo fijo (D9). El inventario controla insumos y sus movimientos, y cada movimiento lo registra una persona del personal (RN09, CU03). Una entrada suma, una salida resta y un ajuste fija el stock al valor contado.
 
@@ -619,12 +619,13 @@ Los cuatro modelos usan los mismos nombres. Esta tabla muestra dónde aparece ca
 | Mensaje de la torta | CU05 alt. 3b | LineaPedido.mensaje (hasta 24 caracteres, límite fijo) | E-commerce | — | RN17 |
 | Disponibilidad manual | CU02, CU04 | Producto.disponible (sin relación con ItemInventario) | IProductos, IStock separadas | — | RN08, D2 |
 | Máximo por pedido | CU02, CU05, CU17 | Producto.maximoPorPedido | IProductos | — | RN18 |
-| Estimación de insumos y tiempo | CU02, CU07 | IngredienteReceta, Producto.minutosPorUnidad, OpcionPersonalizacion.factor, OpcionElegida.factor | E-commerce usa IProductos e IStock | Cola: Confirmado y En preparación | RF46, D12 |
+| Estimación de insumos y tiempo | CU02, CU07 | IngredienteReceta, Producto.minutosPorUnidad, OpcionPersonalizacion.factor, OpcionElegida.factor | E-commerce usa IProductos e IStock | Insumos comprometidos: Confirmado; tiempo de cola: Confirmado y En preparación | RF46, D12 |
+| Descuento de insumos | CU03, CU08 | IngredienteReceta, MovimientoInventario (salida «Pedido #N») | Pedidos usa IStock.registrarMovimiento | Confirmado a En preparación, solo si alcanza el stock | RF47, RN19 |
 | Auditoría | CU07, CU09 | Auditoría (usuarios y permisos), Verificacion (pagos) | Seguridad, Cobros | — | RF28, RNF08 |
 
 Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pagos (uno por intento) y la entrega es una clase aparte que solo existe para pedidos con delivery.
 
-## 7. Cambios en las versiones 1.1 a 1.5
+## 7. Cambios en las versiones 1.1 a 1.6
 
 | Elemento | Cambio | Motivo |
 | --- | --- | --- |
@@ -641,5 +642,6 @@ Dos supuestos de modelado que el equipo puede cambiar: un pedido tiene varios pa
 | Estado del pago (v1.4) | Rechazado es un estado final; el sistema abre un pago nuevo | El diagrama decía que el mismo pago volvía a Pendiente de pago, y el de clases ya mostraba varios pagos por pedido |
 | ImagenProducto, Comprobante, QrMetodoPago (v1.4) | Clases nuevas en el diagrama, en lugar de los atributos imagen, comprobante y qr | Ya eran clases en el código: separan los archivos para no cargarlos en cada lectura |
 | LineaPedido, OpcionElegida, Pedido, Pago (v1.4) | Se agregan nombreProducto (copia), tipo, creado; esAsistido pasa a método | El diagrama no mostraba datos que el código ya guardaba |
+| MovimientoInventario, IngredienteReceta (v1.6) | La receta descuenta insumos al preparar: una salida por insumo con el motivo del pedido | RN19 y RF47, pedidos por el equipo el 23/11/2026 |
 | Producto, OpcionPersonalizacion, OpcionElegida, IngredienteReceta (v1.5) | Máximo por pedido, minutos por unidad, factor por opción (con su copia en el pedido) y la receta aproximada | RN18 y estimación de insumos y tiempo al verificar (RF44–RF46, D12), pedidos por el equipo el 20/11/2026 |
 | Despliegue (v1.3) | Sección 4.1 nueva: nodos de Render, Neon, Brevo y GitHub Actions | Documentar dónde corre cada componente al publicar el sistema en la nube (RNF21) |

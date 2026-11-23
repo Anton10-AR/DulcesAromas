@@ -48,10 +48,13 @@ class PedidoServicio {
 
 	private final ApplicationEventPublisher eventos;
 
+	private final DescuentoInsumos descuento;
+
 	private final Clock reloj;
 
 	PedidoServicio(Cotizador cotizador, PedidoRepositorio pedidos, ConfiguracionRepositorio configuracion,
-			IAutenticacion autenticacion, ApplicationEventPublisher eventos, Clock reloj) {
+			IAutenticacion autenticacion, ApplicationEventPublisher eventos, DescuentoInsumos descuento, Clock reloj) {
+		this.descuento = descuento;
 		this.cotizador = cotizador;
 		this.pedidos = pedidos;
 		this.configuracion = configuracion;
@@ -169,7 +172,7 @@ class PedidoServicio {
 
 	/**
 	 * Confirmado → En preparación, o En preparación → Listo. Solo se prepara un pedido con el pago aprobado:
-	 * únicamente así llega a Confirmado (RN05).
+	 * únicamente así llega a Confirmado (RN05). Pasar a En preparación descuenta los insumos de la receta (RN19).
 	 */
 	@Transactional
 	PedidoVista avanzarPreparacion(Long id, EstadoPedido nuevo, UsuarioActual usuario) {
@@ -200,6 +203,10 @@ class PedidoServicio {
 		}
 		Pedido pedido = bloquear(id);
 		pedido.cambiarEstado(nuevo, usuario.id(), null, reloj.instant());
+		// RN19: empezar a prepararlo usa los insumos de su receta; si no alcanzan, se deshace todo.
+		if (nuevo == EstadoPedido.EN_PREPARACION) {
+			descuento.descontar(pedido, usuario.id());
+		}
 		return pedido;
 	}
 

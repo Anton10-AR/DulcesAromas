@@ -1,6 +1,6 @@
 # Dulces Aromas — Historias de Usuario y Product Backlog v1
 
-Versión 1.3 · 23/11/2026
+Versión 1.4 · 23/11/2026
 
 ## 1. Introducción
 
@@ -23,7 +23,7 @@ Una historia está terminada cuando cumple todos sus criterios de aceptación, r
 
 ## 2. Historias de usuario
 
-Las historias se agrupan por módulo. HU01 a HU14 conservan la numeración de la versión 0 y HU15 a HU21 son nuevas, una por cada caso de uso nuevo. HU22 y HU23 se agregaron el 20/11/2026.
+Las historias se agrupan por módulo. HU01 a HU14 conservan la numeración de la versión 0 y HU15 a HU21 son nuevas, una por cada caso de uso nuevo. HU22 y HU23 se agregaron el 20/11/2026, y HU24 el 23/11/2026.
 
 ### 2.1 Seguridad
 
@@ -60,7 +60,8 @@ Las historias se agrupan por módulo. HU01 a HU14 conservan la numeración de la
 | --- | --- | --- | --- | --- | --- |
 | HU11 | Como cliente, quiero registrar mi pago con su comprobante, para que el negocio confirme mi pedido | 1) Elijo QR, transferencia o depósito. 2) Ingreso la referencia y adjunto un comprobante JPG, PNG o PDF de hasta 5 MB. 3) El pago pasa a En verificación. 4) Si fue rechazado, puedo registrar otro comprobante | CU06 / RF36 | Alta | 5 |
 | HU12 | Como administrador o vendedor con permiso, quiero aprobar o rechazar un pago, para confirmar solo pedidos realmente pagados | 1) Veo los pagos En verificación con su comprobante. 2) Al aprobar, el pago queda Pagado y el pedido Confirmado. 3) Rechazar exige una observación. 4) Dos personas no pueden decidir el mismo pago. 5) Queda el historial de quien verificó y cuándo | CU07 / RF37–RF39 | Alta | 5 |
-| HU23 | Como quien verifica pagos, quiero ver los insumos y el tiempo que requiere un pedido, para saber antes de aprobarlo si la cocina puede cumplirlo | 1) Cada producto puede tener una receta aproximada: insumos por unidad y minutos por unidad; cada opción de tamaño tiene un factor (D12). 2) Al verificar un pago veo, por insumo, lo que necesita el pedido, lo comprometido en pedidos Confirmados y En preparación, el stock y si alcanza. 3) Veo el tiempo del pedido y de la cola, y si alcanza antes del horario de entrega. 4) Los productos sin receta se indican aparte. 5) La estimación no descuenta stock ni impide aprobar. 6) Con el permiso de consultar recetas, el Repostero ve en Cocina la receta del pedido, multiplicada por cantidad y tamaño, sin poder editar el catálogo | CU02, CU07, CU08 / RF45, RF46 | Media | 8 |
+| HU23 | Como quien verifica pagos, quiero ver los insumos y el tiempo que requiere un pedido, para saber antes de aprobarlo si la cocina puede cumplirlo | 1) Cada producto puede tener una receta aproximada: insumos por unidad y minutos por unidad; cada opción de tamaño tiene un factor (D12). 2) Al verificar un pago veo, por insumo, lo que necesita el pedido, lo comprometido en pedidos Confirmados, el stock y si alcanza. 3) Veo el tiempo del pedido y de la cola, y si alcanza antes del horario de entrega. 4) Los productos sin receta se indican aparte. 5) La estimación no descuenta stock ni impide aprobar. 6) Con el permiso de consultar recetas, el Repostero ve en Cocina la receta del pedido, multiplicada por cantidad y tamaño, sin poder editar el catálogo | CU02, CU07, CU08 / RF45, RF46 | Media | 8 |
+| HU24 | Como quien administra el inventario, quiero que preparar un pedido descuente sus insumos, para que el stock refleje lo que se usa sin registrarlo a mano | 1) Al pasar un pedido a En preparación, el sistema registra una salida por cada insumo de su receta, multiplicada por la cantidad y el factor del tamaño, con el motivo «Pedido #N» y quien lo marcó. 2) Si un insumo no alcanza, el pedido sigue Confirmado, no se descuenta nada y el mensaje dice qué falta (RN19). 3) Un producto sin receta no descuenta ni bloquea. 4) Al llegar al mínimo se genera la alerta (RN09). 5) La estimación ya no cuenta como comprometido lo que se descontó | CU03, CU08 / RF47 | Media | 5 |
 
 ### 2.4 Distribución
 
@@ -101,6 +102,7 @@ El backlog sigue las dependencias del sistema: sin cuentas no hay pedidos, sin p
 | 20 | E | HU17 | Gestionar perfil | HU01 | Baja | 2 |
 | 21 | E | HU22 | Máximo de unidades por pedido | HU08, HU10 | Media | 3 |
 | 22 | E | HU23 | Estimar insumos y tiempo al verificar | HU09, HU12 | Media | 8 |
+| 23 | E | HU24 | Descuento automático de insumos | HU23, HU13 | Media | 5 |
 
 ### 3.3 Resumen por etapa
 
@@ -110,8 +112,8 @@ El backlog sigue las dependencias del sistema: sin cuentas no hay pedidos, sin p
 | B. Catálogo | El administrador carga productos y el cliente los consulta | HU08, HU18, HU07 | 11 |
 | C. Pedido y cobro | El cliente pide, paga y el personal verifica el pago | HU10–HU12 | 23 |
 | D. Entrega y seguimiento | El pedido se prepara, se entrega y el cliente ve su estado | HU13, HU19 | 11 |
-| E. Complementos | Inventario, cancelación, pedido asistido, reportes, recuperación de contraseña, perfil, máximo por pedido y estimación de insumos y tiempo | HU09, HU14, HU16, HU17, HU20, HU21, HU22, HU23 | 39 |
-| Total |  | 23 historias | 112 |
+| E. Complementos | Inventario, cancelación, pedido asistido, reportes, recuperación de contraseña, perfil, máximo por pedido, estimación de insumos y tiempo, y descuento automático de insumos | HU09, HU14, HU16, HU17, HU20, HU21, HU22, HU23, HU24 | 44 |
+| Total |  | 24 historias | 117 |
 
 Si el tiempo no alcanza, las etapas A a D forman el núcleo: permiten comprar, pagar y entregar. La etapa E puede recortarse sin romper el flujo principal, aunque HU21 (pedido asistido) y HU16 (recuperar contraseña) son las que más se echarían de menos.
 
@@ -127,6 +129,7 @@ Si el tiempo no alcanza, las etapas A a D forman el núcleo: permiten comprar, p
 | HU07 y HU08 | Prioridad Media | Prioridad Alta, porque no hay pedido sin productos |
 | HU08, HU09 y HU13 | Actor «empleado autorizado» o «responsable de distribución» | Actores concretos: Administrador, Vendedor y Repartidor |
 | HU04 y HU13 (v1.1) | Tres roles de personal | Se agrega el Repostero, que prepara los pedidos desde Cocina (decisión D3 revisada el 13/11/2026) |
+| HU24 (v1.4) | Las recetas solo estimaban | Descuento automático de insumos al pasar un pedido a En preparación (RN19), a pedido del equipo el 23/11/2026 |
 | HU22 y HU23 (v1.2) | Sin límite por producto ni recetas | Máximo por pedido (RN18) y recetas aproximadas que estiman insumos y tiempo al verificar (D12), a pedido del equipo el 20/11/2026 |
 | Criterios de aceptación | Solo para las historias del Sprint 1 | Para las 21 historias, con valores medibles |
 | Puntos | Dos columnas con la misma etiqueta pero distinta escala (27 contra 52) | Una sola escala de puntos por historia; las tareas no se estiman |
@@ -157,8 +160,9 @@ Si el tiempo no alcanza, las etapas A a D forman el núcleo: permiten comprar, p
 | HU21 | CU17 | RF34 |
 | HU22 | CU02, CU05, CU17 | RF44 |
 | HU23 | CU02, CU07 | RF45, RF46 |
+| HU24 | CU03, CU08 | RF47 |
 
-Todos los casos de uso y los 46 requisitos funcionales tienen al menos una historia.
+Todos los casos de uso y los 47 requisitos funcionales tienen al menos una historia.
 
 ### 4.3 Puntos por confirmar
 

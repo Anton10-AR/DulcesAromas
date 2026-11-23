@@ -26,14 +26,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Estima los insumos y el tiempo que requiere un pedido, sumados a los que ya están en la cola de la cocina
- * (Confirmados y En preparación), para que quien verifica el pago sepa si se puede cumplir (RF46, CU07). Usa las
- * recetas aproximadas del catálogo y no descuenta stock ni impide aprobar (D12).
+ * Estima los insumos y el tiempo que requiere un pedido para que quien verifica el pago sepa si se puede cumplir
+ * (RF46, CU07). El tiempo suma la cola de la cocina (Confirmados y En preparación); los insumos, solo lo comprometido
+ * por los Confirmados, porque los En preparación ya los descontaron (RN19). Solo informa: no impide aprobar (D12).
  */
 @Service
 class Estimador {
 
-	/** Lo que la cocina ya tiene comprometido. */
+	/** Lo que la cocina ya tiene por delante: ocupa tiempo. */
 	private static final Set<EstadoPedido> EN_COLA = Set.of(EstadoPedido.CONFIRMADO, EstadoPedido.EN_PREPARACION);
 
 	private final PedidoRepositorio pedidos;
@@ -55,8 +55,11 @@ class Estimador {
 	Estimacion estimar(Long pedidoId) {
 		Pedido pedido = pedidos.findById(pedidoId)
 			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.NOT_FOUND, "PEDIDO_NO_ENCONTRADO", "No existe ese pedido."));
-		List<LineaPedido> cola = pedidos.findByEstadoIn(EN_COLA).stream()
-			.filter(p -> !p.getId().equals(pedidoId))
+		List<Pedido> otros = pedidos.findByEstadoIn(EN_COLA).stream().filter(p -> !p.getId().equals(pedidoId)).toList();
+		List<LineaPedido> cola = otros.stream().flatMap(p -> p.getLineas().stream()).toList();
+		// Los En preparación ya descontaron sus insumos (RN19): solo los Confirmados los tienen comprometidos.
+		List<LineaPedido> sinDescontar = otros.stream()
+			.filter(p -> p.getEstado() == EstadoPedido.CONFIRMADO)
 			.flatMap(p -> p.getLineas().stream())
 			.toList();
 
@@ -68,6 +71,7 @@ class Estimador {
 
 		Suma delPedido = sumar(pedido.getLineas(), recetas);
 		Suma deLaCola = sumar(cola, recetas);
+		Suma comprometida = sumar(sinDescontar, recetas);
 
 		List<InsumoEstimado> insumos = new ArrayList<>();
 		for (IStock.Insumo insumo : stock.insumos()) {
@@ -75,7 +79,7 @@ class Estimador {
 			if (necesita == null) {
 				continue;
 			}
-			BigDecimal comprometido = deLaCola.insumos().getOrDefault(insumo.id(), BigDecimal.ZERO);
+			BigDecimal comprometido = comprometida.insumos().getOrDefault(insumo.id(), BigDecimal.ZERO);
 			BigDecimal falta = necesita.add(comprometido).subtract(insumo.stock()).max(BigDecimal.ZERO);
 			insumos.add(new InsumoEstimado(insumo.id(), insumo.nombre(), insumo.unidad(), redondear(necesita),
 					redondear(comprometido), insumo.stock(), redondear(falta)));

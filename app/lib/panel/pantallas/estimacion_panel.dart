@@ -9,7 +9,7 @@ import '../../comun/tema.dart';
 import '../../comun/widgets.dart';
 
 /// Lo que requiere un pedido según las recetas aproximadas, sumado a la cola de la cocina (RF46, HU23). Solo informa:
-/// no descuenta stock ni impide aprobar (D12).
+/// no impide aprobar (D12). Los insumos se descuentan recién al preparar (RN19).
 class Estimacion {
   Estimacion({
     required this.insumos,
@@ -147,8 +147,9 @@ class _EstimacionPedidoState extends State<EstimacionPedido> {
             if (e.sinReceta.isNotEmpty)
               Text('Sin receta, no estimados: ${e.sinReceta.join(', ')}', style: textos.bodySmall),
             Text(
-              'Cuenta los pedidos Confirmados y En preparación, como si la cocina trabajara sin parar desde ahora. '
-              'Las recetas son aproximadas y no descuentan stock.',
+              'En cola cuenta los insumos de los pedidos Confirmados (los En preparación ya se descontaron) y el '
+              'tiempo de los Confirmados y En preparación, como si la cocina trabajara sin parar desde ahora. '
+              'Las recetas son aproximadas.',
               style: textos.bodySmall,
             ),
           ],

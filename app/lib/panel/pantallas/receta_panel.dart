@@ -105,7 +105,10 @@ class _Contenido extends StatelessWidget {
         ],
         if (receta.minutosTotal > 0) Text('Tiempo total: ${duracion(receta.minutosTotal)}', style: textos.titleSmall),
         const SizedBox(height: 4),
-        Text('Las recetas son aproximadas y no descuentan stock.', style: suave),
+        Text(
+          'Las recetas son aproximadas. Al empezar a preparar, estos insumos se descuentan del inventario.',
+          style: suave,
+        ),
       ],
     );
   }

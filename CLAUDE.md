@@ -8,9 +8,9 @@ Los requisitos están en `docs/`. Si el código y un documento no coinciden, **p
 
 | Archivo | Contenido |
 | --- | --- |
-| `docs/01-vision.md` | Alcance, roles, RF01–RF46, RNF01–RNF21, restricciones, paleta |
-| `docs/02-casos-de-uso.md` | CU01–CU17, estados y transiciones, reglas RN01–RN18, matriz de permisos |
-| `docs/03-historias-y-backlog.md` | HU01–HU23 con criterios de aceptación, backlog por etapas |
+| `docs/01-vision.md` | Alcance, roles, RF01–RF47, RNF01–RNF21, restricciones, paleta |
+| `docs/02-casos-de-uso.md` | CU01–CU17, estados y transiciones, reglas RN01–RN19, matriz de permisos |
+| `docs/03-historias-y-backlog.md` | HU01–HU24 con criterios de aceptación, backlog por etapas |
 | `docs/04-modelos-uml.md` | Casos de uso, clases, componentes y estados (Mermaid) |
 
 Cuando implementes una historia, lee sus criterios de aceptación y el caso de uso que cita. Cita el ID (HU, CU, RN) en el mensaje del commit.
@@ -126,6 +126,7 @@ Cada una necesita al menos una prueba automatizada (RNF17).
 - **RN16:** un cliente no obtiene un rol de personal.
 - **RN17:** el mensaje sobre la torta tiene hasta 24 caracteres y no tiene recargo.
 - **RN18:** un pedido no supera el máximo de unidades por pedido de cada producto, sumando sus líneas.
+- **RN19:** pasar un pedido a En preparación descuenta los insumos de su receta (por cantidad y tamaño); si alguno no alcanza, el pedido no avanza y no se descuenta nada.
 
 ### Decisiones ya tomadas (no reabrir sin preguntar)
 
@@ -142,7 +143,7 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 - **D9:** cada opción de personalización tiene un recargo fijo que define el negocio.
 - **D10:** catálogo e inventario están dentro del módulo E-commerce.
 - **D11:** el rol se llama «Vendedor», no «Empleado».
-- **D12:** las recetas son aproximadas y solo estiman los insumos y el tiempo de un pedido al verificar su pago (tiempo por unidad, factor por opción de tamaño, sumando la cola Confirmado y En preparación). No descuentan stock ni bloquean la aprobación. Agregada el 20/11/2026.
+- **D12:** las recetas son aproximadas. Al verificar un pago estiman los insumos y el tiempo del pedido sin bloquear la aprobación (tiempo por unidad, factor por opción de tamaño; insumos comprometidos por los Confirmados, cola de tiempo con Confirmados y En preparación). Al pasar el pedido a En preparación descuentan sus insumos (RN19). Agregada el 20/11/2026, revisada el 23/11/2026.
 
 ## Convenciones
 
@@ -181,13 +182,13 @@ Las decisiones de implementación, todas confirmadas por el equipo, están en la
 
 ## Orden de trabajo
 
-Sigue el backlog por etapas. **A a D** forman el núcleo (73 de 112 puntos); **E** se hace solo si sobra tiempo.
+Sigue el backlog por etapas. **A a D** forman el núcleo (73 de 117 puntos); **E** se hace solo si sobra tiempo.
 
 1. **A. Cuentas y acceso:** HU01–HU06, HU15.
 2. **B. Catálogo:** HU08, HU18, HU07.
 3. **C. Pedido y cobro:** HU10, HU11, HU12.
 4. **D. Entrega y seguimiento:** HU13, HU19.
-5. **E. Complementos:** HU09, HU20, HU21, HU14, HU16, HU17, HU22, HU23.
+5. **E. Complementos:** HU09, HU20, HU21, HU14, HU16, HU17, HU22, HU23, HU24.
 
 Una historia está terminada cuando:
 
@@ -203,7 +204,7 @@ No implementes nada de esto sin que el equipo lo pida:
 - Pasarelas de pago o QR dinámico. El pago se verifica a mano.
 - Notificaciones automáticas.
 - Varias sucursales.
-- Descuento automático de insumos por receta. Las recetas solo estiman (D12).
+- Automatización de la producción (planificar la cocina, órdenes de compra). Las recetas sí descuentan insumos al preparar (RN19).
 - Roles personalizados.
 - Publicación de la app en tiendas.
 - Rastreo de entregas en mapa.
