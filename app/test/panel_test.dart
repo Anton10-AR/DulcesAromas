@@ -466,4 +466,84 @@ void main() {
     expect(automaticas.first, isNull);
     expect(automaticas.last, '1');
   });
+
+  testWidgets('D12: el Repostero con el permiso ve la receta del pedido en Cocina; sin él, no', (tester) async {
+    final cocina = [
+      {
+        'id': 5,
+        'estado': 'CONFIRMADO',
+        'tipoEntrega': 'RECOJO',
+        'horarioEntrega': '2026-11-25T15:00:00Z',
+        'lineas': [
+          {
+            'producto': 'Torta de chocolate',
+            'cantidad': 2,
+            'opciones': ['Grande'],
+            'mensaje': null,
+          },
+        ],
+      },
+    ];
+    final receta = {
+      'pedidoId': 5,
+      'minutosTotal': 248,
+      'lineas': [
+        {
+          'producto': 'Torta de chocolate',
+          'cantidad': 2,
+          'opciones': ['Grande'],
+          'unidades': 3.3,
+          'minutos': 248,
+          'ingredientes': [
+            {'nombre': 'Harina de trigo', 'unidad': 'kg', 'cantidad': 1.155},
+          ],
+        },
+      ],
+    };
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'REPOSTERO',
+        permisos: ['PEDIDOS_PREPARAR', 'CATALOGO_RECETAS'],
+        respuestas: {'/api/cocina': cocina, '/api/cocina/5/receta': receta},
+      ),
+    );
+    await tester.tap(enMenu('Cocina'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ver receta'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Receta del pedido #5'), findsOneWidget);
+    expect(find.text('Cuenta como 3.3 unidades por el tamaño.'), findsOneWidget);
+    expect(find.text('• Harina de trigo: 1.155 kg'), findsOneWidget);
+    expect(find.text('Tiempo total: 4 h 8 min'), findsOneWidget);
+  });
+
+  testWidgets('D12: sin el permiso de recetas, Cocina no ofrece verlas', (tester) async {
+    await ingresar(
+      tester,
+      apiCon(
+        tipo: 'PERSONAL',
+        rol: 'REPOSTERO',
+        permisos: ['PEDIDOS_PREPARAR'],
+        respuestas: {
+          '/api/cocina': [
+            {
+              'id': 5,
+              'estado': 'CONFIRMADO',
+              'tipoEntrega': 'RECOJO',
+              'horarioEntrega': '2026-11-25T15:00:00Z',
+              'lineas': [],
+            },
+          ],
+        },
+      ),
+    );
+    await tester.tap(enMenu('Cocina'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Empezar a preparar'), findsOneWidget);
+    expect(find.text('Ver receta'), findsNothing);
+  });
 }

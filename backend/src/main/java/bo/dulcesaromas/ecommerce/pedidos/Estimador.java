@@ -90,6 +90,44 @@ class Estimador {
 	}
 
 	/**
+	 * La receta de cada línea del pedido, con los insumos y los minutos ya multiplicados por sus unidades de receta
+	 * (la cantidad por el factor del tamaño), para prepararlo en Cocina.
+	 */
+	@Transactional(readOnly = true)
+	RecetaPedido recetaDe(Long pedidoId) {
+		Pedido pedido = pedidos.findById(pedidoId)
+			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.NOT_FOUND, "PEDIDO_NO_ENCONTRADO", "No existe ese pedido."));
+		Map<Long, Receta> recetas = productos.recetas(pedido.getLineas().stream().map(LineaPedido::getProductoId).toList())
+			.stream()
+			.collect(Collectors.toMap(Receta::productoId, Function.identity()));
+		Map<Long, IStock.Insumo> insumos = stock.insumos().stream()
+			.collect(Collectors.toMap(IStock.Insumo::id, Function.identity()));
+		List<LineaReceta> lineas = new ArrayList<>();
+		int minutosTotal = 0;
+		for (LineaPedido linea : pedido.getLineas()) {
+			Receta receta = recetas.get(linea.getProductoId());
+			BigDecimal unidades = linea.unidadesDeReceta();
+			List<String> opciones = linea.getOpciones().stream().map(OpcionElegida::getNombre).toList();
+			if (receta == null || !receta.definida()) {
+				lineas.add(new LineaReceta(linea.getNombreProducto(), linea.getCantidad(), opciones, redondear(unidades),
+						null, List.of()));
+				continue;
+			}
+			Integer minutos = receta.minutosPorUnidad() == null ? null
+					: minutos(unidades.multiply(BigDecimal.valueOf(receta.minutosPorUnidad())));
+			minutosTotal += minutos == null ? 0 : minutos;
+			List<IngredienteTotal> ingredientes = receta.ingredientes().stream().map(i -> {
+				IStock.Insumo insumo = insumos.get(i.insumoId());
+				return new IngredienteTotal(insumo == null ? "(insumo borrado)" : insumo.nombre(),
+						insumo == null ? "" : insumo.unidad(), redondear(i.cantidad().multiply(unidades)));
+			}).toList();
+			lineas.add(new LineaReceta(linea.getNombreProducto(), linea.getCantidad(), opciones, redondear(unidades),
+					minutos, ingredientes));
+		}
+		return new RecetaPedido(pedidoId, lineas, minutosTotal);
+	}
+
+	/**
 	 * Cada línea cuenta sus unidades de receta (la cantidad por el factor de sus opciones) por los insumos y los
 	 * minutos de una unidad.
 	 */
@@ -133,6 +171,24 @@ class Estimador {
 	record Estimacion(Long pedidoId, List<InsumoEstimado> insumos, List<String> sinReceta, int minutosPedido,
 			int minutosCola, Instant horarioEntrega, Instant listoEstimado, boolean alcanzaElTiempo,
 			boolean alcanzanLosInsumos) {
+	}
+
+	/**
+	 * @param minutosTotal la suma de las líneas con tiempo definido
+	 */
+	record RecetaPedido(Long pedidoId, List<LineaReceta> lineas, int minutosTotal) {
+	}
+
+	/**
+	 * @param unidades cantidad por el factor de sus opciones (2 tortas Grandes de factor 1.5 son 3)
+	 * @param minutos nulo si el producto no tiene tiempo definido
+	 * @param ingredientes vacío si el producto no tiene receta
+	 */
+	record LineaReceta(String producto, int cantidad, List<String> opciones, BigDecimal unidades, Integer minutos,
+			List<IngredienteTotal> ingredientes) {
+	}
+
+	record IngredienteTotal(String nombre, String unidad, BigDecimal cantidad) {
 	}
 
 	record InsumoEstimado(Long id, String nombre, String unidad, BigDecimal necesita, BigDecimal comprometido,

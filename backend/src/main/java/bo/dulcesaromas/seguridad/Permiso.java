@@ -10,6 +10,7 @@ public enum Permiso {
 	INICIO_PENDIENTES("Inicio", "Ver pedidos y pagos pendientes"),
 	CATALOGO_GESTIONAR("Catálogo", "Crear, editar y desactivar productos y categorías"),
 	CATALOGO_DISPONIBILIDAD("Catálogo", "Consultar y cambiar disponibilidad"),
+	CATALOGO_RECETAS("Catálogo", "Consultar las recetas aproximadas"),
 	INVENTARIO_CONSULTAR("Inventario", "Consultar y ver alertas"),
 	INVENTARIO_MOVIMIENTOS("Inventario", "Registrar movimientos"),
 	PEDIDOS_CONSULTAR("Pedidos", "Consultar y registrar pedido asistido"),

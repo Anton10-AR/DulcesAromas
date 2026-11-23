@@ -89,7 +89,7 @@ Hay cinco roles **fijos**: el Cliente y cuatro de personal. El administrador edi
 - **Administrador:** acceso total. Siempre conserva el acceso a Seguridad.
 - **Vendedor:** atiende pedidos y pagos, registra pedidos asistidos y asigna repartidores. Marca la preparación y verifica pagos solo si tiene ese permiso.
 - **Repartidor:** ve y actualiza solo sus propias entregas.
-- **Repostero:** prepara los pedidos desde Cocina (`/api/cocina`): marca En preparación y Listo y consulta los insumos. No ve datos personales ni montos del cliente; la lista y el detalle completos de los pedidos piden además `PEDIDOS_CONSULTAR`.
+- **Repostero:** prepara los pedidos desde Cocina (`/api/cocina`): marca En preparación y Listo, consulta los insumos y, con el permiso `CATALOGO_RECETAS`, la receta aproximada de cada pedido. No ve datos personales ni montos del cliente; la lista y el detalle completos de los pedidos piden además `PEDIDOS_CONSULTAR`.
 
 La matriz completa de permisos está en la sección 8 de `docs/02-casos-de-uso.md`.
 

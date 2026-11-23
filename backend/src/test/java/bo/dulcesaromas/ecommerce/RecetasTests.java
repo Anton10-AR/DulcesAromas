@@ -130,6 +130,50 @@ class RecetasTests extends PruebaPedidos {
 		mvc.perform(con(cliente, get("/api/productos/" + torta + "/produccion"))).andExpect(status().isForbidden());
 	}
 
+	@Test
+	void elReposteroConsultaLaRecetaDelPedidoEnCocinaSinPoderEditarla() throws Exception {
+		long harina = insumo("Harina", "kg", "5");
+		mvc.perform(con(admin, put("/api/productos/" + torta + "/produccion"))
+			.content("{\"minutosPorUnidad\":60,\"receta\":[{\"insumoId\":%d,\"cantidad\":0.5}]}".formatted(harina)))
+			.andExpect(status().isOk());
+		jdbc.update("update opcion_personalizacion set factor = 1.5 where id = ?", grande);
+		long pedido = crearPedido(cliente, pedidoDelivery());
+		pagarYAprobar(pedido);
+		crearPersonal("repostero@dulces.bo", "REPOSTERO");
+		String repostero = iniciarSesion("repostero@dulces.bo");
+
+		// Dos tortas Grande (factor 1.5) cuentan como tres: 1.5 kg de harina y 180 minutos.
+		mvc.perform(con(repostero, get("/api/cocina/" + pedido + "/receta")))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.lineas[0].producto").value("Torta de chocolate"))
+			.andExpect(jsonPath("$.lineas[0].unidades").value(3))
+			.andExpect(jsonPath("$.lineas[0].ingredientes[0].nombre").value("Harina"))
+			.andExpect(jsonPath("$.lineas[0].ingredientes[0].cantidad").value(1.5))
+			.andExpect(jsonPath("$.minutosTotal").value(180))
+			// RNF16: ni montos ni datos del cliente.
+			.andExpect(jsonPath("$.total").doesNotExist())
+			.andExpect(jsonPath("$.direccion").doesNotExist());
+		mvc.perform(con(repostero, get("/api/productos/" + torta + "/produccion"))).andExpect(status().isOk());
+		mvc.perform(con(repostero, put("/api/productos/" + torta + "/produccion")).content("{\"minutosPorUnidad\":1}"))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void elVendedorNoConsultaLasRecetasSinElPermiso() throws Exception {
+		long pedido = crearPedido(cliente, pedidoSimple(torta));
+		crearPersonal("vendedor@dulces.bo", "VENDEDOR");
+		String vendedor = iniciarSesion("vendedor@dulces.bo");
+
+		mvc.perform(con(vendedor, get("/api/productos/" + torta + "/produccion"))).andExpect(status().isForbidden());
+		mvc.perform(con(vendedor, get("/api/cocina/" + pedido + "/receta"))).andExpect(status().isForbidden());
+
+		// El administrador se lo da al Vendedor: ya la consulta, pero no puede editar el catálogo.
+		jdbc.update("insert into rol_permiso (rol, permiso) values ('VENDEDOR', 'CATALOGO_RECETAS')");
+		mvc.perform(con(vendedor, get("/api/productos/" + torta + "/produccion"))).andExpect(status().isOk());
+		mvc.perform(con(vendedor, put("/api/productos/" + torta + "/produccion")).content("{}"))
+			.andExpect(status().isForbidden());
+	}
+
 	private long insumo(String nombre, String unidad, String stock) throws Exception {
 		long id = id(mvc.perform(con(admin, post("/api/inventario"))
 			.content("{\"nombre\":\"%s\",\"unidad\":\"%s\",\"minimo\":0}".formatted(nombre, unidad))));

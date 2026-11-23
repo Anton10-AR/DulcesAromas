@@ -1,6 +1,6 @@
 # Dulces Aromas — Detalle de Casos de Uso v1
 
-Versión 1.6 · 20/11/2026
+Versión 1.7 · 23/11/2026
 
 ## 1. Introducción y actores
 
@@ -437,7 +437,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Fuente | RF21, RF40, RF41, RF42, RF43 |
 | Prioridad | Alta |
 | Objetivo | Llevar el pedido confirmado hasta su entrega |
-| Descripción | El personal marca la preparación, asigna un repartidor a los pedidos con delivery y el Repartidor marca En camino y Entregado. El recojo en tienda lo cierra el Vendedor |
+| Descripción | El personal marca la preparación, asigna un repartidor a los pedidos con delivery y el Repartidor marca En camino y Entregado. El recojo en tienda lo cierra el Vendedor. Quien prepara y tiene el permiso de consultar recetas ve en Cocina la receta aproximada del pedido: los insumos y el tiempo de cada línea, multiplicados por su cantidad y su tamaño (D12) |
 | Precondición | El pedido está Confirmado (pago Pagado) |
 | Postcondición | El pedido queda Entregado, o vuelve a Listo si la entrega falló. Cada cambio queda en el historial |
 | Secuencia normal | 1. El Repostero, desde Cocina, ve los pedidos Confirmados por horario de entrega y marca En preparación y luego Listo; también puede hacerlo el Administrador, o el Vendedor con permiso. 2. Si es delivery, el Vendedor o el Administrador asigna un repartidor. 3. El Repartidor ve el pedido con dirección y teléfono y marca En camino. 4. Entrega y marca Entregado. 5. El sistema guarda cada cambio con usuario y fecha. Si es recojo: el Vendedor marca Entregado cuando el cliente retira |
@@ -457,6 +457,7 @@ Son 17 casos de uso. Los diez primeros vienen del documento v0 y se ajustaron; C
 | Inicio con montos de ventas | Sí | No | No | No | CU10 |
 | Inicio con pedidos y pagos pendientes | Sí | Sí | No | Sí, los pedidos por preparar | CU10 |
 | Catálogo: crear, editar, desactivar, con máximo por pedido y receta | Sí | No | No | No | CU02, CU14 |
+| Catálogo: consultar las recetas aproximadas | Sí | No | No | Sí, desde Cocina | CU02, CU08 |
 | Catálogo: consultar y cambiar disponibilidad | Sí | Sí | No | No | CU02 |
 | Inventario: consultar y ver alertas | Sí | Sí | No | Sí | CU03 |
 | Inventario: registrar movimientos | Sí | No | No | No | CU03 |
@@ -527,6 +528,7 @@ Los 46 requisitos de la Visión v1 (RF01 a RF46) quedan cubiertos por al menos u
 | Sección 10 | El equipo revisó las decisiones propuestas al implementar y las confirmó todas |
 | RNF10 | Las imágenes de producto se aceptan hasta 10 MB y se reducen a 1200 px, para subir fotos de celular sin editarlas antes |
 | CU05, CU17 (v1.3) | Si el producto ofrece tamaños, elegir uno es obligatorio; sin él, el pedido de una torta queda incompleto |
+| Matriz, CU08 (v1.7) | Permiso nuevo «Catálogo: consultar las recetas aproximadas», del administrador y del Repostero, que ve la receta de cada pedido en Cocina | Quien prepara necesitaba las recetas, y el permiso de gestionar el catálogo le habría dado precios y productos. Lo pidió el equipo el 23/11/2026 |
 | RN18, CU02, CU05, CU07, CU17 (v1.6) | Máximo de unidades por pedido para cada producto, y recetas aproximadas que estiman insumos y tiempo al verificar un pago | Un pedido de 30 tortas se aceptaba sin aviso. Lo pidió el equipo el 20/11/2026 |
 | Actores, tabla 2.2, CU08, matriz (v1.5) | Nuevo rol fijo Repostero, que prepara los pedidos desde Cocina | Con tres roles, quien prepara necesitaba una cuenta de Vendedor, que también cobra y cancela. Lo observó el docente |
 | Tabla 2.2, CU07 (v1.4) | Un pago rechazado no vuelve a Pendiente de pago: queda Rechazado y el sistema abre un pago nuevo. Las verificaciones se guardan en su propia tabla, no en la auditoría de cuentas | Así lo hace el sistema: conserva cada comprobante y su motivo de rechazo |
@@ -565,5 +567,5 @@ Decisiones tomadas al construir el sistema que los documentos no fijaban. El equ
 | Cancelación de un pedido pagado | Su pago sale de la cola de verificación y ya no se puede decidir (CU16) |
 | Reporte de ventas | «Vendido» suma los pedidos pagados y no cancelados; el rango es de hasta 12 meses (RNF02) |
 | Máximo por pedido (RN18) | Opcional por producto; sin máximo rige el tope general de 99 unidades por línea. Se cuenta la suma de las líneas del producto. Valores iniciales: tortas 3, postres individuales 12, masitas y galletas 50, bebidas 20 |
-| Recetas (D12, 20/11/2026) | Son aproximadas y solo estiman: no descuentan stock ni bloquean la aprobación. El tiempo se cuenta por unidad y cada opción de tamaño multiplica insumos y tiempo por su factor. La estimación suma los pedidos Confirmados y En preparación |
+| Recetas (D12, 20/11/2026) | Son aproximadas y solo estiman: no descuentan stock ni bloquean la aprobación. Las consulta quien tiene el permiso de recetas (el Repostero, en Cocina) y las edita quien gestiona el catálogo. El tiempo se cuenta por unidad y cada opción de tamaño multiplica insumos y tiempo por su factor. La estimación suma los pedidos Confirmados y En preparación |
 | Estado del cobro en Mis pedidos | La Tienda combina dos consultas (pedidos y pagos), para que E-commerce no dependa de Cobros |

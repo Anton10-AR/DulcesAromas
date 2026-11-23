@@ -1,6 +1,6 @@
 # Dulces Aromas — Historias de Usuario y Product Backlog v1
 
-Versión 1.2 · 20/11/2026
+Versión 1.3 · 23/11/2026
 
 ## 1. Introducción
 
@@ -60,7 +60,7 @@ Las historias se agrupan por módulo. HU01 a HU14 conservan la numeración de la
 | --- | --- | --- | --- | --- | --- |
 | HU11 | Como cliente, quiero registrar mi pago con su comprobante, para que el negocio confirme mi pedido | 1) Elijo QR, transferencia o depósito. 2) Ingreso la referencia y adjunto un comprobante JPG, PNG o PDF de hasta 5 MB. 3) El pago pasa a En verificación. 4) Si fue rechazado, puedo registrar otro comprobante | CU06 / RF36 | Alta | 5 |
 | HU12 | Como administrador o vendedor con permiso, quiero aprobar o rechazar un pago, para confirmar solo pedidos realmente pagados | 1) Veo los pagos En verificación con su comprobante. 2) Al aprobar, el pago queda Pagado y el pedido Confirmado. 3) Rechazar exige una observación. 4) Dos personas no pueden decidir el mismo pago. 5) Queda el historial de quien verificó y cuándo | CU07 / RF37–RF39 | Alta | 5 |
-| HU23 | Como quien verifica pagos, quiero ver los insumos y el tiempo que requiere un pedido, para saber antes de aprobarlo si la cocina puede cumplirlo | 1) Cada producto puede tener una receta aproximada: insumos por unidad y minutos por unidad; cada opción de tamaño tiene un factor (D12). 2) Al verificar un pago veo, por insumo, lo que necesita el pedido, lo comprometido en pedidos Confirmados y En preparación, el stock y si alcanza. 3) Veo el tiempo del pedido y de la cola, y si alcanza antes del horario de entrega. 4) Los productos sin receta se indican aparte. 5) La estimación no descuenta stock ni impide aprobar | CU02, CU07 / RF45, RF46 | Media | 8 |
+| HU23 | Como quien verifica pagos, quiero ver los insumos y el tiempo que requiere un pedido, para saber antes de aprobarlo si la cocina puede cumplirlo | 1) Cada producto puede tener una receta aproximada: insumos por unidad y minutos por unidad; cada opción de tamaño tiene un factor (D12). 2) Al verificar un pago veo, por insumo, lo que necesita el pedido, lo comprometido en pedidos Confirmados y En preparación, el stock y si alcanza. 3) Veo el tiempo del pedido y de la cola, y si alcanza antes del horario de entrega. 4) Los productos sin receta se indican aparte. 5) La estimación no descuenta stock ni impide aprobar. 6) Con el permiso de consultar recetas, el Repostero ve en Cocina la receta del pedido, multiplicada por cantidad y tamaño, sin poder editar el catálogo | CU02, CU07, CU08 / RF45, RF46 | Media | 8 |
 
 ### 2.4 Distribución
 

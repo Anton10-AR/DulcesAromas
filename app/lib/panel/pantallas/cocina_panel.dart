@@ -5,7 +5,9 @@ import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
+import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
+import 'receta_panel.dart';
 
 /// Un pedido como lo ve la cocina: qué hay que hacer y para cuándo, sin datos personales ni montos (RNF16).
 class PedidoCocina {
@@ -155,18 +157,31 @@ class _CocinaPanelState extends State<CocinaPanel> with ActualizacionPeriodica {
                 ),
               ),
             const SizedBox(height: 8),
-            if (p.estado == 'CONFIRMADO')
-              FilledButton.icon(
-                onPressed: () => _avanzar(p, 'en-preparacion', 'Pedido #${p.id} en preparación.'),
-                icon: const Icon(Icons.soup_kitchen_outlined),
-                label: const Text('Empezar a preparar'),
-              ),
-            if (p.estado == 'EN_PREPARACION')
-              FilledButton.icon(
-                onPressed: () => _avanzar(p, 'listo', 'Pedido #${p.id} listo.'),
-                icon: const Icon(Icons.check),
-                label: const Text('Marcar listo'),
-              ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                // D12: qué insumos lleva y cuánto tarda, con el permiso de consultar recetas.
+                if (context.read<Sesion>().usuario!.puede('CATALOGO_RECETAS'))
+                  OutlinedButton.icon(
+                    onPressed: () => mostrarReceta(context, p.id),
+                    icon: const Icon(Icons.menu_book_outlined),
+                    label: const Text('Ver receta'),
+                  ),
+                if (p.estado == 'CONFIRMADO')
+                  FilledButton.icon(
+                    onPressed: () => _avanzar(p, 'en-preparacion', 'Pedido #${p.id} en preparación.'),
+                    icon: const Icon(Icons.soup_kitchen_outlined),
+                    label: const Text('Empezar a preparar'),
+                  ),
+                if (p.estado == 'EN_PREPARACION')
+                  FilledButton.icon(
+                    onPressed: () => _avanzar(p, 'listo', 'Pedido #${p.id} listo.'),
+                    icon: const Icon(Icons.check),
+                    label: const Text('Marcar listo'),
+                  ),
+              ],
+            ),
           ],
         ),
       ),

@@ -64,10 +64,11 @@ class ProductosControlador {
 	}
 
 	/**
-	 * El máximo por pedido y la receta aproximada (RN18, RF45). No se publican en el catálogo.
+	 * El máximo por pedido y la receta aproximada (RN18, RF45). No se publican en el catálogo. Consultarla basta con
+	 * el permiso de recetas; cambiarla pide el de gestionar el catálogo.
 	 */
 	@GetMapping("/{id}/produccion")
-	@PreAuthorize("hasAuthority('CATALOGO_GESTIONAR')")
+	@PreAuthorize("hasAnyAuthority('CATALOGO_GESTIONAR', 'CATALOGO_RECETAS')")
 	ProduccionVista produccion(@PathVariable Long id) {
 		return servicio.produccion(id);
 	}

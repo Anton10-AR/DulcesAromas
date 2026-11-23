@@ -22,10 +22,13 @@ class CocinaControlador {
 
 	private final PedidoServicio servicio;
 
+	private final Estimador estimador;
+
 	private final IAutenticacion autenticacion;
 
-	CocinaControlador(PedidoServicio servicio, IAutenticacion autenticacion) {
+	CocinaControlador(PedidoServicio servicio, Estimador estimador, IAutenticacion autenticacion) {
 		this.servicio = servicio;
+		this.estimador = estimador;
 		this.autenticacion = autenticacion;
 	}
 
@@ -35,6 +38,16 @@ class CocinaControlador {
 	@GetMapping
 	List<PedidoCocina> pendientes() {
 		return servicio.paraCocina();
+	}
+
+	/**
+	 * La receta aproximada del pedido, multiplicada por la cantidad y el tamaño de cada línea (D12). No trae datos
+	 * personales ni montos (RNF16). Además de preparar, pide el permiso de consultar recetas.
+	 */
+	@GetMapping("/{id}/receta")
+	@PreAuthorize("hasAuthority('PEDIDOS_PREPARAR') and hasAuthority('CATALOGO_RECETAS')")
+	Estimador.RecetaPedido receta(@PathVariable Long id) {
+		return estimador.recetaDe(id);
 	}
 
 	@PostMapping("/{id}/en-preparacion")
