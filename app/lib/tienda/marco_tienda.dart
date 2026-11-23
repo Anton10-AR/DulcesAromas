@@ -6,6 +6,7 @@ import '../comun/formato.dart';
 import '../comun/marca.dart';
 import '../comun/sesion.dart';
 import 'carrito.dart';
+import 'totem.dart';
 
 /// Hasta este ancho la Tienda lleva la barra inferior; más ancho, el carrito y la cuenta van en la barra de arriba.
 const anchoBarraInferior = 720.0;
@@ -55,7 +56,8 @@ class MarcoTienda extends StatelessWidget {
           border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
         ),
         child: NavigationBar(
-          selectedIndex: actual ?? 0,
+          // En el tótem no está la cuenta: hay una sección menos.
+          selectedIndex: (actual ?? 0).clamp(0, context.watch<ModoTotem>().activo ? 2 : 3),
           // Fuera de las cuatro secciones (no debería pasar), ninguna se marca como elegida.
           indicatorColor: actual == null ? Colors.transparent : null,
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -85,7 +87,10 @@ class MarcoTienda extends StatelessWidget {
               selectedIcon: Icon(Icons.receipt_long),
               label: 'Mis pedidos',
             ),
-            if (usuario != null)
+            // El tótem no muestra la cuenta: ningún visitante debe cerrar su sesión.
+            if (context.watch<ModoTotem>().activo)
+              ...[]
+            else if (usuario != null)
               NavigationDestination(tooltip: 'Mi cuenta', icon: CirculoIniciales(usuario.nombre), label: 'Mi cuenta')
             else
               const NavigationDestination(

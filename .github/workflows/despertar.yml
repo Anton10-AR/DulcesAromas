@@ -2,14 +2,14 @@
 # minutos sin solicitudes y el primer cliente espera cerca de un minuto. Este workflow consulta el catálogo cada 5
 # minutos, lo que también mantiene despierta la base de Neon.
 #
-# Horario de atención en La Paz (UTC-4): lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00. Empieza 10 minutos
-# antes de abrir. GitHub puede retrasar unos minutos las tareas programadas, por eso consulta cada 5 y no cada 14.
+# Horario de atención en La Paz (UTC-4): lunes a sábado de 9:00 a 20:00 y domingo de 10:00 a 14:00. De lunes a sábado
+# empieza a las 7:00, para la feria EXPOSOFT (26/11/2026, desde las 8:00). GitHub puede retrasar unos minutos las tareas programadas, por eso consulta cada 5 y no cada 14.
 # Usa la misma variable API_URL que el workflow del sitio web.
 name: Despertar la API
 
 on:
   schedule:
-    - cron: '50,55 12 * * 1-6' # lunes a sábado, 8:50 y 8:55
+    - cron: '*/5 11-12 * * 1-6' # lunes a sábado, de 7:00 a 8:55
     - cron: '*/5 13-23 * * 1-6' # lunes a sábado, de 9:00 a 19:55
     - cron: '50,55 13 * * 0' # domingo, 9:50 y 9:55
     - cron: '*/5 14-17 * * 0' # domingo, de 10:00 a 13:55

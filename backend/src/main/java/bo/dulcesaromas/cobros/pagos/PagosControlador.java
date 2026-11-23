@@ -65,6 +65,18 @@ class PagosControlador {
 				autenticacion.usuarioActual());
 	}
 
+	/**
+	 * Pago con tarjeta de débito en el tótem, aprobado por el procesador y verificado por el sistema.
+	 */
+	@PostMapping("/tarjeta")
+	@PreAuthorize("hasAuthority('CLIENTE')")
+	PagoVista pagarConTarjeta(@Valid @RequestBody PagoTarjeta datos) {
+		return servicio.pagarConTarjeta(datos.pedidoId(), autenticacion.usuarioActual());
+	}
+
+	record PagoTarjeta(@NotNull(message = "Indica el pedido.") Long pedidoId) {
+	}
+
 	@GetMapping("/en-verificacion")
 	@PreAuthorize("hasAuthority('COBRANZA_VERIFICAR')")
 	List<PagoVista> enVerificacion() {

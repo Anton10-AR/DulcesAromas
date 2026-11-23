@@ -24,6 +24,12 @@ public interface IPagos {
 	PagoVista registrar(Long pedidoId, Long metodoPagoId, String referencia, byte[] comprobante, UsuarioActual usuario);
 
 	/**
+	 * El cliente paga con tarjeta de débito en el tótem: el procesador aprueba el cobro y el sistema lo verifica solo,
+	 * sin comprobante ni revisión manual. El pago queda Pagado y el pedido Confirmado en la misma transacción (RN05).
+	 */
+	PagoVista pagarConTarjeta(Long pedidoId, UsuarioActual cliente);
+
+	/**
 	 * El estado del cobro de cada pedido del cliente, para Mis pedidos (HU19).
 	 */
 	List<Cobro> deCliente(Long clienteId);

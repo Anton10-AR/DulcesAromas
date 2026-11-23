@@ -422,7 +422,7 @@ class Entrega {
 }
 
 class MetodoPago {
-  MetodoPago(this.id, this.nombre, this.instrucciones, this.activo, this.qr);
+  MetodoPago(this.id, this.nombre, this.instrucciones, this.activo, this.qr, [this.automatico = false]);
 
   factory MetodoPago.deJson(Json j) => MetodoPago(
     j['id'] as int,
@@ -430,6 +430,7 @@ class MetodoPago {
     j['instrucciones'] as String,
     j['activo'] as bool,
     j['qr'] as String?,
+    j['automatico'] as bool? ?? false,
   );
 
   final int id;
@@ -437,6 +438,9 @@ class MetodoPago {
   final String instrucciones;
   final bool activo;
   final String? qr;
+
+  /// Lo aprueba un procesador al momento, sin referencia ni comprobante: la tarjeta de débito del tótem.
+  final bool automatico;
 }
 
 /// El mismo criterio que la API: «Tamaño», sin importar mayúsculas ni la eñe.

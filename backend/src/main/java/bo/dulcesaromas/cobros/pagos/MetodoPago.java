@@ -31,6 +31,9 @@ class MetodoPago {
 
 	private Instant qrActualizado;
 
+	/** Lo aprueba un procesador, sin referencia ni comprobante del cliente: la tarjeta de débito del tótem. */
+	private boolean automatico;
+
 	protected MetodoPago() {
 	}
 
@@ -74,6 +77,10 @@ class MetodoPago {
 
 	Instant getQrActualizado() {
 		return qrActualizado;
+	}
+
+	boolean isAutomatico() {
+		return automatico;
 	}
 
 }

@@ -11,6 +11,7 @@ import '../../comun/formato.dart';
 import '../../comun/sesion.dart';
 import '../carrito.dart';
 import '../marco_tienda.dart';
+import '../totem.dart';
 
 /// Acciones de la barra superior de la Tienda: el tema y, en pantallas anchas, el carrito con su cantidad y la
 /// cuenta. En el teléfono, el carrito y la cuenta están en la barra inferior (`MarcoTienda`).
@@ -18,6 +19,7 @@ List<Widget> accionesTienda(BuildContext context) {
   final carrito = context.watch<Carrito>();
   final sesion = context.watch<Sesion>();
   if (conBarraInferior(context)) return const [BotonTema()];
+  final totem = context.watch<ModoTotem>().activo;
   return [
     const BotonTema(),
     IconButton(
@@ -29,7 +31,10 @@ List<Widget> accionesTienda(BuildContext context) {
         child: const Icon(Icons.shopping_bag_outlined),
       ),
     ),
-    if (sesion.iniciada)
+    // El tótem no muestra la cuenta: ningún visitante debe cerrar su sesión.
+    if (totem)
+      ...[]
+    else if (sesion.iniciada)
       PopupMenuButton<String>(
         tooltip: 'Mi cuenta',
         icon: CirculoIniciales(sesion.usuario!.nombre),

@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,10 +43,14 @@ class PagoServicio implements IPagos {
 
 	private final IAutenticacion autenticacion;
 
+	private final ProcesadorTarjetas procesador;
+
 	private final Clock reloj;
 
 	PagoServicio(PagoRepositorio pagos, VerificacionRepositorio verificaciones, ComprobanteRepositorio comprobantes,
-			MetodoPagoRepositorio metodos, IPedidos pedidos, IAutenticacion autenticacion, Clock reloj) {
+			MetodoPagoRepositorio metodos, IPedidos pedidos, IAutenticacion autenticacion, ProcesadorTarjetas procesador,
+			Clock reloj) {
+		this.procesador = procesador;
 		this.pagos = pagos;
 		this.verificaciones = verificaciones;
 		this.comprobantes = comprobantes;
@@ -92,6 +97,11 @@ class PagoServicio implements IPagos {
 		MetodoPago metodo = metodos.findById(metodoPagoId).filter(MetodoPago::isActivo)
 			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "METODO_NO_DISPONIBLE",
 					"Ese método de pago no está disponible.", Map.of("metodoPagoId", "Elige otro método de pago.")));
+		if (metodo.isAutomatico()) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "METODO_AUTOMATICO",
+					"La tarjeta se paga en el lector del tótem, no con comprobante.",
+					Map.of("metodoPagoId", "Elige QR, transferencia o depósito."));
+		}
 		Archivo archivo = ValidadorArchivos.comprobante(comprobante);
 		Pago pago = pagos.bloquearDePedidoEn(pedidoId, EstadoPago.PENDIENTE_DE_PAGO)
 			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.CONFLICT, "PAGO_NO_PENDIENTE",
@@ -137,6 +147,36 @@ class PagoServicio implements IPagos {
 			.filter(p -> p.estado() == EstadoPedido.CANCELADO).map(IPedidos.PedidoResumen::id)
 			.collect(Collectors.toSet());
 		return vistas(lista.stream().filter(p -> !cancelados.contains(p.getPedidoId())).toList());
+	}
+
+	@Override
+	@Transactional
+	public PagoVista pagarConTarjeta(Long pedidoId, UsuarioActual cliente) {
+		var pedido = pedidos.resumen(pedidoId);
+		if (!pedido.clienteId().equals(cliente.id())) {
+			throw pedidoNoEncontrado();
+		}
+		if (pedido.estado() != EstadoPedido.PENDIENTE) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "PEDIDO_NO_PENDIENTE",
+					"Este pedido ya no espera un pago.");
+		}
+		MetodoPago tarjeta = metodos.findAll().stream().filter(m -> m.isAutomatico() && m.isActivo()).findFirst()
+			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "METODO_NO_DISPONIBLE",
+					"El pago con tarjeta no está disponible."));
+		Pago pago = pagos.bloquearDePedidoEn(pedidoId, EstadoPago.PENDIENTE_DE_PAGO)
+			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.CONFLICT, "PAGO_NO_PENDIENTE",
+					"Este pedido ya tiene un pago en verificación."));
+		var respuesta = procesador.cobrar(pago.getMonto(), "Pedido #" + pedidoId);
+		if (!respuesta.aprobado()) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "TARJETA_RECHAZADA",
+					"El banco rechazó el pago: " + respuesta.motivo() + ". Prueba con otra tarjeta u otro método.");
+		}
+		pago.registrar(tarjeta, respuesta.autorizacion(), reloj.instant());
+		pago.aprobar();
+		// Lo verificó el sistema con la respuesta del procesador: no hay verificador humano.
+		verificaciones.save(new Verificacion(pago.getId(), Verificacion.Decision.APROBADO, null, null, reloj.instant()));
+		pedidos.confirmarPorPagoAprobado(pedidoId, null);
+		return vistas(List.of(pago)).getFirst();
 	}
 
 	/**
@@ -217,13 +257,15 @@ class PagoServicio implements IPagos {
 			.stream()
 			.collect(Collectors.toMap(IPedidos.PedidoResumen::id, IPedidos.PedidoResumen::clienteId));
 		Set<Long> personas = new HashSet<>(clientePorPedido.values());
-		porPago.values().forEach(v -> personas.add(v.getVerificadorId()));
+		porPago.values().stream().map(Verificacion::getVerificadorId).filter(Objects::nonNull).forEach(personas::add);
 		Map<Long, String> nombres = autenticacion.nombres(personas);
+		Set<Long> conComprobante = new HashSet<>(comprobantes.conComprobante(lista.stream().map(Pago::getId).toList()));
 		return lista.stream().map(p -> {
 			Verificacion v = porPago.get(p.getId());
 			var verificacion = v == null ? null : new PagoVista.VerificacionVista(v.getDecision().name(),
-					v.getObservacion(), nombres.get(v.getVerificadorId()), v.getFecha());
-			String comprobante = p.getRegistrado() == null ? null : "/api/pagos/" + p.getId() + "/comprobante";
+					v.getObservacion(), v.getVerificadorId() == null ? "Sistema (procesador de pagos)"
+							: nombres.get(v.getVerificadorId()), v.getFecha());
+			String comprobante = conComprobante.contains(p.getId()) ? "/api/pagos/" + p.getId() + "/comprobante" : null;
 			return new PagoVista(p.getId(), p.getPedidoId(), nombres.get(clientePorPedido.get(p.getPedidoId())),
 					p.getMonto(), p.getEstado(), p.getMetodoNombre(), p.getReferencia(), p.getRegistrado(), comprobante,
 					verificacion);

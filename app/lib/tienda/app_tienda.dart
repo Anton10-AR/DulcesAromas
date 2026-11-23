@@ -22,6 +22,7 @@ import 'pantallas/perfil_pantalla.dart';
 import 'pantallas/producto_pantalla.dart';
 import 'pantallas/recuperar_pantalla.dart';
 import 'pantallas/registro_pantalla.dart';
+import 'totem.dart';
 
 /// Rutas que exigen sesión de cliente. Sin ella, se pide iniciar sesión y luego se vuelve aquí (RN15).
 bool _esPrivada(String ruta) =>
@@ -85,6 +86,7 @@ GoRouter rutasTienda(Sesion sesion) {
                 ],
               ),
               GoRoute(path: 'perfil', builder: (_, _) => const PerfilPantalla()),
+              GoRoute(path: 'totem', builder: (_, _) => const TotemPantalla()),
             ],
           ),
         ],
@@ -108,6 +110,7 @@ class _AppTiendaState extends State<AppTienda> {
   late final Carrito _carrito = Carrito();
   late final PreferenciaTema _tema = PreferenciaTema(claveGuardado: 'tema_tienda');
   late final RecuerdoPortada _portada = RecuerdoPortada();
+  late final ModoTotem _totem = ModoTotem();
   late final GoRouter _rutas = rutasTienda(_sesion);
 
   /// Las pantallas esperan a la sesión y al carrito guardados. Si no, al abrir o recargar una ruta como /pedidos o
@@ -117,6 +120,7 @@ class _AppTiendaState extends State<AppTienda> {
     _carrito.cargar(),
     _tema.cargar(),
     _portada.cargar(),
+    _totem.cargar(),
   ]);
 
   @override
@@ -128,6 +132,7 @@ class _AppTiendaState extends State<AppTienda> {
         ChangeNotifierProvider.value(value: _carrito),
         ChangeNotifierProvider.value(value: _tema),
         Provider.value(value: _portada),
+        ChangeNotifierProvider.value(value: _totem),
       ],
       child: FutureBuilder(
         future: _listo,
@@ -144,9 +149,13 @@ class _AppTiendaState extends State<AppTienda> {
                 // RNF20: marco visible alrededor del control con foco al usar el teclado.
                 // El fondo decorado va una sola vez, debajo de todas las pantallas: las páginas cambian sin animación, así que
                 // nunca se ve una a través de otra.
-                builder: (context, hijo) => FondoDecorado(
-                  child: MenosMovimiento(child: IndicadorDeFoco(child: hijo!)),
-                ),
+                builder: (context, hijo) {
+                  final pantalla = FondoDecorado(
+                    child: MenosMovimiento(child: IndicadorDeFoco(child: hijo!)),
+                  );
+                  // En un tótem público: letra más grande y vuelta al inicio tras un rato sin uso.
+                  return context.watch<ModoTotem>().activo ? VigiaTotem(rutas: _rutas, child: pantalla) : pantalla;
+                },
               ),
       ),
     );

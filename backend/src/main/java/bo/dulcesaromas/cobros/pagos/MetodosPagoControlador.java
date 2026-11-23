@@ -96,12 +96,12 @@ class MetodosPagoControlador {
 			@NotNull(message = "Escribe los datos para pagar, aunque sea vacío.") @Size(max = 1000, message = "Usa como máximo 1000 caracteres.") String instrucciones) {
 	}
 
-	record MetodoVista(Long id, String nombre, String instrucciones, boolean activo, String qr) {
+	record MetodoVista(Long id, String nombre, String instrucciones, boolean activo, String qr, boolean automatico) {
 
 		static MetodoVista de(MetodoPago m) {
 			String qr = m.getQrActualizado() == null ? null
 					: "/api/metodos-pago/" + m.getId() + "/qr?v=" + m.getQrActualizado().toEpochMilli();
-			return new MetodoVista(m.getId(), m.getNombre(), m.getInstrucciones(), m.isActivo(), qr);
+			return new MetodoVista(m.getId(), m.getNombre(), m.getInstrucciones(), m.isActivo(), qr, m.isAutomatico());
 		}
 
 	}

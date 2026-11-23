@@ -7,6 +7,7 @@ import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
 import '../carrito.dart';
+import '../totem.dart';
 import 'comunes.dart';
 
 /// Confirmar el pedido con recojo o delivery (CU05, HU10, RN12).
@@ -31,6 +32,13 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
   @override
   void initState() {
     super.initState();
+    // Tótem: recojo con el primer horario libre, para no escribir nada.
+    if (context.read<ModoTotem>().activo) {
+      _tipo = 'RECOJO';
+      final horario = primerHorarioDeRecojo();
+      _dia = DateTime(horario.year, horario.month, horario.day);
+      _hora = TimeOfDay(hour: horario.hour, minute: horario.minute);
+    }
     _cotizar();
     _traerDatosDelPerfil();
   }
@@ -127,9 +135,15 @@ class _ConfirmarPantallaState extends State<ConfirmarPantalla> {
               Text('¿Cómo lo recibes?', style: textos.titleMedium),
               const SizedBox(height: 8),
               SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'RECOJO', label: Text('Recojo'), icon: Icon(Icons.storefront_outlined)),
-                  ButtonSegment(value: 'DELIVERY', label: Text('Delivery'), icon: Icon(Icons.delivery_dining_outlined)),
+                segments: [
+                  const ButtonSegment(value: 'RECOJO', label: Text('Recojo'), icon: Icon(Icons.storefront_outlined)),
+                  // En el tótem se recoge en el stand.
+                  if (!context.watch<ModoTotem>().activo)
+                    const ButtonSegment(
+                      value: 'DELIVERY',
+                      label: Text('Delivery'),
+                      icon: Icon(Icons.delivery_dining_outlined),
+                    ),
                 ],
                 emptySelectionAllowed: true,
                 selected: {?_tipo},
