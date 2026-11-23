@@ -7,6 +7,8 @@ import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
+import '../carrito.dart';
+import '../totem.dart';
 import 'comunes.dart';
 import 'progreso_pedido.dart';
 
@@ -121,6 +123,12 @@ class _PedidoPantallaState extends State<PedidoPantalla> with ActualizacionPerio
     );
   }
 
+  /// Tótem: vacía el carrito y vuelve al catálogo para el siguiente visitante.
+  void _nuevoPedido() {
+    context.read<Carrito>().vaciar();
+    context.go('/');
+  }
+
   Widget _detalle(Pedido pedido, List<Pago> pagos) {
     final textos = Theme.of(context).textTheme;
     final colores = Theme.of(context).colorScheme;
@@ -147,6 +155,22 @@ class _PedidoPantallaState extends State<PedidoPantalla> with ActualizacionPerio
         const SizedBox(height: 4),
         Text('Pedido el ${fechaHora(pedido.fechaCreacion)}', style: textos.bodySmall),
         const SizedBox(height: 16),
+        // Tótem: el visitante termina aquí; el siguiente empieza su propio pedido con un toque.
+        if (context.watch<ModoTotem>().activo) ...[
+          FilledButton.icon(
+            onPressed: _nuevoPedido,
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('Nuevo pedido'),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Muestra el número #${pedido.id} en el stand para recibir tu pedido.',
+            style: textos.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+        ],
         _Seccion(
           titulo: 'Seguimiento',
           children: [

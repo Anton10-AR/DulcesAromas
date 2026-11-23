@@ -93,6 +93,51 @@ void main() {
     expect(rutas.routerDelegate.currentConfiguration.uri.path, '/pedidos/7');
   });
 
+  testWidgets('desde el seguimiento, «Nuevo pedido» deja el tótem listo para el siguiente visitante', (tester) async {
+    final api = Api(
+      base: 'http://api',
+      cliente: MockClient((solicitud) async {
+        return switch (solicitud.url.path) {
+          '/api/auth/yo' => json({
+            'id': 9,
+            'nombre': 'Tótem',
+            'correo': 't@example.com',
+            'tipo': 'CLIENTE',
+            'rol': null,
+            'permisos': [],
+          }),
+          '/api/pedidos/7' => json({
+            'id': 7,
+            'estado': 'CONFIRMADO',
+            'tipoEntrega': 'RECOJO',
+            'direccion': null,
+            'telefono': '70012345',
+            'horarioEntrega': '2026-11-27T14:00:00Z',
+            'lineas': [],
+            'costoEnvio': 0,
+            'total': 120,
+            'fechaCreacion': '2026-11-26T14:00:00Z',
+            'asistido': false,
+            'motivoCancelacion': null,
+            'historial': [],
+          }),
+          '/api/pagos' => json([
+            {'id': 1, 'pedidoId': 7, 'monto': 120, 'estado': 'PAGADO'},
+          ]),
+          _ => json([]),
+        };
+      }),
+    );
+    final rutas = await abrir(tester, api);
+    rutas.go('/pedidos/7');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Muestra el número #7 en el stand para recibir tu pedido.'), findsOneWidget);
+    await tester.tap(find.text('Nuevo pedido'));
+    await tester.pumpAndSettle();
+    expect(rutas.routerDelegate.currentConfiguration.uri.path, '/');
+  });
+
   testWidgets('el tótem no muestra la cuenta y vuelve al catálogo tras un rato sin uso', (tester) async {
     final rutas = await abrir(tester, apiDelTotem(pagos: []));
     expect(find.byTooltip('Mi cuenta'), findsNothing);
