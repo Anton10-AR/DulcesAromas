@@ -1,6 +1,7 @@
 package bo.dulcesaromas.cobros;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import bo.dulcesaromas.seguridad.UsuarioActual;
@@ -28,6 +29,22 @@ public interface IPagos {
 	 * sin comprobante ni revisión manual. El pago queda Pagado y el pedido Confirmado en la misma transacción (RN05).
 	 */
 	PagoVista pagarConTarjeta(Long pedidoId, UsuarioActual cliente);
+
+	/**
+	 * Abre un cobro por QR para el pedido: un código secreto de un solo uso que vence a los 15 minutos. El QR lleva a
+	 * la pasarela de pagos con ese código.
+	 */
+	CobroQrVista crearCobroQr(Long pedidoId, UsuarioActual cliente);
+
+	/**
+	 * Lo que muestra la pasarela de un cobro: el comercio, el pedido y el monto, sin datos del cliente.
+	 */
+	CobroPasarela cobroEnPasarela(String codigo);
+
+	/**
+	 * La pasarela confirma el pago: el sistema lo verifica solo y el pedido queda Confirmado (RN05).
+	 */
+	CobroPasarela confirmarEnPasarela(String codigo);
 
 	/**
 	 * El estado del cobro de cada pedido del cliente, para Mis pedidos (HU19).
@@ -59,6 +76,16 @@ public interface IPagos {
 	}
 
 	record ArchivoComprobante(String tipoContenido, byte[] datos) {
+	}
+
+	record CobroQrVista(String codigo, Long pedidoId, BigDecimal monto, Instant vence) {
+	}
+
+	/**
+	 * @param estado PENDIENTE, PAGADO, VENCIDO o CERRADO (el pedido ya no espera este pago)
+	 */
+	record CobroPasarela(String comercio, Long pedidoId, BigDecimal monto, Instant vence, String estado,
+			String referencia) {
 	}
 
 }

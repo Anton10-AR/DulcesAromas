@@ -1,16 +1,18 @@
-import 'dart:typed_data';
+import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
 import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
-import '../carrito.dart';
 import '../comprobante_demo.dart';
 import '../totem.dart';
 import 'comunes.dart';
@@ -40,6 +42,11 @@ class _PagarPantallaState extends State<PagarPantalla> {
 
   /// El pago con tarjeta: leyendo la tarjeta, esperando al procesador, o aprobado.
   _FaseTarjeta? _fase;
+
+  /// El cobro por QR que se muestra, y la consulta que espera a que la pasarela lo confirme.
+  _CobroQr? _cobroQr;
+  ErrorApi? _errorQr;
+  Timer? _esperaQr;
   Pago? _aprobado;
 
   Api get _api => context.read<Api>();
@@ -54,6 +61,7 @@ class _PagarPantallaState extends State<PagarPantalla> {
 
   @override
   void dispose() {
+    _esperaQr?.cancel();
     _referencia.dispose();
     super.dispose();
   }
@@ -139,6 +147,136 @@ class _PagarPantallaState extends State<PagarPantalla> {
     }
   }
 
+  /// Cambia de método. Con QR abre un cobro nuevo y espera a que la pasarela lo confirme; con otro, deja de esperar.
+  void _elegir(MetodoPago metodo) {
+    if (!mounted || _metodo == metodo) return;
+    _esperaQr?.cancel();
+    setState(() {
+      _metodo = metodo;
+      _cobroQr = null;
+      _errorQr = null;
+    });
+    if (metodo.esQr) _crearCobroQr();
+  }
+
+  Future<void> _crearCobroQr() async {
+    _esperaQr?.cancel();
+    setState(() {
+      _cobroQr = null;
+      _errorQr = null;
+    });
+    try {
+      final cobro = _CobroQr.deJson(await _api.post('/api/pagos/qr', {'pedidoId': widget.pedidoId}) as Json);
+      if (!mounted) return;
+      setState(() => _cobroQr = cobro);
+      // La pasarela avisa al sistema; aquí se consulta cada 3 segundos hasta ver el pago aprobado.
+      _esperaQr = Timer.periodic(const Duration(seconds: 3), (_) => Api.enSegundoPlano(_revisarPagoQr));
+    } on ErrorApi catch (e) {
+      if (mounted) setState(() => _errorQr = e);
+    }
+  }
+
+  Future<void> _revisarPagoQr() async {
+    if (!mounted) return;
+    if (_cobroQr != null && DateTime.now().isAfter(_cobroQr!.vence)) {
+      _esperaQr?.cancel();
+      setState(() {});
+      return;
+    }
+    try {
+      final pagos = lista(await _api.get('/api/pagos', {'pedido': '${widget.pedidoId}'}), Pago.deJson);
+      final pagado = pagos.where((p) => p.estado == 'PAGADO').firstOrNull;
+      if (pagado == null || !mounted) return;
+      _esperaQr?.cancel();
+      setState(() => _aprobado = pagado);
+    } on ErrorApi {
+      // Se intenta otra vez en la próxima vuelta.
+    }
+  }
+
+  /// La dirección de la pasarela en este mismo sitio. En la web, el sitio desde el que se abrió la Tienda (así también
+  /// funciona en local); en Android, el sitio publicado.
+  String _urlPasarela(String codigo) {
+    const sitio = String.fromEnvironment('SITIO_URL', defaultValue: 'https://dulces-aromas.onrender.com');
+    return '${kIsWeb ? Uri.base.origin : sitio}/pasarela/$codigo';
+  }
+
+  /// El QR del cobro, al estilo de los QR de cobro de los negocios: solo el QR, el monto y el pedido.
+  List<Widget> _pagoConQr() {
+    final textos = Theme.of(context).textTheme;
+    if (_errorQr != null) {
+      return [
+        const SizedBox(height: 16),
+        AvisoError(_errorQr!.mensaje),
+        OutlinedButton(onPressed: _crearCobroQr, child: const Text('Intentar de nuevo')),
+      ];
+    }
+    final cobro = _cobroQr;
+    if (cobro == null) return const [SizedBox(height: 24), Center(child: CircularProgressIndicator())];
+    if (DateTime.now().isAfter(cobro.vence)) {
+      return [
+        const SizedBox(height: 24),
+        Text('Este QR venció.', style: textos.titleMedium, textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: _crearCobroQr,
+          icon: const Icon(Icons.refresh),
+          label: const Text('Generar otro QR'),
+        ),
+      ];
+    }
+    // Blanco y café oscuro, también en el tema oscuro: así lo lee cualquier cámara.
+    const cafe = Color(0xFF3A2A23);
+    return [
+      const SizedBox(height: 20),
+      Center(
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, 6))],
+          ),
+          child: Column(
+            children: [
+              Text(
+                'Dulces Aromas',
+                style: textos.titleLarge?.copyWith(color: cafe, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              QrImageView(
+                data: _urlPasarela(cobro.codigo),
+                size: 240,
+                backgroundColor: Colors.white,
+                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: cafe),
+                dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: cafe),
+                semanticsLabel: 'Código QR para pagar el pedido #${cobro.pedidoId}',
+              ),
+              const SizedBox(height: 12),
+              Text(bolivianos(cobro.monto), style: textos.titleLarge?.copyWith(color: cafe)),
+              Text(
+                'Pedido #${cobro.pedidoId} · vence a las ${fechaHora(cobro.vence).substring(11)}',
+                style: textos.bodySmall?.copyWith(color: const Color(0xFF5C463C)),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 12),
+          Text('Esperando el pago…', style: textos.titleMedium),
+        ],
+      ),
+      const SizedBox(height: 4),
+      Text('Escanéalo con la cámara de tu celular.', style: textos.bodyMedium, textAlign: TextAlign.center),
+    ];
+  }
+
   /// Pago con tarjeta: el lector espera la tarjeta y el procesador aprueba el cobro. El procesador de la feria es una
   /// simulación: no se lee ni se envía ningún dato de la tarjeta.
   Future<void> _pagarConTarjeta() async {
@@ -164,12 +302,6 @@ class _PagarPantallaState extends State<PagarPantalla> {
         });
       }
     }
-  }
-
-  /// Tótem: deja el carrito vacío y vuelve al catálogo para el siguiente visitante.
-  void _nuevaCompra() {
-    context.read<Carrito>().vaciar();
-    context.go('/');
   }
 
   Future<void> _registrar() async {
@@ -243,7 +375,6 @@ class _PagarPantallaState extends State<PagarPantalla> {
   Widget _pagoAprobado(Pago pago) {
     final textos = Theme.of(context).textTheme;
     final colores = Theme.of(context).colorScheme;
-    final totem = context.read<ModoTotem>().activo;
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -266,23 +397,11 @@ class _PagarPantallaState extends State<PagarPantalla> {
               const SizedBox(height: 4),
               Text('Procesador de demostración: no se cobró dinero real.', style: textos.bodySmall),
               const SizedBox(height: 24),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _volverAlPedido,
-                    icon: const Icon(Icons.receipt_long_outlined),
-                    label: const Text('Seguir mi pedido'),
-                  ),
-                  if (totem)
-                    FilledButton.icon(
-                      onPressed: _nuevaCompra,
-                      icon: const Icon(Icons.storefront_outlined),
-                      label: const Text('Terminar'),
-                    ),
-                ],
+              // En el tótem, el seguimiento queda en pantalla hasta que vuelve solo al catálogo por inactividad.
+              FilledButton.icon(
+                onPressed: _volverAlPedido,
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: const Text('Seguir mi pedido'),
               ),
             ],
           ),
@@ -333,8 +452,10 @@ class _PagarPantallaState extends State<PagarPantalla> {
   Widget _formulario(Pago vigente, Pago? rechazado, List<MetodoPago> metodos) {
     final textos = Theme.of(context).textTheme;
     // En el tótem se paga con tarjeta: queda elegida si está activa.
+    // En el tótem se paga sin comprobante: queda elegido el primer método automático (QR o tarjeta).
     if (_metodo == null && context.read<ModoTotem>().activo) {
-      _metodo = metodos.where((m) => m.automatico).firstOrNull;
+      final automatico = metodos.where((m) => m.automatico).firstOrNull;
+      if (automatico != null) WidgetsBinding.instance.addPostFrameCallback((_) => _elegir(automatico));
     }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -360,17 +481,20 @@ class _PagarPantallaState extends State<PagarPantalla> {
                 children: [
                   for (final m in metodos)
                     ChoiceChip(
-                      avatar: m.automatico ? const Icon(Icons.credit_card) : null,
+                      avatar: m.esQr
+                          ? const Icon(Icons.qr_code_2)
+                          : (m.automatico ? const Icon(Icons.credit_card) : null),
                       label: Text(m.nombre),
                       selected: _metodo == m,
                       // Mientras el lector espera la tarjeta, no se cambia de método.
-                      onSelected: _fase != null ? null : (_) => setState(() => _metodo = m),
+                      onSelected: _fase != null ? null : (_) => _elegir(m),
                     ),
                 ],
               ),
               if (_error?.campos['metodoPagoId'] != null)
                 Text(_error!.campos['metodoPagoId']!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              if (_metodo != null) ...[
+              // El QR por cobro se dibuja abajo; el QR fijo que subía el administrador ya no se usa.
+              if (_metodo != null && !_metodo!.esQr) ...[
                 const SizedBox(height: 12),
                 Card(
                   child: Padding(
@@ -395,7 +519,9 @@ class _PagarPantallaState extends State<PagarPantalla> {
                   ),
                 ),
               ],
-              if (_metodo?.automatico ?? false)
+              if (_metodo?.esQr ?? false)
+                ..._pagoConQr()
+              else if (_metodo?.automatico ?? false)
                 ..._pagoConTarjeta(vigente)
               else ...[
                 const SizedBox(height: 24),
@@ -448,3 +574,16 @@ class _PagarPantallaState extends State<PagarPantalla> {
 }
 
 enum _FaseTarjeta { leyendo, procesando }
+
+/// Un cobro por QR: el código secreto que va en el QR, el monto y hasta cuándo vale.
+class _CobroQr {
+  _CobroQr(this.codigo, this.pedidoId, this.monto, this.vence);
+
+  factory _CobroQr.deJson(Json j) =>
+      _CobroQr(j['codigo'] as String, j['pedidoId'] as int, decimalDe(j['monto']), instante(j['vence'])!);
+
+  final String codigo;
+  final int pedidoId;
+  final Decimal monto;
+  final DateTime vence;
+}

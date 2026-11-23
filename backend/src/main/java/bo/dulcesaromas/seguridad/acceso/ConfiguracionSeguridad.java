@@ -46,6 +46,8 @@ class ConfiguracionSeguridad {
 				// RN15: el catálogo y el total del carrito se consultan sin sesión; hacer el pedido sí la exige.
 				.requestMatchers(HttpMethod.GET, "/api/catalogo/**", "/api/metodos-pago/*/qr").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/pedidos/cotizacion").permitAll()
+				// La pasarela de pagos simulada: la abre quien escanea el QR, sin cuenta. El código secreto es la llave.
+				.requestMatchers("/api/pasarela/**").permitAll()
 				.requestMatchers("/error").permitAll()
 				.anyRequest().authenticated())
 			.addFilterBefore(new FiltroToken(sesiones), UsernamePasswordAuthenticationFilter.class)

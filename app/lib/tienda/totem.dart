@@ -77,6 +77,12 @@ class _VigiaTotemState extends State<VigiaTotem> {
   Timer? _reloj;
   int? _quedan;
 
+  /// Si ya se le dio más tiempo a la pantalla de pago en esta espera.
+  bool _extendido = false;
+
+  /// En la pantalla de pago el visitante paga con su celular (el QR) y no toca el tótem: ahí se espera más.
+  static const _esperaEnPago = Duration(minutes: 5);
+
   @override
   void initState() {
     super.initState();
@@ -91,19 +97,24 @@ class _VigiaTotemState extends State<VigiaTotem> {
 
   void _reiniciar() {
     _reloj?.cancel();
+    _extendido = false;
     if (_quedan != null) setState(() => _quedan = null);
     _reloj = Timer(widget.espera, _avisar);
   }
 
-  bool get _hayAlgoQueLimpiar {
-    final ruta = widget.rutas.routerDelegate.currentConfiguration.uri.path;
-    return ruta != '/' || !context.read<Carrito>().vacio;
-  }
+  String get _ruta => widget.rutas.routerDelegate.currentConfiguration.uri.path;
+
+  bool get _hayAlgoQueLimpiar => _ruta != '/' || !context.read<Carrito>().vacio;
 
   void _avisar() {
     if (!mounted) return;
     if (!_hayAlgoQueLimpiar) {
       _reiniciar();
+      return;
+    }
+    if (_ruta.endsWith('/pagar') && !_extendido) {
+      _extendido = true;
+      _reloj = Timer(_esperaEnPago - widget.espera, _avisar);
       return;
     }
     setState(() => _quedan = widget.aviso.inSeconds);

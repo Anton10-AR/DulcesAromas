@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 http.Response json(Object cuerpo, [int estado = 200]) =>
@@ -85,9 +86,11 @@ void main() {
     // Sin comprobante ni referencia: no se registró un pago manual.
     expect(pedidos, isNot(contains('POST /api/pagos')));
 
-    await tester.tap(find.text('Terminar'));
+    // Un solo botón: el seguimiento del pedido, que queda en pantalla.
+    expect(find.text('Terminar'), findsNothing);
+    await tester.tap(find.text('Seguir mi pedido'));
     await tester.pumpAndSettle();
-    expect(rutas.routerDelegate.currentConfiguration.uri.path, '/');
+    expect(rutas.routerDelegate.currentConfiguration.uri.path, '/pedidos/7');
   });
 
   testWidgets('el tótem no muestra la cuenta y vuelve al catálogo tras un rato sin uso', (tester) async {
@@ -133,5 +136,89 @@ void main() {
       // Sábado 28/11 a las 7:00 → domingo 29/11 a las 7:00, antes de abrir → 10:00.
       expect(primerHorarioDeRecojo(enLaPaz(28, 7)), DateTime(2026, 11, 29, 10));
     });
+  });
+
+  testWidgets('con QR, el tótem muestra el QR del cobro y pasa solo a «¡Pago aprobado!» cuando la pasarela confirma', (
+    tester,
+  ) async {
+    var pagado = false;
+    final api = Api(
+      base: 'http://api',
+      cliente: MockClient((solicitud) async {
+        return switch (solicitud.url.path) {
+          '/api/auth/yo' => json({
+            'id': 9,
+            'nombre': 'Tótem',
+            'correo': 't@example.com',
+            'tipo': 'CLIENTE',
+            'rol': null,
+            'permisos': [],
+          }),
+          '/api/pagos' => json([
+            {
+              'id': 1,
+              'pedidoId': 7,
+              'monto': 120,
+              'estado': pagado ? 'PAGADO' : 'PENDIENTE_DE_PAGO',
+              if (pagado) 'metodo': 'QR',
+              if (pagado) 'referencia': 'QR-ABCD1234',
+            },
+          ]),
+          '/api/metodos-pago' => json([
+            {
+              'id': 1,
+              'nombre': 'QR',
+              'instrucciones': '',
+              'activo': true,
+              'qr': null,
+              'automatico': true,
+              'canal': 'QR',
+            },
+          ]),
+          '/api/pagos/qr' => json({
+            'codigo': 'codigo-secreto',
+            'pedidoId': 7,
+            'monto': 120,
+            'vence': DateTime.now().toUtc().add(const Duration(minutes: 15)).toIso8601String(),
+          }),
+          _ => json([]),
+        };
+      }),
+    );
+    final rutas = await abrir(tester, api);
+    rutas.go('/pedidos/7/pagar');
+    // Sin pumpAndSettle: mientras espera el pago, el indicador gira siempre.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(tester.widget<QrImageView>(find.byType(QrImageView)).semanticsLabel, contains('pedido #7'));
+    expect(find.text('Esperando el pago…'), findsOneWidget);
+
+    // El visitante confirma en la pasarela, desde su celular.
+    pagado = true;
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('¡Pago aprobado!'), findsOneWidget);
+    expect(find.text('QR · Autorización QR-ABCD1234'), findsOneWidget);
+  });
+
+  testWidgets('en la pantalla de pago el tótem espera más antes de volver al inicio', (tester) async {
+    final rutas = await abrir(tester, apiDelTotem(pagos: []));
+    rutas.go('/pedidos/7/pagar');
+    await tester.pumpAndSettle();
+
+    // A los 90 segundos todavía está en el pago: el visitante puede estar pagando con su celular.
+    await tester.pump(const Duration(seconds: 91));
+    expect(rutas.routerDelegate.currentConfiguration.uri.path, '/pedidos/7/pagar');
+    expect(find.textContaining('¿Sigues ahí?'), findsNothing);
+
+    // Pasados 5 minutos sin tocar la pantalla, avisa y vuelve al catálogo.
+    await tester.pump(const Duration(seconds: 211));
+    expect(find.textContaining('¿Sigues ahí?'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 16));
+    await tester.pumpAndSettle();
+    expect(rutas.routerDelegate.currentConfiguration.uri.path, '/');
   });
 }

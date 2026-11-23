@@ -50,7 +50,7 @@ class PagoConTarjetaTests extends PruebaPedidos {
 	@Test
 	void laTarjetaNoSePagaConComprobante() throws Exception {
 		long pedido = crearPedido(cliente, pedidoSimple(torta));
-		long tarjeta = jdbc.queryForObject("select id from metodo_pago where automatico", Long.class);
+		long tarjeta = jdbc.queryForObject("select id from metodo_pago where canal = 'TARJETA'", Long.class);
 
 		mvc.perform(multipart("/api/pagos").param("pedidoId", String.valueOf(pedido))
 			.param("metodoPagoId", String.valueOf(tarjeta)).param("referencia", "OP-1")

@@ -19,8 +19,8 @@ const _secciones = [
   ('/perfil', ['/perfil']),
 ];
 
-/// Pantallas sin barra inferior: ingresar, registrarse y recuperar la contraseña, para no distraer del formulario.
-const _sinBarra = ['/ingresar', '/registro', '/recuperar'];
+/// Pantallas sin barra inferior: ingresar, registrarse, recuperar la contraseña y la pasarela de pago, para no distraer.
+const _sinBarra = ['/ingresar', '/registro', '/recuperar', '/pasarela'];
 
 /// Si la Tienda usa la barra inferior en este ancho.
 bool conBarraInferior(BuildContext context) => MediaQuery.sizeOf(context).width < anchoBarraInferior;

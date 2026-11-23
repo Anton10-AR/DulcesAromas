@@ -17,6 +17,7 @@ import 'pantallas/confirmar_pantalla.dart';
 import 'pantallas/ingresar_pantalla.dart';
 import 'pantallas/mis_pedidos_pantalla.dart';
 import 'pantallas/pagar_pantalla.dart';
+import 'pantallas/pasarela_pantalla.dart';
 import 'pantallas/pedido_pantalla.dart';
 import 'pantallas/perfil_pantalla.dart';
 import 'pantallas/producto_pantalla.dart';
@@ -87,6 +88,10 @@ GoRouter rutasTienda(Sesion sesion) {
               ),
               GoRoute(path: 'perfil', builder: (_, _) => const PerfilPantalla()),
               GoRoute(path: 'totem', builder: (_, _) => const TotemPantalla()),
+              GoRoute(
+                path: 'pasarela/:codigo',
+                builder: (_, e) => PasarelaPantalla(codigo: e.pathParameters['codigo']!),
+              ),
             ],
           ),
         ],

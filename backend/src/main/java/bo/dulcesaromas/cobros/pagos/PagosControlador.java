@@ -77,6 +77,15 @@ class PagosControlador {
 	record PagoTarjeta(@NotNull(message = "Indica el pedido.") Long pedidoId) {
 	}
 
+	/**
+	 * Abre un cobro por QR: la Tienda dibuja el QR, que lleva a la pasarela con el código.
+	 */
+	@PostMapping("/qr")
+	@PreAuthorize("hasAuthority('CLIENTE')")
+	IPagos.CobroQrVista crearCobroQr(@Valid @RequestBody PagoTarjeta datos) {
+		return servicio.crearCobroQr(datos.pedidoId(), autenticacion.usuarioActual());
+	}
+
 	@GetMapping("/en-verificacion")
 	@PreAuthorize("hasAuthority('COBRANZA_VERIFICAR')")
 	List<PagoVista> enVerificacion() {

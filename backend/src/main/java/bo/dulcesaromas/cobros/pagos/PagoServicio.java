@@ -1,9 +1,12 @@
 package bo.dulcesaromas.cobros.pagos;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.Clock;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -12,6 +15,8 @@ import java.util.stream.Collectors;
 
 import bo.dulcesaromas.cobros.EstadoPago;
 import bo.dulcesaromas.cobros.IPagos;
+import bo.dulcesaromas.cobros.IPagos.CobroPasarela;
+import bo.dulcesaromas.cobros.IPagos.CobroQrVista;
 import bo.dulcesaromas.cobros.PagoVista;
 import bo.dulcesaromas.compartido.ReglaNegocioException;
 import bo.dulcesaromas.ecommerce.EstadoPedido;
@@ -45,12 +50,17 @@ class PagoServicio implements IPagos {
 
 	private final ProcesadorTarjetas procesador;
 
+	private final CobroQrRepositorio cobrosQr;
+
 	private final Clock reloj;
+
+	private final SecureRandom azar = new SecureRandom();
 
 	PagoServicio(PagoRepositorio pagos, VerificacionRepositorio verificaciones, ComprobanteRepositorio comprobantes,
 			MetodoPagoRepositorio metodos, IPedidos pedidos, IAutenticacion autenticacion, ProcesadorTarjetas procesador,
-			Clock reloj) {
+			CobroQrRepositorio cobrosQr, Clock reloj) {
 		this.procesador = procesador;
+		this.cobrosQr = cobrosQr;
 		this.pagos = pagos;
 		this.verificaciones = verificaciones;
 		this.comprobantes = comprobantes;
@@ -99,8 +109,8 @@ class PagoServicio implements IPagos {
 					"Ese método de pago no está disponible.", Map.of("metodoPagoId", "Elige otro método de pago.")));
 		if (metodo.isAutomatico()) {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "METODO_AUTOMATICO",
-					"La tarjeta se paga en el lector del tótem, no con comprobante.",
-					Map.of("metodoPagoId", "Elige QR, transferencia o depósito."));
+					metodo.getNombre() + " se paga desde la pantalla de pago, sin comprobante.",
+					Map.of("metodoPagoId", "Para pagar con comprobante, elige transferencia o depósito."));
 		}
 		Archivo archivo = ValidadorArchivos.comprobante(comprobante);
 		Pago pago = pagos.bloquearDePedidoEn(pedidoId, EstadoPago.PENDIENTE_DE_PAGO)
@@ -152,6 +162,96 @@ class PagoServicio implements IPagos {
 	@Override
 	@Transactional
 	public PagoVista pagarConTarjeta(Long pedidoId, UsuarioActual cliente) {
+		exigirPedidoPendienteDe(pedidoId, cliente);
+		MetodoPago tarjeta = metodoAutomatico("TARJETA", "El pago con tarjeta no está disponible.");
+		Pago pago = pagoPendiente(pedidoId);
+		var respuesta = procesador.cobrar(pago.getMonto(), "Pedido #" + pedidoId);
+		if (!respuesta.aprobado()) {
+			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "TARJETA_RECHAZADA",
+					"El banco rechazó el pago: " + respuesta.motivo() + ". Prueba con otra tarjeta u otro método.");
+		}
+		aprobarAutomaticamente(pago, tarjeta, respuesta.autorizacion());
+		return vistas(List.of(pago)).getFirst();
+	}
+
+	@Override
+	@Transactional
+	public CobroQrVista crearCobroQr(Long pedidoId, UsuarioActual cliente) {
+		exigirPedidoPendienteDe(pedidoId, cliente);
+		metodoAutomatico("QR", "El pago por QR no está disponible.");
+		Pago pago = pagoPendiente(pedidoId);
+		byte[] bytes = new byte[24];
+		azar.nextBytes(bytes);
+		CobroQr cobro = cobrosQr.save(new CobroQr(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes),
+				pago.getId(), reloj.instant()));
+		return new CobroQrVista(cobro.getCodigo(), pedidoId, pago.getMonto(), cobro.getVence());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public CobroPasarela cobroEnPasarela(String codigo) {
+		CobroQr cobro = cobrosQr.findById(codigo).orElseThrow(PagoServicio::cobroNoEncontrado);
+		Pago pago = pagos.findById(cobro.getPagoId()).orElseThrow(PagoServicio::cobroNoEncontrado);
+		String estado;
+		if (cobro.usado()) {
+			estado = "PAGADO";
+		}
+		else if (pago.getEstado() != EstadoPago.PENDIENTE_DE_PAGO
+				|| pedidos.resumen(pago.getPedidoId()).estado() != EstadoPedido.PENDIENTE) {
+			estado = "CERRADO";
+		}
+		else {
+			estado = cobro.vencido(reloj.instant()) ? "VENCIDO" : "PENDIENTE";
+		}
+		return pasarela(cobro, pago, estado);
+	}
+
+	/**
+	 * Lo que haría el aviso del banco: el código es válido, no venció ni se usó, y el pedido sigue esperando el pago.
+	 * Entonces se aprueba solo. El cobro se bloquea, así que confirmar dos veces el mismo QR no paga dos veces.
+	 */
+	@Override
+	@Transactional
+	public CobroPasarela confirmarEnPasarela(String codigo) {
+		CobroQr cobro = cobrosQr.bloquear(codigo).orElseThrow(PagoServicio::cobroNoEncontrado);
+		if (cobro.usado()) {
+			throw new ReglaNegocioException(HttpStatus.CONFLICT, "COBRO_USADO", "Este QR ya se pagó.");
+		}
+		if (cobro.vencido(reloj.instant())) {
+			throw new ReglaNegocioException(HttpStatus.GONE, "COBRO_VENCIDO",
+					"Este QR venció. Pide uno nuevo en la pantalla de pago.");
+		}
+		Pago pago = pagos.bloquear(cobro.getPagoId()).orElseThrow(PagoServicio::cobroNoEncontrado);
+		if (pago.getEstado() != EstadoPago.PENDIENTE_DE_PAGO
+				|| pedidos.resumen(pago.getPedidoId()).estado() != EstadoPedido.PENDIENTE) {
+			throw new ReglaNegocioException(HttpStatus.CONFLICT, "PAGO_NO_PENDIENTE",
+					"Este pedido ya no espera este pago.");
+		}
+		MetodoPago qr = metodoAutomatico("QR", "El pago por QR no está disponible.");
+		// La referencia que daría el banco: letras y números, sin los símbolos del código.
+		String referencia = "QR-" + codigo.replaceAll("[^A-Za-z0-9]", "").substring(0, 8).toUpperCase(Locale.ROOT);
+		aprobarAutomaticamente(pago, qr, referencia);
+		cobro.usar(reloj.instant());
+		return pasarela(cobro, pago, "PAGADO");
+	}
+
+	private CobroPasarela pasarela(CobroQr cobro, Pago pago, String estado) {
+		return new CobroPasarela("Dulces Aromas", pago.getPedidoId(), pago.getMonto(), cobro.getVence(), estado,
+				"PAGADO".equals(estado) ? pago.getReferencia() : null);
+	}
+
+	/**
+	 * Un pago aprobado por el procesador o la pasarela: queda Pagado y el pedido Confirmado en la misma transacción
+	 * (RN05). Lo verificó el sistema con la respuesta del procesador, así que no hay verificador humano.
+	 */
+	private void aprobarAutomaticamente(Pago pago, MetodoPago metodo, String referencia) {
+		pago.registrar(metodo, referencia, reloj.instant());
+		pago.aprobar();
+		verificaciones.save(new Verificacion(pago.getId(), Verificacion.Decision.APROBADO, null, null, reloj.instant()));
+		pedidos.confirmarPorPagoAprobado(pago.getPedidoId(), null);
+	}
+
+	private void exigirPedidoPendienteDe(Long pedidoId, UsuarioActual cliente) {
 		var pedido = pedidos.resumen(pedidoId);
 		if (!pedido.clienteId().equals(cliente.id())) {
 			throw pedidoNoEncontrado();
@@ -160,23 +260,23 @@ class PagoServicio implements IPagos {
 			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "PEDIDO_NO_PENDIENTE",
 					"Este pedido ya no espera un pago.");
 		}
-		MetodoPago tarjeta = metodos.findAll().stream().filter(m -> m.isAutomatico() && m.isActivo()).findFirst()
-			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "METODO_NO_DISPONIBLE",
-					"El pago con tarjeta no está disponible."));
-		Pago pago = pagos.bloquearDePedidoEn(pedidoId, EstadoPago.PENDIENTE_DE_PAGO)
+	}
+
+	private MetodoPago metodoAutomatico(String canal, String siNoHay) {
+		return metodos.findAll().stream()
+			.filter(m -> m.isAutomatico() && m.isActivo() && canal.equals(m.getCanal()))
+			.findFirst()
+			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "METODO_NO_DISPONIBLE", siNoHay));
+	}
+
+	private Pago pagoPendiente(Long pedidoId) {
+		return pagos.bloquearDePedidoEn(pedidoId, EstadoPago.PENDIENTE_DE_PAGO)
 			.orElseThrow(() -> new ReglaNegocioException(HttpStatus.CONFLICT, "PAGO_NO_PENDIENTE",
 					"Este pedido ya tiene un pago en verificación."));
-		var respuesta = procesador.cobrar(pago.getMonto(), "Pedido #" + pedidoId);
-		if (!respuesta.aprobado()) {
-			throw new ReglaNegocioException(HttpStatus.UNPROCESSABLE_CONTENT, "TARJETA_RECHAZADA",
-					"El banco rechazó el pago: " + respuesta.motivo() + ". Prueba con otra tarjeta u otro método.");
-		}
-		pago.registrar(tarjeta, respuesta.autorizacion(), reloj.instant());
-		pago.aprobar();
-		// Lo verificó el sistema con la respuesta del procesador: no hay verificador humano.
-		verificaciones.save(new Verificacion(pago.getId(), Verificacion.Decision.APROBADO, null, null, reloj.instant()));
-		pedidos.confirmarPorPagoAprobado(pedidoId, null);
-		return vistas(List.of(pago)).getFirst();
+	}
+
+	private static ReglaNegocioException cobroNoEncontrado() {
+		return new ReglaNegocioException(HttpStatus.NOT_FOUND, "COBRO_NO_ENCONTRADO", "Este QR no es válido.");
 	}
 
 	/**

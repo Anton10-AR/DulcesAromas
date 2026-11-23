@@ -31,8 +31,11 @@ class MetodoPago {
 
 	private Instant qrActualizado;
 
-	/** Lo aprueba un procesador, sin referencia ni comprobante del cliente: la tarjeta de débito del tótem. */
+	/** Lo aprueba un procesador, sin referencia ni comprobante del cliente: la tarjeta o el QR por cobro. */
 	private boolean automatico;
+
+	/** Por dónde se cobra un método automático: «TARJETA» o «QR». Nulo en los manuales. */
+	private String canal;
 
 	protected MetodoPago() {
 	}
@@ -81,6 +84,10 @@ class MetodoPago {
 
 	boolean isAutomatico() {
 		return automatico;
+	}
+
+	String getCanal() {
+		return canal;
 	}
 
 }
