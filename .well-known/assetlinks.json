@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "bo.dulcesaromas.dulces_aromas",
+      "sha256_cert_fingerprints": [
+        "24:FD:F0:7F:79:16:6D:93:63:1B:C6:DA:F9:BE:49:DF:93:72:4A:79:DB:4A:BB:C5:31:F0:29:35:E9:87:3A:61"
+      ]
+    }
+  }
+]
