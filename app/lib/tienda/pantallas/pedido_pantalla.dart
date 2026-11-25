@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
+import '../../comun/impresion/ticket.dart';
 import '../../comun/modelos.dart';
 import '../../comun/widgets.dart';
 import '../carrito.dart';
@@ -169,6 +170,12 @@ class _PedidoPantallaState extends State<PedidoPantalla> with ActualizacionPerio
             style: textos.bodyMedium,
             textAlign: TextAlign.center,
           ),
+          if (BotonTicket.seOfrece(vigente, estadoPedido: pedido.estado)) ...[
+            const SizedBox(height: 12),
+            Center(
+              child: BotonTicket(pedido: () async => pedido, pago: vigente!),
+            ),
+          ],
           const SizedBox(height: 16),
         ],
         _Seccion(

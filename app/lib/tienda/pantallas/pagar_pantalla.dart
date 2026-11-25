@@ -10,6 +10,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
+import '../../comun/impresion/ticket.dart';
 import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/widgets.dart';
@@ -375,6 +376,10 @@ class _PagarPantallaState extends State<PagarPantalla> {
   Widget _pagoAprobado(Pago pago) {
     final textos = Theme.of(context).textTheme;
     final colores = Theme.of(context).colorScheme;
+    // El ticket es del tótem: en el celular, el seguimiento ya hace de comprobante.
+    final conTicket = context.watch<ModoTotem>().activo && BotonTicket.seOfrece(pago);
+    const iconoSeguir = Icon(Icons.receipt_long_outlined);
+    const textoSeguir = Text('Seguir mi pedido');
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -398,10 +403,22 @@ class _PagarPantallaState extends State<PagarPantalla> {
               Text('Procesador de demostración: no se cobró dinero real.', style: textos.bodySmall),
               const SizedBox(height: 24),
               // En el tótem, el seguimiento queda en pantalla hasta que vuelve solo al catálogo por inactividad.
-              FilledButton.icon(
-                onPressed: _volverAlPedido,
-                icon: const Icon(Icons.receipt_long_outlined),
-                label: const Text('Seguir mi pedido'),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  if (conTicket)
+                    BotonTicket(
+                      principal: true,
+                      pedido: () async => Pedido.deJson(await _api.get('/api/pedidos/${widget.pedidoId}') as Json),
+                      pago: pago,
+                    ),
+                  if (conTicket)
+                    OutlinedButton.icon(onPressed: _volverAlPedido, icon: iconoSeguir, label: textoSeguir)
+                  else
+                    FilledButton.icon(onPressed: _volverAlPedido, icon: iconoSeguir, label: textoSeguir),
+                ],
               ),
             ],
           ),

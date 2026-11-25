@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../comun/actualizacion.dart';
 import '../../comun/api.dart';
 import '../../comun/formato.dart';
+import '../../comun/impresion/ticket.dart';
 import '../../comun/modelos.dart';
 import '../../comun/sesion.dart';
 import '../../comun/tema.dart';
@@ -120,11 +121,7 @@ class _PedidoPanelState extends State<PedidoPanel> with ActualizacionPeriodica {
                 children: [
                   _encabezado(pedido, pagos),
                   const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _acciones(pedido, entrega, pagos.lastOrNull?.estado == 'PENDIENTE_DE_PAGO'),
-                  ),
+                  Wrap(spacing: 8, runSpacing: 8, children: _acciones(pedido, entrega, pagos.lastOrNull)),
                   if (pedido.esDelivery && _usuario.puede('DISTRIBUCION_ASIGNAR')) _repartidor(pedido, entrega),
                   // CU08: el recojo no lleva repartidor; se cierra cuando el cliente lo retira.
                   if (!pedido.esDelivery && ['CONFIRMADO', 'EN_PREPARACION', 'LISTO'].contains(pedido.estado))
@@ -201,8 +198,9 @@ class _PedidoPanelState extends State<PedidoPanel> with ActualizacionPeriodica {
   }
 
   /// Solo las acciones que el rol permite y el estado admite; el servidor las valida igual (RNF07).
-  List<Widget> _acciones(Pedido p, Entrega? entrega, bool pagoPendiente) {
+  List<Widget> _acciones(Pedido p, Entrega? entrega, Pago? pago) {
     final u = _usuario;
+    final pagoPendiente = pago?.estado == 'PENDIENTE_DE_PAGO';
     Widget boton(String texto, Future<dynamic> Function() llamada, String hecho) =>
         FilledButton(onPressed: _ocupado ? null : () => _accion(llamada, hecho), child: Text(texto));
     return [
@@ -224,6 +222,8 @@ class _PedidoPanelState extends State<PedidoPanel> with ActualizacionPeriodica {
           onPressed: _ocupado ? null : _registrarPago,
           child: const Text('Registrar pago'),
         ),
+      // Para un pedido asistido, una reimpresión, o si falla la impresora del tótem.
+      if (BotonTicket.seOfrece(pago, estadoPedido: p.estado)) BotonTicket(pedido: () async => p, pago: pago!),
     ];
   }
 
